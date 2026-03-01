@@ -1,0 +1,10 @@
+/*
+ * GrantThrive Unified Frontend — Global Styles
+ * =============================================
+ * This file is the single CSS entry point for the unified app.
+ * It imports the marketing site styles (which define the GrantThrive brand
+ * colour tokens and Tailwind base). Admin-specific styles are scoped under
+ * src/admin/AdminApp.css and imported directly by the admin module.
+ */
+
+@import "./marketing/MarketingApp.css";
