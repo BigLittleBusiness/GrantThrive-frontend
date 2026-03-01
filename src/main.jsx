@@ -1,16 +1,19 @@
 /**
  * GrantThrive Unified Frontend — Entry Point
  * ===========================================
- * Single entry point for the merged marketing website + admin dashboard.
+ * Single entry point for all five GrantThrive apps.
  *
  * Routes:
- *   /          → Marketing website (public, no auth required)
- *   /features  → Marketing features page
- *   /pricing   → Marketing pricing page
+ *   /app/*         → Council portal (council_admin, council_staff, community_member)
+ *   /admin/*       → Admin dashboard (system_admin role required via AdminAuthGate)
+ *   /map           → Interactive grant map (public, no auth)
+ *   /roi           → ROI calculator (public, no auth)
+ *   /              → Marketing website (public, no auth — all other routes)
+ *   /features      → Marketing features page
+ *   /pricing       → Marketing pricing page
  *   /roi-calculator → Marketing ROI calculator page
- *   /resources → Marketing resources page
- *   /contact   → Marketing contact page
- *   /admin/*   → Admin dashboard (system_admin role required via AdminAuthGate)
+ *   /resources     → Marketing resources page
+ *   /contact       → Marketing contact page
  *
  * Domain: grantthrive.com
  */
@@ -20,21 +23,31 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import './index.css'
 
-// Marketing website — public, no auth
-import MarketingApp from './marketing/MarketingApp.jsx'
-
-// Admin dashboard — gated by AdminAuthGate (system_admin role only)
+// ── Admin dashboard — system_admin role only ──────────────────────────────
 import AdminAuthGate from './admin/components/AdminAuthGate.jsx'
 import AdminApp from './admin/AdminApp.jsx'
-
-// Import admin-specific CSS (scoped to admin section)
 import './admin/AdminApp.css'
+
+// ── Council portal — authenticated users (council_admin, staff, community) ─
+import PortalApp from './portal/PortalApp.jsx'
+import './portal/PortalApp.css'
+
+// ── Interactive grant map — public ────────────────────────────────────────
+import MapApp from './map/MapApp.jsx'
+import './map/MapApp.css'
+
+// ── ROI calculator — public ───────────────────────────────────────────────
+import ROIApp from './roi/ROIApp.jsx'
+import './roi/ROIApp.css'
+
+// ── Marketing website — public (catch-all) ───────────────────────────────
+import MarketingApp from './marketing/MarketingApp.jsx'
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* ── Admin section ─────────────────────────────────────────────── */}
+        {/* ── Admin dashboard ─────────────────────────────────────────── */}
         <Route
           path="/admin/*"
           element={
@@ -44,7 +57,16 @@ function App() {
           }
         />
 
-        {/* ── Marketing website (all other routes) ──────────────────────── */}
+        {/* ── Council portal ──────────────────────────────────────────── */}
+        <Route path="/app/*" element={<PortalApp />} />
+
+        {/* ── Interactive grant map ───────────────────────────────────── */}
+        <Route path="/map" element={<MapApp />} />
+
+        {/* ── ROI calculator ──────────────────────────────────────────── */}
+        <Route path="/roi" element={<ROIApp />} />
+
+        {/* ── Marketing website (all other routes) ────────────────────── */}
         <Route path="/*" element={<MarketingApp />} />
       </Routes>
     </BrowserRouter>
