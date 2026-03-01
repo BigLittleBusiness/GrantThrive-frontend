@@ -1,4 +1,13 @@
-name: Deploy All React Apps (npm)
+name: Build and Deploy GrantThrive Frontend
+
+# Triggered on every push to main.
+# Builds the single unified React app and deploys the dist/ output to EC2.
+# Required GitHub Secrets:
+#   EC2_SSH_KEY    — private SSH key for the EC2 instance
+#   EC2_HOST       — public IP or hostname of the EC2 instance
+#   EC2_USER       — SSH username (e.g. ubuntu)
+#   VITE_API_URL   — full URL of the backend API (e.g. https://api.grantthrive.com/api)
+#   VITE_LOGIN_URL — full URL of the login page (e.g. https://app.grantthrive.com/login)
 
 on:
   push:
@@ -9,39 +18,31 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        app:
-          - path: frontend
-            target: /var/www/frontend
-          - path: grantthrive-admin-dashboard
-            target: /var/www/admin
-          - path: grantthrive-mapping-component
-            target: /var/www/mapping
-          - path: grantthrive-marketing-website
-            target: /var/www/marketing
-          - path: grantthrive-roi-calculator
-            target: /var/www/roi
-
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
 
       - name: Install dependencies
-        working-directory: ${{ matrix.app.path }}
-        run: npm install --force
+        run: pnpm install
 
-      - name: Build app
-        working-directory: ${{ matrix.app.path }}
-        run: npm run build
+      - name: Build unified app
+        run: pnpm build
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_LOGIN_URL: ${{ secrets.VITE_LOGIN_URL }}
 
       - name: Setup SSH
         run: |
@@ -50,16 +51,11 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Deploy to EC2
+      - name: Deploy dist/ to EC2
         run: |
-          BUILD_DIR="build"
-          if [ -d "${{ matrix.app.path }}/dist" ]; then
-            BUILD_DIR="dist"
-          fi
-
           rsync -avz --delete \
-            ${{ matrix.app.path }}/$BUILD_DIR/ \
-            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ matrix.app.target }}
+            dist/ \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/var/www/grantthrive/
 
       - name: Reload Nginx
         run: |

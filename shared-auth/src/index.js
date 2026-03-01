@@ -2,11 +2,11 @@
  * @grantthrive/auth — Shared SSO Authentication Library
  * =======================================================
  * Single source of truth for authentication across all GrantThrive UI apps:
- *   - frontend           (core platform — all user roles)
- *   - grantthrive-admin-dashboard  (system_admin only)
- *   - grantthrive-mapping-component (public — no auth required)
- *   - grantthrive-roi-calculator    (public — no auth required)
- *   - grantthrive-marketing-website (public — no auth required)
+ *   - admin-apps/portal    (core council platform — all user roles)
+ *   - admin-apps/admin     (system_admin only)
+ *   - public-apps/map      (public — no auth required)
+ *   - public-apps/roi      (public — no auth required)
+ *   - public-apps/marketing (public — no auth required)
  *
  * Architecture:
  *   JWT token is stored in localStorage under the key `gt_auth_token`.
