@@ -1,19 +1,25 @@
 // API utility for GrantThrive frontend-backend integration
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+// Token key must match the shared @grantthrive/auth library (gt_auth_token)
+import { TOKEN_KEY } from '@grantthrive/auth';
+
+const API_BASE_URL =
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) ||
+  process.env?.REACT_APP_API_URL ||
+  'http://localhost:5000/api';
 
 class ApiClient {
   constructor() {
     this.baseURL = API_BASE_URL;
-    this.token = localStorage.getItem('authToken');
+    this.token = localStorage.getItem(TOKEN_KEY);
   }
 
   // Set authentication token
   setToken(token) {
     this.token = token;
     if (token) {
-      localStorage.setItem('authToken', token);
+      localStorage.setItem(TOKEN_KEY, token);
     } else {
-      localStorage.removeItem('authToken');
+      localStorage.removeItem(TOKEN_KEY);
     }
   }
 
@@ -41,10 +47,14 @@ class ApiClient {
     try {
       const response = await fetch(url, config);
       
-      // Handle authentication errors
+      // Handle authentication errors — redirect to the shared login page
       if (response.status === 401) {
         this.setToken(null);
-        window.location.href = '/login';
+        const loginUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_LOGIN_URL)
+          ? import.meta.env.VITE_LOGIN_URL
+          : '/login';
+        const redirect = encodeURIComponent(window.location.href);
+        window.location.href = `${loginUrl}?redirect=${redirect}`;
         throw new Error('Authentication required');
       }
 

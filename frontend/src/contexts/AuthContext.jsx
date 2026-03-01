@@ -1,4 +1,29 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+/**
+ * AuthContext — GrantThrive Core Platform
+ * =========================================
+ * React context wrapper around the shared @grantthrive/auth library.
+ * All token storage (localStorage key: gt_auth_token), API calls, and role
+ * helpers are delegated to the shared library so that authentication behaviour
+ * is identical across all five GrantThrive UI apps.
+ *
+ * Backwards-compatible: all previously exported values are preserved so that
+ * existing components (Login, Navbar, dashboards, etc.) require no changes.
+ *
+ * Domain: grantthrive.com
+ */
+
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import {
+  login as sharedLogin,
+  logout as sharedLogout,
+  verifyToken,
+  setAuth,
+  getToken,
+  getStoredUser,
+  clearAuth,
+  getAuthHeaders,
+  ROLES,
+} from '@grantthrive/auth';
 import apiClient from '../utils/api';
 
 const AuthContext = createContext();
@@ -12,148 +37,140 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser]       = useState(getStoredUser);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError]     = useState(null);
 
-  // Check for existing authentication on mount
+  // On mount: verify the stored token with the backend and refresh user profile
   useEffect(() => {
     checkAuthStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const checkAuthStatus = async () => {
+  const checkAuthStatus = useCallback(async () => {
     try {
       setLoading(true);
-      const userData = await apiClient.verifyToken();
-      if (userData) {
-        setUser(userData);
-      }
-    } catch (error) {
-      console.error('Auth check failed:', error);
-      // Token is invalid, clear it
-      apiClient.setToken(null);
+      const verifiedUser = await verifyToken();
+      setUser(verifiedUser || null);
+    } catch {
+      clearAuth();
+      setUser(null);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const login = async (email, password) => {
+  const login = useCallback(async (email, password) => {
     try {
       setError(null);
       setLoading(true);
-      
-      const response = await apiClient.login(email, password);
-      
-      if (response.user && response.token) {
-        setUser(response.user);
-        return { success: true, user: response.user };
-      } else {
-        throw new Error('Invalid response from server');
+      const result = await sharedLogin(email, password);
+      if (result.success) {
+        setUser(result.user);
+        return { success: true, user: result.user };
       }
-    } catch (error) {
-      const errorMessage = error.message || 'Login failed';
-      setError(errorMessage);
-      return { success: false, error: errorMessage };
+      setError(result.error);
+      return { success: false, error: result.error };
+    } catch (err) {
+      const msg = err.message || 'Login failed';
+      setError(msg);
+      return { success: false, error: msg };
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const register = async (userData) => {
+  const register = useCallback(async (userData) => {
     try {
       setError(null);
       setLoading(true);
-      
+      // Registration still uses the existing apiClient — it calls /auth/register
       const response = await apiClient.register(userData);
-      
       if (response.user) {
-        // If user is immediately active, set them as logged in
         if (response.token) {
+          setAuth(response.token, response.user);
           setUser(response.user);
         }
-        return { 
-          success: true, 
+        return {
+          success: true,
           user: response.user,
-          requiresApproval: response.requires_approval || false
+          requiresApproval: response.requires_approval || false,
         };
-      } else {
-        throw new Error('Registration failed');
       }
-    } catch (error) {
-      const errorMessage = error.message || 'Registration failed';
-      setError(errorMessage);
-      return { success: false, error: errorMessage };
+      throw new Error('Registration failed');
+    } catch (err) {
+      const msg = err.message || 'Registration failed';
+      setError(msg);
+      return { success: false, error: msg };
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const demoLogin = async (demoType) => {
+  const demoLogin = useCallback(async (demoType) => {
     try {
       setError(null);
       setLoading(true);
-      
       const response = await apiClient.demoLogin(demoType);
-      
       if (response.user && response.token) {
+        setAuth(response.token, response.user);
         setUser(response.user);
         return { success: true, user: response.user };
-      } else {
-        throw new Error('Demo login failed');
       }
-    } catch (error) {
-      const errorMessage = error.message || 'Demo login failed';
-      setError(errorMessage);
-      return { success: false, error: errorMessage };
+      throw new Error('Demo login failed');
+    } catch (err) {
+      const msg = err.message || 'Demo login failed';
+      setError(msg);
+      return { success: false, error: msg };
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
-      await apiClient.logout();
-    } catch (error) {
-      console.error('Logout error:', error);
+      await sharedLogout(true);
+    } catch {
+      // Always clear local state even if the server call fails
     } finally {
       setUser(null);
       setError(null);
     }
-  };
+  }, []);
 
-  const updateUser = (updatedUser) => {
+  const updateUser = useCallback((updatedUser) => {
     setUser(updatedUser);
-  };
+    if (updatedUser) {
+      setAuth(getToken(), updatedUser);
+    }
+  }, []);
 
-  const clearError = () => {
-    setError(null);
-  };
+  const clearError = useCallback(() => setError(null), []);
 
-  // Helper functions for role checking
-  const isAdmin = () => {
-    return user && (user.role === 'council_admin' || user.role === 'system_admin');
-  };
+  // ── Role helpers (backwards-compatible names) ─────────────────────────────
+  const isAdmin = useCallback(() =>
+    !!(user && (user.role === ROLES.COUNCIL_ADMIN || user.role === ROLES.SYSTEM_ADMIN)),
+  [user]);
 
-  const isCouncilStaff = () => {
-    return user && (user.role === 'council_staff' || user.role === 'council_admin');
-  };
+  const isCouncilStaff = useCallback(() =>
+    !!(user && [ROLES.COUNCIL_ADMIN, ROLES.COUNCIL_STAFF, ROLES.SYSTEM_ADMIN].includes(user.role)),
+  [user]);
 
-  const isCommunityMember = () => {
-    return user && user.role === 'community_member';
-  };
+  const isCommunityMember = useCallback(() =>
+    !!(user && user.role === ROLES.COMMUNITY_MEMBER),
+  [user]);
 
-  const isProfessionalConsultant = () => {
-    return user && user.role === 'professional_consultant';
-  };
+  const isProfessionalConsultant = useCallback(() =>
+    !!(user && user.role === ROLES.PROFESSIONAL_CONSULTANT),
+  [user]);
 
-  const hasRole = (role) => {
-    return user && user.role === role;
-  };
+  const isSystemAdmin = useCallback(() =>
+    !!(user && user.role === ROLES.SYSTEM_ADMIN),
+  [user]);
 
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem('authToken');
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  };
+  const hasRole = useCallback((role) =>
+    !!(user && user.role === role),
+  [user]);
 
   const value = {
     user,
@@ -172,7 +189,8 @@ export const AuthProvider = ({ children }) => {
     isCouncilStaff,
     isCommunityMember,
     isProfessionalConsultant,
-    hasRole
+    isSystemAdmin,
+    hasRole,
   };
 
   return (
@@ -183,4 +201,4 @@ export const AuthProvider = ({ children }) => {
 };
 
 export { AuthContext };
-
+export default AuthContext;

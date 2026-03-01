@@ -48,8 +48,8 @@ const ContactPage = () => {
     {
       icon: <Mail className="h-6 w-6 text-blue-600" />,
       label: 'Email',
-      value: 'info@grantthrive.com.au',
-      link: 'mailto:info@grantthrive.com.au'
+      value: 'info@grantthrive.com',
+      link: 'mailto:info@grantthrive.com'
     },
     {
       icon: <Clock className="h-6 w-6 text-blue-600" />,

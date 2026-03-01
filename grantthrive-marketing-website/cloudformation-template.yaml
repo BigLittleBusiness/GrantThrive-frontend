@@ -4,7 +4,7 @@ Description: 'GrantThrive Marketing Website Infrastructure'
 Parameters:
   DomainName:
     Type: String
-    Default: grantthrive.com.au
+    Default: grantthrive.com
     Description: Domain name for the website
 
 Resources:
