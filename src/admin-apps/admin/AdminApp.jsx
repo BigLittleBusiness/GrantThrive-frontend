@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import CouncilManagement from './pages/CouncilManagement.jsx';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card';
 import { Badge } from '@shared/components/ui/badge';
 import { Button } from '@shared/components/ui/button';
@@ -41,6 +42,7 @@ import {
   Mail,
   Phone,
   Building,
+  Building2,
   CreditCard,
   UserCheck,
   AlertCircle,
@@ -84,14 +86,15 @@ const AdminDashboard = () => {
   ];
 
   const sidebarItems = [
-    { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-    { id: 'users', label: 'User Management', icon: Users },
-    { id: 'data', label: 'Data Pipeline', icon: Database },
-    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-    { id: 'support', label: 'Support', icon: MessageSquare },
-    { id: 'security', label: 'Security', icon: Shield },
-    { id: 'billing', label: 'Billing', icon: DollarSign },
-    { id: 'settings', label: 'Settings', icon: Settings }
+    { id: 'overview',  label: 'Overview',           icon: LayoutDashboard },
+    { id: 'councils',  label: 'Council Management',  icon: Building2 },
+    { id: 'users',     label: 'User Management',     icon: Users },
+    { id: 'data',      label: 'Data Pipeline',       icon: Database },
+    { id: 'analytics', label: 'Analytics',           icon: BarChart3 },
+    { id: 'support',   label: 'Support',             icon: MessageSquare },
+    { id: 'security',  label: 'Security',            icon: Shield },
+    { id: 'billing',   label: 'Billing',             icon: DollarSign },
+    { id: 'settings',  label: 'Settings',            icon: Settings },
   ];
 
   const getAlertIcon = (type) => {
@@ -453,8 +456,11 @@ const AdminDashboard = () => {
             </div>
           )}
 
-          {/* Other tab content would go here */}
-          {activeTab !== 'overview' && (
+          {/* Council Management */}
+          {activeTab === 'councils' && <CouncilManagement />}
+
+          {/* Placeholder for tabs still under development */}
+          {activeTab !== 'overview' && activeTab !== 'councils' && (
             <div className="text-center py-12">
               <div className="text-gray-400 mb-4">
                 <Settings className="w-16 h-16 mx-auto" />

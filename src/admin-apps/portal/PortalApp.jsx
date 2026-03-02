@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { TenantProvider, useTenant } from '@shared/tenancy/TenantContext';
 import Login from './pages/Login.jsx';
 import Registration from './pages/Registration.jsx';
 import AdminApprovalDashboard from './pages/AdminApprovalDashboard.jsx';
@@ -18,80 +19,119 @@ import QRCodeManagement from './pages/QRCodeManagement.jsx';
 import CommunityVoting from './pages/CommunityVoting.jsx';
 import PublicGrantMap from './pages/PublicGrantMap.jsx';
 
-function App() {
+// ── Inner app (has access to TenantContext) ───────────────────────────────────
+function PortalInner() {
+  const { council, isLoading: tenantLoading } = useTenant();
   const [currentUser, setCurrentUser] = useState(null);
   const [currentPage, setCurrentPage] = useState('login');
 
+  // Listen for global logout events (dispatched by useTenantApi on 401)
+  useEffect(() => {
+    const handleGlobalLogout = () => {
+      localStorage.removeItem('gt_auth_token');
+      localStorage.removeItem('gt_auth_user');
+      setCurrentUser(null);
+      setCurrentPage('login');
+    };
+    window.addEventListener('gt:logout', handleGlobalLogout);
+    return () => window.removeEventListener('gt:logout', handleGlobalLogout);
+  }, []);
+
+  // Restore session from localStorage on mount
+  useEffect(() => {
+    const storedUser = localStorage.getItem('gt_auth_user');
+    const storedToken = localStorage.getItem('gt_auth_token');
+    if (storedUser && storedToken) {
+      try {
+        setCurrentUser(JSON.parse(storedUser));
+        setCurrentPage('dashboard');
+      } catch {
+        localStorage.removeItem('gt_auth_user');
+        localStorage.removeItem('gt_auth_token');
+      }
+    }
+  }, []);
+
   const handleLogin = (userData) => {
+    localStorage.setItem('gt_auth_user', JSON.stringify(userData));
     setCurrentUser(userData);
     setCurrentPage('dashboard');
   };
 
   const handleLogout = () => {
+    localStorage.removeItem('gt_auth_token');
+    localStorage.removeItem('gt_auth_user');
     setCurrentUser(null);
     setCurrentPage('login');
   };
 
-  const navigateToPage = (page) => {
-    setCurrentPage(page);
-  };
+  const navigateToPage = (page) => setCurrentPage(page);
+
+  // Show a minimal loading screen while the tenant is being resolved
+  if (tenantLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-green-700 border-t-transparent" />
+          <p className="mt-4 text-sm text-gray-500">Loading…</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Common props forwarded to every page
+  const pageProps = { user: currentUser, council, onNavigate: navigateToPage, onLogout: handleLogout };
 
   // Show login page if no user is authenticated
   if (!currentUser) {
     if (currentPage === 'register') {
-      return <Registration />;
+      return <Registration council={council} onLogin={handleLogin} />;
     }
-    return <Login onLogin={handleLogin} />;
+    return <Login council={council} onLogin={handleLogin} />;
   }
 
-  // Route to appropriate dashboard based on user type
+  // Route to appropriate dashboard based on user role
   const renderDashboard = () => {
-    switch (currentUser.userType) {
+    const role = currentUser.role || currentUser.userType;
+    switch (role) {
       case 'council_admin':
-        return <CouncilAdminDashboard user={currentUser} onNavigate={navigateToPage} onLogout={handleLogout} />;
+        return <CouncilAdminDashboard {...pageProps} />;
       case 'council_staff':
-        return <CouncilStaffDashboard user={currentUser} onNavigate={navigateToPage} onLogout={handleLogout} />;
+        return <CouncilStaffDashboard {...pageProps} />;
       case 'community_member':
-        return <CommunityMemberDashboard user={currentUser} onNavigate={navigateToPage} onLogout={handleLogout} />;
+        return <CommunityMemberDashboard {...pageProps} />;
       case 'professional_consultant':
-        return <ProfessionalConsultantDashboard user={currentUser} onNavigate={navigateToPage} onLogout={handleLogout} />;
+        return <ProfessionalConsultantDashboard {...pageProps} />;
       default:
-        return <CommunityMemberDashboard user={currentUser} onNavigate={navigateToPage} onLogout={handleLogout} />;
+        return <CommunityMemberDashboard {...pageProps} />;
     }
   };
 
   // Route to specific pages
   switch (currentPage) {
-    case 'dashboard':
-      return renderDashboard();
-    case 'admin-approvals':
-      return <AdminApprovalDashboard user={currentUser} onNavigate={navigateToPage} onLogout={handleLogout} />;
-    case 'create-grant':
-      return <GrantCreationWizard user={currentUser} onNavigate={navigateToPage} onLogout={handleLogout} />;
-    case 'grants':
-      return <GrantsListing user={currentUser} onNavigate={navigateToPage} onLogout={handleLogout} />;
-    case 'grant-details':
-      return <GrantDetails user={currentUser} onNavigate={navigateToPage} onLogout={handleLogout} />;
-    case 'application-form':
-      return <ApplicationForm user={currentUser} onNavigate={navigateToPage} onLogout={handleLogout} />;
-    case 'community-forum':
-      return <CommunityForum user={currentUser} onNavigate={navigateToPage} onLogout={handleLogout} />;
-    case 'resource-hub':
-      return <ResourceHub user={currentUser} onNavigate={navigateToPage} onLogout={handleLogout} />;
-    case 'winners-showcase':
-      return <WinnersShowcase user={currentUser} onNavigate={navigateToPage} onLogout={handleLogout} />;
-    case 'communication-settings':
-      return <CommunicationSettings user={currentUser} onNavigate={navigateToPage} onLogout={handleLogout} />;
-    case 'qr-code-management':
-      return <QRCodeManagement user={currentUser} onNavigate={navigateToPage} onLogout={handleLogout} />;
-    case 'community-voting':
-      return <CommunityVoting user={currentUser} onNavigate={navigateToPage} onLogout={handleLogout} />;
-    case 'grant-map':
-      return <PublicGrantMap user={currentUser} onNavigate={navigateToPage} onLogout={handleLogout} />;
-    default:
-      return renderDashboard();
+    case 'dashboard':           return renderDashboard();
+    case 'admin-approvals':     return <AdminApprovalDashboard {...pageProps} />;
+    case 'create-grant':        return <GrantCreationWizard {...pageProps} />;
+    case 'grants':              return <GrantsListing {...pageProps} />;
+    case 'grant-details':       return <GrantDetails {...pageProps} />;
+    case 'application-form':    return <ApplicationForm {...pageProps} />;
+    case 'community-forum':     return <CommunityForum {...pageProps} />;
+    case 'resource-hub':        return <ResourceHub {...pageProps} />;
+    case 'winners-showcase':    return <WinnersShowcase {...pageProps} />;
+    case 'communication-settings': return <CommunicationSettings {...pageProps} />;
+    case 'qr-code-management':  return <QRCodeManagement {...pageProps} />;
+    case 'community-voting':    return <CommunityVoting {...pageProps} />;
+    case 'grant-map':           return <PublicGrantMap {...pageProps} />;
+    default:                    return renderDashboard();
   }
 }
 
-export default App;
+// ── Root export (wraps everything in TenantProvider) ─────────────────────────
+export default function PortalApp() {
+  return (
+    <TenantProvider>
+      <PortalInner />
+    </TenantProvider>
+  );
+}
 
