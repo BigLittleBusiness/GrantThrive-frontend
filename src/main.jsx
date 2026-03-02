@@ -66,7 +66,7 @@ function App() {
         />
 
         {/* ── Council portal ──────────────────────────────────────────── */}
-        <Route path="/app/*" element={<PortalApp />} />
+        <Route path="/portal/*" element={<PortalApp />} />
 
         {/* ── Interactive grant map ───────────────────────────────────── */}
         <Route path="/map" element={<MapApp />} />
