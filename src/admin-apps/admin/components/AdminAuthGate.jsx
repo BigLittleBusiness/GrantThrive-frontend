@@ -4,22 +4,26 @@
  * Wraps the entire admin dashboard. On mount it verifies the shared SSO token
  * (stored in localStorage under key `gt_auth_token` by @grantthrive/auth).
  *
- * Access rules:
- *   - No token present       → redirect to app.grantthrive.com/login
- *   - Valid token, wrong role → show "Access Denied" screen
- *   - Valid token, system_admin role → render children (the dashboard)
+ * Auth flow:
+ *   1. On mount, verify any existing token with the backend.
+ *   2. No token / invalid token  → show AdminLogin (dedicated login screen).
+ *   3. Valid token, wrong role   → show "Access Denied" screen.
+ *   4. Valid token, system_admin → render children (the dashboard).
  *
- * Domain: grantthrive.com
+ * The gate also listens for the custom `gt:logout` event so that the
+ * AdminApp can trigger a sign-out from anywhere without prop-drilling.
+ *
+ * Domain: admin.grantthrive.com
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   verifyToken,
   clearAuth,
   ROLES,
-  LOGIN_URL,
 } from '@grantthrive/auth';
-import { Shield, Loader2, AlertTriangle, LogOut } from 'lucide-react';
+import { Loader2, AlertTriangle, LogOut } from 'lucide-react';
+import AdminLogin from './AdminLogin.jsx';
 
 // ── Loading screen ────────────────────────────────────────────────────────────
 
@@ -27,7 +31,7 @@ function LoadingScreen() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-950">
       <div className="flex flex-col items-center gap-4 text-white">
-        <Loader2 className="w-10 h-10 animate-spin text-blue-400" />
+        <Loader2 className="w-10 h-10 animate-spin text-blue-400" aria-hidden="true" />
         <p className="text-gray-400 text-sm">Verifying credentials…</p>
       </div>
     </div>
@@ -42,7 +46,7 @@ function AccessDenied({ user, onLogout }) {
       <div className="bg-gray-900 border border-red-800 rounded-2xl p-10 max-w-md w-full text-center shadow-2xl">
         <div className="flex justify-center mb-6">
           <div className="bg-red-900/40 rounded-full p-4">
-            <AlertTriangle className="w-10 h-10 text-red-400" />
+            <AlertTriangle className="w-10 h-10 text-red-400" aria-hidden="true" />
           </div>
         </div>
         <h1 className="text-2xl font-bold text-white mb-2">Access Denied</h1>
@@ -62,7 +66,7 @@ function AccessDenied({ user, onLogout }) {
           onClick={onLogout}
           className="inline-flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium transition-colors"
         >
-          <LogOut className="w-4 h-4" />
+          <LogOut className="w-4 h-4" aria-hidden="true" />
           Log out and switch account
         </button>
       </div>
@@ -73,44 +77,69 @@ function AccessDenied({ user, onLogout }) {
 // ── Main gate component ───────────────────────────────────────────────────────
 
 export default function AdminAuthGate({ children }) {
-  const [status, setStatus]   = useState('loading'); // 'loading' | 'authorised' | 'denied'
-  const [user, setUser]       = useState(null);
+  /**
+   * status:
+   *   'loading'    — verifying stored token on mount
+   *   'login'      — no valid token; show AdminLogin
+   *   'authorised' — valid system_admin token; render dashboard
+   *   'denied'     — valid token but wrong role; show AccessDenied
+   */
+  const [status, setStatus] = useState('loading');
+  const [user, setUser]     = useState(null);
 
-  useEffect(() => {
-    let cancelled = false;
+  // ── Token verification ──────────────────────────────────────────────────────
 
-    async function check() {
+  const verifyAndRoute = useCallback(async () => {
+    setStatus('loading');
+    try {
       const verified = await verifyToken();
-
-      if (cancelled) return;
-
       if (!verified) {
-        // No valid token — redirect to the shared login page
-        const redirect = encodeURIComponent(window.location.href);
-        window.location.href = `${LOGIN_URL}?redirect=${redirect}`;
+        setUser(null);
+        setStatus('login');
         return;
       }
-
       setUser(verified);
-
-      if (verified.role === ROLES.SYSTEM_ADMIN) {
-        setStatus('authorised');
-      } else {
-        setStatus('denied');
-      }
+      setStatus(verified.role === ROLES.SYSTEM_ADMIN ? 'authorised' : 'denied');
+    } catch {
+      setUser(null);
+      setStatus('login');
     }
-
-    check();
-    return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => {
+    verifyAndRoute();
+  }, [verifyAndRoute]);
+
+  // ── Listen for logout events dispatched by the dashboard ───────────────────
+
+  useEffect(() => {
+    const handleLogoutEvent = () => handleLogout();
+    window.addEventListener('gt:logout', handleLogoutEvent);
+    return () => window.removeEventListener('gt:logout', handleLogoutEvent);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Handlers ────────────────────────────────────────────────────────────────
+
+  /**
+   * Called by AdminLogin after a successful system_admin login.
+   * The shared-auth library has already stored the token; we just update state.
+   */
+  function handleAuthenticated(verifiedUser) {
+    setUser(verifiedUser);
+    setStatus('authorised');
+  }
 
   function handleLogout() {
     clearAuth();
-    const redirect = encodeURIComponent(window.location.href);
-    window.location.href = `${LOGIN_URL}?redirect=${redirect}`;
+    setUser(null);
+    setStatus('login');
   }
 
+  // ── Render ──────────────────────────────────────────────────────────────────
+
   if (status === 'loading')    return <LoadingScreen />;
+  if (status === 'login')      return <AdminLogin onAuthenticated={handleAuthenticated} />;
   if (status === 'denied')     return <AccessDenied user={user} onLogout={handleLogout} />;
   return children;
 }
