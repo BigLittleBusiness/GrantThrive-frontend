@@ -1,7 +1,7 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card.jsx';
-import { Badge } from '../components/ui/badge.jsx';
-import { Button } from '../components/ui/button.jsx';
+import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card.jsx';
+import { Badge } from '@shared/components/ui/badge.jsx';
+import { Button } from '@shared/components/ui/button.jsx';
 import { 
   Briefcase, 
   Users, 

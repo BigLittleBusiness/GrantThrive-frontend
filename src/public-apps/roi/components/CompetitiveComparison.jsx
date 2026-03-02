@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card.jsx'
-import { Button } from '../components/ui/button.jsx'
-import { Badge } from '../components/ui/badge.jsx'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs.jsx'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card.jsx'
+import { Button } from '@shared/components/ui/button.jsx'
+import { Badge } from '@shared/components/ui/badge.jsx'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared/components/ui/tabs.jsx'
 import { CheckCircle, XCircle, Star, TrendingUp, DollarSign, Users } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { 
@@ -10,7 +10,7 @@ import {
   getFeaturesByCategory, 
   generateCompetitiveSummary,
   FEATURE_COMPARISON 
-} from '../lib/competitiveAnalysis.js'
+} from '../../../shared/lib/competitiveAnalysis.js'
 
 export default function CompetitiveComparison({ councilSize, features = {} }) {
   const [showAllFeatures, setShowAllFeatures] = useState(false);

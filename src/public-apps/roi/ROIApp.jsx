@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react'
-import { Button } from './components/ui/button.jsx'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './components/ui/card.jsx'
-import { Input } from './components/ui/input.jsx'
-import { Label } from './components/ui/label.jsx'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './components/ui/select.jsx'
-import { Checkbox } from './components/ui/checkbox.jsx'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs.jsx'
-import { Badge } from './components/ui/badge.jsx'
+import { Button } from '@shared/components/ui/button.jsx'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card.jsx'
+import { Input } from '@shared/components/ui/input.jsx'
+import { Label } from '@shared/components/ui/label.jsx'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/components/ui/select.jsx'
+import { Checkbox } from '@shared/components/ui/checkbox.jsx'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared/components/ui/tabs.jsx'
+import { Badge } from '@shared/components/ui/badge.jsx'
 import { Calculator, TrendingUp, DollarSign, Clock, CheckCircle, Users, Map, Vote } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import CompetitiveComparison from './components/CompetitiveComparison.jsx'
@@ -17,8 +17,8 @@ import {
   validateInputs,
   DEFAULT_METRICS,
   COUNCIL_SIZES 
-} from './lib/roiCalculations.js'
-import { downloadROIReport, formatReportForEmail } from './lib/pdfGenerator.js'
+} from '../../shared/lib/roiCalculations.js'
+import { downloadROIReport, formatReportForEmail } from '../../shared/lib/pdfGenerator.js'
 import './ROIApp.css'
 
 function App() {

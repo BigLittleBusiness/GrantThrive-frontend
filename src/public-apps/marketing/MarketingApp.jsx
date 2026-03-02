@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom'
-import { Button } from './components/ui/button.jsx'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './components/ui/card.jsx'
-import { Badge } from './components/ui/badge.jsx'
+import { Button } from '@shared/components/ui/button.jsx'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card.jsx'
+import { Badge } from '@shared/components/ui/badge.jsx'
 import { 
   Menu, 
   X, 

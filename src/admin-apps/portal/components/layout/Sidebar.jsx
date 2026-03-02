@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { cn } from '../../lib/utils'
-import { Button } from '../ui/button'
-import { Badge } from '../ui/badge'
+import { cn } from '../../shared/lib/utils'
+import { Button } from '@shared/components/ui/button'
+import { Badge } from '@shared/components/ui/badge'
 import { 
   LayoutDashboard, 
   FileText, 

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
-import { Button } from '../ui/button'
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
+import { Button } from '@shared/components/ui/button'
+import { Avatar, AvatarFallback, AvatarImage } from '@shared/components/ui/avatar'
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -9,8 +9,8 @@ import {
   DropdownMenuLabel, 
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
-} from '../ui/dropdown-menu'
-import { Badge } from '../ui/badge'
+} from '@shared/components/ui/dropdown-menu'
+import { Badge } from '@shared/components/ui/badge'
 import { 
   Bell, 
   Search, 

@@ -4,7 +4,7 @@ import {
   CardContent, 
   CardHeader, 
   CardTitle 
-} from '../components/ui/card';
+} from '@shared/components/ui/card';
 import QRCodeGenerator from '../components/QRCodeGenerator';
 
 const QRCodeManagement = ({ user, onNavigate, onLogout }) => {

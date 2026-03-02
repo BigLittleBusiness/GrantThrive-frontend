@@ -4,7 +4,7 @@ import {
   CardContent, 
   CardHeader, 
   CardTitle 
-} from '../components/ui/card';
+} from '@shared/components/ui/card';
 
 const CommunicationSettings = () => {
   const [preferences, setPreferences] = useState(null);

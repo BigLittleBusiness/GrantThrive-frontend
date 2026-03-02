@@ -4,7 +4,7 @@ import {
   CardContent, 
   CardHeader, 
   CardTitle 
-} from './ui/card';
+} from '@shared/components/ui/card';
 
 const QRCodeGenerator = ({ grant, onQRCodeGenerated }) => {
   const [qrCodeData, setQRCodeData] = useState(null);

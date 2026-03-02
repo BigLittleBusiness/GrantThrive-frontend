@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card.jsx';
-import { Badge } from '../components/ui/badge.jsx';
-import { Button } from '../components/ui/button.jsx';
-import { Input } from '../components/ui/input.jsx';
+import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card.jsx';
+import { Badge } from '@shared/components/ui/badge.jsx';
+import { Button } from '@shared/components/ui/button.jsx';
+import { Input } from '@shared/components/ui/input.jsx';
 import { 
   ArrowLeft,
   ArrowRight,

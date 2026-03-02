@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useGrants } from '../contexts/GrantContext'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
-import { Button } from '../components/ui/button'
-import { Badge } from '../components/ui/badge'
-import { Progress } from '../components/ui/progress'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card'
+import { Button } from '@shared/components/ui/button'
+import { Badge } from '@shared/components/ui/badge'
+import { Progress } from '@shared/components/ui/progress'
 import { 
   BarChart, 
   Bar, 
