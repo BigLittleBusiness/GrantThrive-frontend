@@ -7,20 +7,22 @@ import {
   FileText, 
   DollarSign, 
   Clock, 
-  AlertTriangle,
   TrendingUp,
   CheckCircle,
   XCircle,
   Eye,
   MessageSquare,
-  Calendar,
   Settings,
   BarChart3,
   Plus,
-  UserCheck
+  UserCheck,
+  QrCode,
+  Vote,
+  Map,
+  LogOut
 } from 'lucide-react';
 
-const CouncilAdminDashboard = ({ onNavigate }) => {
+const CouncilAdminDashboard = ({ user, onNavigate, onLogout }) => {
   const adminMetrics = {
     totalPrograms: 8,
     activeApplications: 47,
@@ -129,13 +131,19 @@ const CouncilAdminDashboard = ({ onNavigate }) => {
   return (
     <div className="p-6">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Council Administration Dashboard
-        </h1>
-        <p className="text-gray-600">
-          Manage grant programs, review applications, and oversee community funding.
-        </p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Council Administration Dashboard
+          </h1>
+          <p className="text-gray-600">
+            Welcome back, {user?.name || 'Administrator'}. Manage grant programs, review applications, and oversee community funding.
+          </p>
+        </div>
+        <Button variant="outline" onClick={onLogout} className="flex items-center gap-2">
+          <LogOut className="w-4 h-4" />
+          Logout
+        </Button>
       </div>
 
       {/* Quick Actions */}
@@ -147,23 +155,43 @@ const CouncilAdminDashboard = ({ onNavigate }) => {
           <Plus className="w-5 h-5 mr-2" />
           Create Grant Program
         </Button>
-        <Button variant="outline" className="h-14">
+        <Button variant="outline" className="h-14" onClick={() => onNavigate('grants')}>
           <FileText className="w-5 h-5 mr-2" />
           Review Applications
         </Button>
-        <Button variant="outline" className="h-14">
+        <Button variant="outline" className="h-14" onClick={() => onNavigate('admin-approvals')}>
           <UserCheck className="w-5 h-5 mr-2" />
           Staff Approvals
         </Button>
-        <Button variant="outline" className="h-14">
+        <Button variant="outline" className="h-14" onClick={() => onNavigate('communication-settings')}>
           <BarChart3 className="w-5 h-5 mr-2" />
-          Generate Reports
+          Reports &amp; Settings
+        </Button>
+      </div>
+
+      {/* Secondary Quick Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <Button variant="outline" className="h-12" onClick={() => onNavigate('community-voting')}>
+          <Vote className="w-4 h-4 mr-2" />
+          Community Voting
+        </Button>
+        <Button variant="outline" className="h-12" onClick={() => onNavigate('qr-code-management')}>
+          <QrCode className="w-4 h-4 mr-2" />
+          QR Codes
+        </Button>
+        <Button variant="outline" className="h-12" onClick={() => onNavigate('grant-map')}>
+          <Map className="w-4 h-4 mr-2" />
+          Grant Map
+        </Button>
+        <Button variant="outline" className="h-12" onClick={() => onNavigate('winners-showcase')}>
+          <CheckCircle className="w-4 h-4 mr-2" />
+          Winners Showcase
         </Button>
       </div>
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <Card>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => onNavigate('grants')}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -175,7 +203,7 @@ const CouncilAdminDashboard = ({ onNavigate }) => {
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => onNavigate('grants')}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -248,17 +276,20 @@ const CouncilAdminDashboard = ({ onNavigate }) => {
                     </span>
                   </div>
                   <div className="flex gap-2 mt-3">
-                    <Button size="sm" className="flex-1">
+                    <Button size="sm" className="flex-1" onClick={() => onNavigate('grant-details')}>
                       <Eye className="w-4 h-4 mr-1" />
                       Review
                     </Button>
-                    <Button size="sm" variant="outline">
+                    <Button size="sm" variant="outline" onClick={() => onNavigate('communication-settings')}>
                       <MessageSquare className="w-4 h-4 mr-1" />
                       Contact
                     </Button>
                   </div>
                 </div>
               ))}
+              <Button variant="outline" className="w-full" onClick={() => onNavigate('grants')}>
+                View All Applications
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -303,13 +334,17 @@ const CouncilAdminDashboard = ({ onNavigate }) => {
                   
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-600">Deadline: {program.deadline}</span>
-                    <Button size="sm" variant="outline">
+                    <Button size="sm" variant="outline" onClick={() => onNavigate('grant-details')}>
                       <Settings className="w-4 h-4 mr-1" />
                       Manage
                     </Button>
                   </div>
                 </div>
               ))}
+              <Button variant="outline" className="w-full" onClick={() => onNavigate('create-grant')}>
+                <Plus className="w-4 h-4 mr-2" />
+                Create New Grant Program
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -362,4 +397,3 @@ const CouncilAdminDashboard = ({ onNavigate }) => {
 };
 
 export default CouncilAdminDashboard;
-

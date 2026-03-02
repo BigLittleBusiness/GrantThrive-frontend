@@ -11,14 +11,13 @@ import {
   Mail,
   Calendar,
   User,
-  AlertCircle,
   Eye,
   Edit,
-  Send,
-  Download
+  Download,
+  LogOut
 } from 'lucide-react';
 
-const CouncilStaffDashboard = () => {
+const CouncilStaffDashboard = ({ user, onNavigate, onLogout }) => {
   const staffMetrics = {
     assignedApplications: 15,
     completedToday: 3,
@@ -151,38 +150,44 @@ const CouncilStaffDashboard = () => {
   return (
     <div className="p-6">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          My Grant Reviews Dashboard
-        </h1>
-        <p className="text-gray-600">
-          Manage your assigned applications and community engagement tasks.
-        </p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            My Grant Reviews Dashboard
+          </h1>
+          <p className="text-gray-600">
+            Welcome back, {user?.name || 'Staff Member'}. Manage your assigned applications and community engagement tasks.
+          </p>
+        </div>
+        <Button variant="outline" onClick={onLogout} className="flex items-center gap-2">
+          <LogOut className="w-4 h-4" />
+          Logout
+        </Button>
       </div>
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <Button className="h-14 bg-blue-600 hover:bg-blue-700">
+        <Button className="h-14 bg-blue-600 hover:bg-blue-700" onClick={() => onNavigate('grants')}>
           <FileText className="w-5 h-5 mr-2" />
           Start Review
         </Button>
-        <Button variant="outline" className="h-14">
+        <Button variant="outline" className="h-14" onClick={() => onNavigate('communication-settings')}>
           <MessageSquare className="w-5 h-5 mr-2" />
           Contact Applicant
         </Button>
-        <Button variant="outline" className="h-14">
+        <Button variant="outline" className="h-14" onClick={() => onNavigate('resource-hub')}>
           <Download className="w-5 h-5 mr-2" />
-          Generate Report
+          Resources &amp; Reports
         </Button>
-        <Button variant="outline" className="h-14">
+        <Button variant="outline" className="h-14" onClick={() => onNavigate('community-forum')}>
           <Calendar className="w-5 h-5 mr-2" />
-          Schedule Meeting
+          Community Forum
         </Button>
       </div>
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <Card>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => onNavigate('grants')}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -194,7 +199,7 @@ const CouncilStaffDashboard = () => {
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => onNavigate('grants')}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -260,7 +265,7 @@ const CouncilStaffDashboard = () => {
 
                     {/* Contact Information */}
                     <div className="bg-gray-50 rounded-lg p-3 mb-3">
-                      <div className="flex items-center gap-4 text-sm">
+                      <div className="flex flex-wrap items-center gap-4 text-sm">
                         <div className="flex items-center gap-1">
                           <User className="w-4 h-4 text-gray-500" />
                           <span className="font-medium">{app.contact}</span>
@@ -296,21 +301,24 @@ const CouncilStaffDashboard = () => {
                     </div>
 
                     <div className="flex gap-2">
-                      <Button size="sm" className="flex-1">
+                      <Button size="sm" className="flex-1" onClick={() => onNavigate('grant-details')}>
                         <Eye className="w-4 h-4 mr-1" />
                         Review
                       </Button>
-                      <Button size="sm" variant="outline">
+                      <Button size="sm" variant="outline" onClick={() => onNavigate('communication-settings')}>
                         <MessageSquare className="w-4 h-4 mr-1" />
                         Contact
                       </Button>
-                      <Button size="sm" variant="outline">
+                      <Button size="sm" variant="outline" onClick={() => onNavigate('grant-details')}>
                         <Edit className="w-4 h-4 mr-1" />
                         Update
                       </Button>
                     </div>
                   </div>
                 ))}
+                <Button variant="outline" className="w-full" onClick={() => onNavigate('grants')}>
+                  View All Applications
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -327,13 +335,13 @@ const CouncilStaffDashboard = () => {
                 {todaysTasks.map((task) => (
                   <div key={task.id} className="border rounded-lg p-3">
                     <div className="flex items-start gap-3">
-                      <div className="flex items-center justify-center w-8 h-8 bg-blue-100 rounded-lg">
+                      <div className="flex items-center justify-center w-8 h-8 bg-blue-100 rounded-lg flex-shrink-0">
                         {getTaskIcon(task.type)}
                       </div>
                       <div className="flex-1">
                         <p className="text-sm font-medium text-gray-900">{task.task}</p>
                         <div className="flex items-center gap-2 mt-1">
-                          <Badge className={getPriorityColor(task.priority)} size="sm">
+                          <Badge className={getPriorityColor(task.priority)}>
                             {task.priority}
                           </Badge>
                           <span className="text-xs text-gray-500">{task.estimatedTime}</span>
@@ -371,6 +379,9 @@ const CouncilStaffDashboard = () => {
                   <span className="font-semibold">2.3 hours</span>
                 </div>
               </div>
+              <Button variant="outline" className="w-full mt-4" onClick={() => onNavigate('resource-hub')}>
+                View Resources
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -380,4 +391,3 @@ const CouncilStaffDashboard = () => {
 };
 
 export default CouncilStaffDashboard;
-

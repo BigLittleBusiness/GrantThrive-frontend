@@ -18,10 +18,13 @@ import {
   ArrowRight,
   CheckCircle,
   AlertCircle,
-  Download
+  Download,
+  Vote,
+  Map,
+  LogOut
 } from 'lucide-react';
 
-const CommunityMemberDashboard = () => {
+const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
   const memberMetrics = {
     totalApplications: 5,
     activeApplications: 2,
@@ -92,17 +95,6 @@ const CommunityMemberDashboard = () => {
       category: 'Health',
       applicants: 12,
       matchScore: 88
-    },
-    {
-      id: 3,
-      title: 'Digital Innovation for Community',
-      description: 'Support for technology projects that enhance community connectivity and digital inclusion.',
-      amount: 40000,
-      deadline: '2024-04-01',
-      council: 'Yarra City Council',
-      category: 'Technology',
-      applicants: 25,
-      matchScore: 82
     }
   ];
 
@@ -166,38 +158,64 @@ const CommunityMemberDashboard = () => {
   return (
     <div className="p-6">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Welcome to Your Grant Journey! 🌟
-        </h1>
-        <p className="text-gray-600">
-          Discover funding opportunities, track your applications, and connect with the community.
-        </p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Welcome to Your Grant Journey!
+          </h1>
+          <p className="text-gray-600">
+            Hello, {user?.name || 'Community Member'}. Discover funding opportunities, track your applications, and connect with the community.
+          </p>
+        </div>
+        <Button variant="outline" onClick={onLogout} className="flex items-center gap-2">
+          <LogOut className="w-4 h-4" />
+          Logout
+        </Button>
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <Button className="h-14 bg-blue-600 hover:bg-blue-700">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <Button className="h-14 bg-blue-600 hover:bg-blue-700" onClick={() => onNavigate('grants')}>
           <Plus className="w-5 h-5 mr-2" />
           Apply for Grant
         </Button>
-        <Button variant="outline" className="h-14">
+        <Button variant="outline" className="h-14" onClick={() => onNavigate('community-forum')}>
           <MessageSquare className="w-5 h-5 mr-2" />
           Join Discussion
         </Button>
-        <Button variant="outline" className="h-14">
-          <Calendar className="w-5 h-5 mr-2" />
-          View Events
+        <Button variant="outline" className="h-14" onClick={() => onNavigate('community-voting')}>
+          <Vote className="w-5 h-5 mr-2" />
+          Vote on Grants
         </Button>
-        <Button variant="outline" className="h-14">
+        <Button variant="outline" className="h-14" onClick={() => onNavigate('resource-hub')}>
           <BookOpen className="w-5 h-5 mr-2" />
           Resources
         </Button>
       </div>
 
+      {/* Secondary Quick Actions */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <Button variant="outline" className="h-12" onClick={() => onNavigate('grant-map')}>
+          <Map className="w-4 h-4 mr-2" />
+          Grant Map
+        </Button>
+        <Button variant="outline" className="h-12" onClick={() => onNavigate('winners-showcase')}>
+          <Trophy className="w-4 h-4 mr-2" />
+          Winners Showcase
+        </Button>
+        <Button variant="outline" className="h-12" onClick={() => onNavigate('grants')}>
+          <FileText className="w-4 h-4 mr-2" />
+          Browse All Grants
+        </Button>
+        <Button variant="outline" className="h-12" onClick={() => onNavigate('application-form')}>
+          <Calendar className="w-4 h-4 mr-2" />
+          New Application
+        </Button>
+      </div>
+
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <Card>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => onNavigate('grants')}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -274,7 +292,6 @@ const CommunityMemberDashboard = () => {
                       </Badge>
                     </div>
 
-                    {/* Progress Bar */}
                     <div className="mb-3">
                       <div className="flex justify-between text-sm mb-1">
                         <span>Application Progress</span>
@@ -295,18 +312,18 @@ const CommunityMemberDashboard = () => {
                     </div>
 
                     <div className="flex gap-2">
-                      <Button size="sm" className="flex-1">
+                      <Button size="sm" className="flex-1" onClick={() => onNavigate('grant-details')}>
                         <Eye className="w-4 h-4 mr-1" />
                         View Details
                       </Button>
                       {app.status === 'in_progress' && (
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline" onClick={() => onNavigate('application-form')}>
                           <FileText className="w-4 h-4 mr-1" />
                           Update
                         </Button>
                       )}
                       {app.status === 'approved' && (
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline" onClick={() => onNavigate('winners-showcase')}>
                           <Download className="w-4 h-4 mr-1" />
                           Agreement
                         </Button>
@@ -314,6 +331,10 @@ const CommunityMemberDashboard = () => {
                     </div>
                   </div>
                 ))}
+                <Button variant="outline" className="w-full" onClick={() => onNavigate('grants')}>
+                  View All Grants
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -323,7 +344,7 @@ const CommunityMemberDashboard = () => {
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span>Recommended for You</span>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" onClick={() => onNavigate('grants')}>
                   View All Grants
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
@@ -331,7 +352,7 @@ const CommunityMemberDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {recommendedGrants.slice(0, 2).map((grant) => (
+                {recommendedGrants.map((grant) => (
                   <div key={grant.id} className="border rounded-lg p-4">
                     <div className="flex items-start justify-between mb-2">
                       <Badge className="bg-green-100 text-green-800">
@@ -361,7 +382,7 @@ const CommunityMemberDashboard = () => {
                         <span className="font-semibold">{grant.applicants}</span>
                       </div>
                     </div>
-                    <Button className="w-full bg-blue-600 hover:bg-blue-700" size="sm">
+                    <Button className="w-full bg-blue-600 hover:bg-blue-700" size="sm" onClick={() => onNavigate('application-form')}>
                       Apply Now
                     </Button>
                   </div>
@@ -386,10 +407,10 @@ const CommunityMemberDashboard = () => {
                     <p className="text-xs text-gray-600 mt-1">{event.date} • {event.time}</p>
                     <p className="text-xs text-gray-600">{event.location}</p>
                     <div className="flex items-center justify-between mt-2">
-                      <Badge variant="outline" size="sm">{event.type}</Badge>
+                      <Badge variant="outline">{event.type}</Badge>
                       <span className="text-xs text-gray-500">{event.spots} spots left</span>
                     </div>
-                    <Button size="sm" className="w-full mt-2" variant="outline">
+                    <Button size="sm" className="w-full mt-2" variant="outline" onClick={() => onNavigate('community-forum')}>
                       Register
                     </Button>
                   </div>
@@ -427,6 +448,9 @@ const CommunityMemberDashboard = () => {
                   <p className="text-sm text-gray-600">Successful Projects</p>
                 </div>
               </div>
+              <Button variant="outline" className="w-full mt-4" onClick={() => onNavigate('winners-showcase')}>
+                View Winners Showcase
+              </Button>
             </CardContent>
           </Card>
 
@@ -438,22 +462,25 @@ const CommunityMemberDashboard = () => {
             <CardContent>
               <div className="space-y-3 text-sm">
                 <div className="flex items-start gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-600 mt-0.5" />
+                  <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
                   <span>Start applications early to allow time for revisions</span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-600 mt-0.5" />
+                  <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
                   <span>Attend workshops to improve your application quality</span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-600 mt-0.5" />
+                  <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
                   <span>Connect with other community members for advice</span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-600 mt-0.5" />
+                  <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
                   <span>Follow up promptly on any requests for information</span>
                 </div>
               </div>
+              <Button variant="outline" className="w-full mt-4" onClick={() => onNavigate('resource-hub')}>
+                View All Resources
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -463,4 +490,3 @@ const CommunityMemberDashboard = () => {
 };
 
 export default CommunityMemberDashboard;
-

@@ -389,28 +389,28 @@ const ContactPage = () => {
             <div>
               <h3 className="font-semibold mb-4">Product</h3>
               <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">Features</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Pricing</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Security</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Integrations</a></li>
+                <li><a href="https://grantthrive.com/features" className="hover:text-white transition-colors">Features</a></li>
+                <li><a href="https://grantthrive.com/pricing" className="hover:text-white transition-colors">Pricing</a></li>
+                <li><a href="https://grantthrive.com/security" className="hover:text-white transition-colors">Security</a></li>
+                <li><a href="https://grantthrive.com/integrations" className="hover:text-white transition-colors">Integrations</a></li>
               </ul>
             </div>
             <div>
               <h3 className="font-semibold mb-4">Company</h3>
               <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">About</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Careers</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Press</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
+                <li><a href="https://grantthrive.com/about" className="hover:text-white transition-colors">About</a></li>
+                <li><a href="https://grantthrive.com/careers" className="hover:text-white transition-colors">Careers</a></li>
+                <li><a href="https://grantthrive.com/press" className="hover:text-white transition-colors">Press</a></li>
+                <li><a href="https://grantthrive.com/contact" className="hover:text-white transition-colors">Contact</a></li>
               </ul>
             </div>
             <div>
               <h3 className="font-semibold mb-4">Support</h3>
               <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">Help Center</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Documentation</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">API Reference</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Status</a></li>
+                <li><a href="https://grantthrive.com/help" className="hover:text-white transition-colors">Help Center</a></li>
+                <li><a href="https://grantthrive.com/docs" className="hover:text-white transition-colors">Documentation</a></li>
+                <li><a href="https://grantthrive.com/docs/api" className="hover:text-white transition-colors">API Reference</a></li>
+                <li><a href="https://status.grantthrive.com" className="hover:text-white transition-colors">Status</a></li>
               </ul>
             </div>
           </div>

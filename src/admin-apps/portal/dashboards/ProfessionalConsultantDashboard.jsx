@@ -9,21 +9,19 @@ import {
   Star,
   TrendingUp,
   Clock,
-  Calendar,
   MessageSquare,
   FileText,
   Award,
   Plus,
   Eye,
-  Phone,
   Mail,
-  MapPin,
+  Phone,
   CheckCircle,
-  AlertCircle,
-  Target
+  Target,
+  LogOut
 } from 'lucide-react';
 
-const ProfessionalConsultantDashboard = () => {
+const ProfessionalConsultantDashboard = ({ user, onNavigate, onLogout }) => {
   const consultantMetrics = {
     activeClients: 8,
     totalProjects: 24,
@@ -191,32 +189,38 @@ const ProfessionalConsultantDashboard = () => {
   return (
     <div className="p-6">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Professional Services Dashboard 💼
-        </h1>
-        <p className="text-gray-600">
-          Manage your grant consulting projects, find new opportunities, and grow your practice.
-        </p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Professional Services Dashboard
+          </h1>
+          <p className="text-gray-600">
+            Welcome back, {user?.name || 'Consultant'}. Manage your grant consulting projects, find new opportunities, and grow your practice.
+          </p>
+        </div>
+        <Button variant="outline" onClick={onLogout} className="flex items-center gap-2">
+          <LogOut className="w-4 h-4" />
+          Logout
+        </Button>
       </div>
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <Button className="h-14 bg-blue-600 hover:bg-blue-700">
+        <Button className="h-14 bg-blue-600 hover:bg-blue-700" onClick={() => onNavigate('application-form')}>
           <Plus className="w-5 h-5 mr-2" />
           New Project
         </Button>
-        <Button variant="outline" className="h-14">
+        <Button variant="outline" className="h-14" onClick={() => onNavigate('grants')}>
           <Briefcase className="w-5 h-5 mr-2" />
           Browse Opportunities
         </Button>
-        <Button variant="outline" className="h-14">
+        <Button variant="outline" className="h-14" onClick={() => onNavigate('communication-settings')}>
           <MessageSquare className="w-5 h-5 mr-2" />
           Client Communication
         </Button>
-        <Button variant="outline" className="h-14">
+        <Button variant="outline" className="h-14" onClick={() => onNavigate('resource-hub')}>
           <Award className="w-5 h-5 mr-2" />
-          Portfolio
+          Resources &amp; Portfolio
         </Button>
       </div>
 
@@ -297,7 +301,7 @@ const ProfessionalConsultantDashboard = () => {
 
                     {/* Contact Information */}
                     <div className="bg-gray-50 rounded-lg p-3 mb-3">
-                      <div className="flex items-center gap-4 text-sm">
+                      <div className="flex flex-wrap items-center gap-4 text-sm">
                         <div className="flex items-center gap-1">
                           <Users className="w-4 h-4 text-gray-500" />
                           <span className="font-medium">{project.contact}</span>
@@ -333,21 +337,24 @@ const ProfessionalConsultantDashboard = () => {
                     </div>
 
                     <div className="flex gap-2">
-                      <Button size="sm" className="flex-1">
+                      <Button size="sm" className="flex-1" onClick={() => onNavigate('grant-details')}>
                         <Eye className="w-4 h-4 mr-1" />
                         View Project
                       </Button>
-                      <Button size="sm" variant="outline">
+                      <Button size="sm" variant="outline" onClick={() => onNavigate('communication-settings')}>
                         <MessageSquare className="w-4 h-4 mr-1" />
                         Contact Client
                       </Button>
-                      <Button size="sm" variant="outline">
+                      <Button size="sm" variant="outline" onClick={() => onNavigate('application-form')}>
                         <FileText className="w-4 h-4 mr-1" />
                         Update
                       </Button>
                     </div>
                   </div>
                 ))}
+                <Button variant="outline" className="w-full" onClick={() => onNavigate('grants')}>
+                  Browse All Grant Opportunities
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -409,10 +416,10 @@ const ProfessionalConsultantDashboard = () => {
                     </div>
 
                     <div className="flex gap-2">
-                      <Button size="sm" className="flex-1">
+                      <Button size="sm" className="flex-1" onClick={() => onNavigate('application-form')}>
                         Submit Proposal
                       </Button>
-                      <Button size="sm" variant="outline">
+                      <Button size="sm" variant="outline" onClick={() => onNavigate('grant-details')}>
                         <Eye className="w-4 h-4 mr-1" />
                         View Details
                       </Button>
@@ -436,14 +443,14 @@ const ProfessionalConsultantDashboard = () => {
                 {upcomingDeadlines.map((deadline) => (
                   <div key={deadline.id} className="border rounded-lg p-3">
                     <div className="flex items-start gap-3">
-                      <div className="flex items-center justify-center w-8 h-8 bg-blue-100 rounded-lg">
+                      <div className="flex items-center justify-center w-8 h-8 bg-blue-100 rounded-lg flex-shrink-0">
                         {getTaskIcon(deadline.type)}
                       </div>
                       <div className="flex-1">
                         <p className="text-sm font-medium text-gray-900">{deadline.task}</p>
                         <p className="text-xs text-gray-600">{deadline.client}</p>
                         <div className="flex items-center gap-2 mt-1">
-                          <Badge className={getPriorityColor(deadline.priority)} size="sm">
+                          <Badge className={getPriorityColor(deadline.priority)}>
                             {deadline.priority}
                           </Badge>
                           <span className="text-xs text-gray-500">{deadline.deadline}</span>
@@ -493,7 +500,7 @@ const ProfessionalConsultantDashboard = () => {
               <CardTitle>Professional Growth</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div className="text-center">
                   <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-lg mx-auto mb-2">
                     <Award className="w-6 h-6 text-blue-600" />
@@ -516,6 +523,10 @@ const ProfessionalConsultantDashboard = () => {
                   <p className="text-sm text-gray-600">Client Rating</p>
                 </div>
               </div>
+              <Button variant="outline" className="w-full mt-4" onClick={() => onNavigate('resource-hub')}>
+                <CheckCircle className="w-4 h-4 mr-2" />
+                View Resources
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -525,4 +536,3 @@ const ProfessionalConsultantDashboard = () => {
 };
 
 export default ProfessionalConsultantDashboard;
-
