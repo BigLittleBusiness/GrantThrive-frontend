@@ -274,14 +274,14 @@ const ResourceHub = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-blue-600 text-white">
+      <div className="bg-green-800 text-white">
         <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-3xl font-bold mb-2">Resource Hub</h1>
               <p className="text-blue-100">Guides, templates, videos, and tools to help you succeed</p>
             </div>
-            <Button className="bg-orange-500 hover:bg-orange-600">
+            <Button className="bg-green-700 hover:bg-green-800">
               <Plus className="w-4 h-4 mr-2" />
               Suggest Resource
             </Button>
@@ -364,7 +364,7 @@ const ResourceHub = () => {
                           {renderStars(resource.rating)}
                           <span className="text-sm text-gray-600 ml-1">({resource.reviews})</span>
                         </div>
-                        <Button size="sm" className="bg-orange-500 hover:bg-orange-600">
+                        <Button size="sm" className="bg-green-700 hover:bg-green-800">
                           <Download className="w-4 h-4 mr-2" />
                           Download
                         </Button>
@@ -552,7 +552,7 @@ const ResourceHub = () => {
                                 <Eye className="w-4 h-4 mr-2" />
                                 Preview
                               </Button>
-                              <Button size="sm" className="bg-orange-500 hover:bg-orange-600">
+                              <Button size="sm" className="bg-green-700 hover:bg-green-800">
                                 <Download className="w-4 h-4 mr-2" />
                                 Download
                               </Button>

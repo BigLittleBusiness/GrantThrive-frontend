@@ -297,7 +297,7 @@ const CommunityForum = () => {
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Community Forum</h1>
               <p className="text-gray-600">Connect, share knowledge, and collaborate with fellow community members</p>
             </div>
-            <Button className="bg-orange-500 hover:bg-orange-600">
+            <Button className="bg-green-700 hover:bg-green-800">
               <Plus className="w-4 h-4 mr-2" />
               Start Discussion
             </Button>

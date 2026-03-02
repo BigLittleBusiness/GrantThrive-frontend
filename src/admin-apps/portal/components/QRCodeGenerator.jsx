@@ -224,7 +224,7 @@ const QRCodeGenerator = ({ grant, onQRCodeGenerated }) => {
               <button
                 onClick={() => generateQRCode(false)}
                 disabled={loading}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+                className="px-4 py-2 bg-green-700 text-white rounded-md text-sm font-medium hover:bg-green-800 disabled:opacity-50"
               >
                 {loading ? 'Generating...' : '🔲 Generate QR Code'}
               </button>
@@ -293,7 +293,7 @@ const QRCodeGenerator = ({ grant, onQRCodeGenerated }) => {
                 </button>
                 <button
                   onClick={copyQRCodeURL}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700"
+                  className="px-4 py-2 bg-green-700 text-white rounded-md text-sm font-medium hover:bg-green-800"
                 >
                   📋 Copy Grant URL
                 </button>

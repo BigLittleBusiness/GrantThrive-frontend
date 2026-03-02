@@ -392,7 +392,7 @@ const CommunityVoting = () => {
               <Button 
                 onClick={submitAllVotes}
                 disabled={loading}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-green-700 hover:bg-green-800"
               >
                 {loading ? (
                   <>

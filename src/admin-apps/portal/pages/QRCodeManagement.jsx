@@ -320,7 +320,7 @@ const QRCodeManagement = ({ user, onNavigate, onLogout }) => {
                     <p className="text-gray-600 mb-4">Generate your first QR code to get started</p>
                     <button
                       onClick={() => setActiveTab('generate')}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700"
+                      className="px-4 py-2 bg-green-700 text-white rounded-md text-sm font-medium hover:bg-green-800"
                     >
                       Generate QR Code
                     </button>
@@ -346,7 +346,7 @@ const QRCodeManagement = ({ user, onNavigate, onLogout }) => {
                           <div className="flex space-x-2">
                             <button
                               onClick={() => window.open(qrCode.qr_code_url, '_blank')}
-                              className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                              className="px-3 py-1 text-sm bg-green-700 text-white rounded hover:bg-green-800"
                             >
                               View
                             </button>
@@ -366,7 +366,7 @@ const QRCodeManagement = ({ user, onNavigate, onLogout }) => {
                                 const grant = grants.find(g => g.grant_id === qrCode.grant_id);
                                 if (grant) regenerateQRCode(grant);
                               }}
-                              className="px-3 py-1 text-sm bg-orange-600 text-white rounded hover:bg-orange-700"
+                              className="px-3 py-1 text-sm bg-green-700 text-white rounded hover:bg-green-800"
                             >
                               Regenerate
                             </button>
@@ -479,7 +479,7 @@ const QRCodeManagement = ({ user, onNavigate, onLogout }) => {
                       <button
                         onClick={generateBulkQRCodes}
                         disabled={bulkGenerating}
-                        className="w-full px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+                        className="w-full px-4 py-2 bg-green-700 text-white rounded-md text-sm font-medium hover:bg-green-800 disabled:opacity-50"
                       >
                         {bulkGenerating ? 'Generating...' : 'Generate All QR Codes'}
                       </button>

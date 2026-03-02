@@ -158,7 +158,7 @@ const Login = ({ onLogin }) => {
       <div className="max-w-md w-full px-4">
         <Card className="bg-white shadow-xl">
           <CardHeader className="text-center pb-6">
-            <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-green-700 rounded-full flex items-center justify-center mx-auto mb-4">
               <Building className="w-8 h-8 text-white" />
             </div>
             <CardTitle className="text-2xl font-bold text-gray-900">
@@ -267,7 +267,7 @@ const Login = ({ onLogin }) => {
 
               <Button 
                 type="submit" 
-                className="w-full bg-blue-600 hover:bg-blue-700"
+                className="w-full bg-green-700 hover:bg-green-800"
                 disabled={isLoading}
               >
                 {isLoading ? 'Signing in...' : 'Sign In'}
@@ -288,7 +288,7 @@ const Login = ({ onLogin }) => {
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs font-semibold">
+                        <div className="w-8 h-8 bg-green-700 rounded-full flex items-center justify-center text-white text-xs font-semibold">
                           {account.avatar}
                         </div>
                         <div>

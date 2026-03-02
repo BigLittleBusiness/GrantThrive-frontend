@@ -179,7 +179,7 @@ const GrantsListing = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-blue-600 text-white">
+      <div className="bg-green-800 text-white">
         <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -411,7 +411,7 @@ const GrantsListing = () => {
 
                     {/* Action Buttons */}
                     <div className="flex gap-2">
-                      <Button className="flex-1 bg-orange-500 hover:bg-orange-600">
+                      <Button className="flex-1 bg-green-700 hover:bg-green-800">
                         Learn More
                       </Button>
                       <Button variant="outline" size="sm">

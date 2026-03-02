@@ -142,7 +142,7 @@ const GrantDetails = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-blue-600 text-white">
+      <div className="bg-green-800 text-white">
         <div className="max-w-7xl mx-auto px-4 py-6">
           {/* Breadcrumb */}
           <nav className="flex items-center space-x-2 text-blue-100 mb-4">
@@ -366,7 +366,7 @@ const GrantDetails = () => {
                   <div className="font-semibold text-orange-800">Application Deadline</div>
                   <div className="text-2xl font-bold text-orange-600">{grant.daysLeft} days left</div>
                 </div>
-                <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white">
+                <Button className="w-full bg-green-700 hover:bg-green-800 text-white">
                   Apply Now
                 </Button>
                 <div className="text-center mt-3">

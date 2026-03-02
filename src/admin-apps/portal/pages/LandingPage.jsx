@@ -95,16 +95,16 @@ const LandingPage = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* Navigation */}
-      <nav className="bg-blue-700 text-white px-6 py-4">
+      <nav className="bg-green-800 text-white px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="text-2xl font-bold">GAP</div>
           <div className="hidden md:flex space-x-8">
-            <a href="#features" className="hover:text-blue-200 transition-colors">Features</a>
-            <a href="#pricing" className="hover:text-blue-200 transition-colors">Pricing</a>
-            <a href="#about" className="hover:text-blue-200 transition-colors">About</a>
-            <a href="#contact" className="hover:text-blue-200 transition-colors">Contact</a>
+            <a href="#features" className="hover:text-green-200 transition-colors">Features</a>
+            <a href="#pricing" className="hover:text-green-200 transition-colors">Pricing</a>
+            <a href="#about" className="hover:text-green-200 transition-colors">About</a>
+            <a href="#contact" className="hover:text-green-200 transition-colors">Contact</a>
           </div>
-          <Button className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold">
+          <Button className="bg-green-700 hover:bg-green-800 text-white font-semibold">
             Get Started
           </Button>
         </div>
@@ -121,11 +121,11 @@ const LandingPage = () => {
               Streamline your grant applications and build stronger community connections with our AI-powered platform.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button size="lg" className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold">
+              <Button size="lg" className="bg-green-700 hover:bg-green-800 text-white font-semibold">
                 Start Free Trial
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-blue-700">
+              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-green-800">
                 Watch Demo
               </Button>
             </div>
@@ -148,7 +148,7 @@ const LandingPage = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {stats.map((stat, index) => (
               <div key={index} className="text-center">
-                <div className="text-4xl font-bold text-blue-700 mb-2">{stat.number}</div>
+                <div className="text-4xl font-bold text-green-800 mb-2">{stat.number}</div>
                 <div className="text-gray-600">{stat.label}</div>
               </div>
             ))}
@@ -252,7 +252,7 @@ const LandingPage = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-blue-700 text-white">
+      <section className="py-20 bg-green-800 text-white">
         <div className="max-w-4xl mx-auto px-6 text-center">
           <h2 className="text-4xl font-bold mb-6">
             Ready to Transform Your Grant Management?
@@ -261,11 +261,11 @@ const LandingPage = () => {
             Join hundreds of councils already using GrantThrive to streamline their grant processes and build stronger communities.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold">
+            <Button size="lg" className="bg-green-700 hover:bg-green-800 text-white font-semibold">
               Start Free Trial
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
-            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-blue-700">
+            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-green-800">
               Schedule Demo
             </Button>
           </div>

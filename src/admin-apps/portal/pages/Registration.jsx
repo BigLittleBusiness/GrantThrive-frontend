@@ -198,7 +198,7 @@ const Registration = () => {
       {userType && (
         <Button 
           onClick={() => setStep(2)}
-          className="w-full bg-blue-600 hover:bg-blue-700"
+          className="w-full bg-green-700 hover:bg-green-800"
         >
           Continue with {userTypes.find(t => t.id === userType)?.name}
           <ArrowRight className="w-4 h-4 ml-2" />
@@ -296,7 +296,7 @@ const Registration = () => {
         </Button>
         <Button 
           onClick={() => setStep(3)}
-          className="flex-1 bg-blue-600 hover:bg-blue-700"
+          className="flex-1 bg-green-700 hover:bg-green-800"
           disabled={!formData.firstName || !formData.lastName || !formData.email || !formData.phone}
         >
           Continue
@@ -469,7 +469,7 @@ const Registration = () => {
         </Button>
         <Button 
           onClick={() => setStep(4)}
-          className="flex-1 bg-blue-600 hover:bg-blue-700"
+          className="flex-1 bg-green-700 hover:bg-green-800"
         >
           Continue
           <ArrowRight className="w-4 h-4 ml-2" />
@@ -569,7 +569,7 @@ const Registration = () => {
         </Button>
         <Button 
           onClick={() => setStep(5)}
-          className="flex-1 bg-blue-600 hover:bg-blue-700"
+          className="flex-1 bg-green-700 hover:bg-green-800"
         >
           Continue
           <ArrowRight className="w-4 h-4 ml-2" />
@@ -666,7 +666,7 @@ const Registration = () => {
 
         <Button 
           onClick={() => window.location.href = '/login'}
-          className="w-full bg-green-600 hover:bg-green-700"
+          className="w-full bg-green-700 hover:bg-green-800"
         >
           {userType === 'community_member' ? 'Login to Your Account' : 'Return to Login'}
         </Button>

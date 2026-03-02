@@ -240,7 +240,7 @@ const CommunicationSettings = () => {
                   <button
                     onClick={savePreferences}
                     disabled={saving}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+                    className="px-4 py-2 bg-green-700 text-white rounded-md text-sm font-medium hover:bg-green-800 disabled:opacity-50"
                   >
                     {saving ? 'Saving...' : 'Save Changes'}
                   </button>
@@ -433,7 +433,7 @@ const CommunicationSettings = () => {
                 <button
                   onClick={savePreferences}
                   disabled={saving}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 disabled:opacity-50"
+                  className="px-6 py-2 bg-green-700 text-white rounded-md font-medium hover:bg-green-800 disabled:opacity-50"
                 >
                   {saving ? 'Saving...' : 'Save Global Settings'}
                 </button>
@@ -533,7 +533,7 @@ const CommunicationSettings = () => {
                     <button
                       onClick={() => testNotification('email')}
                       disabled={testingNotification}
-                      className="w-full px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+                      className="w-full px-4 py-2 bg-green-700 text-white rounded-md text-sm font-medium hover:bg-green-800 disabled:opacity-50"
                     >
                       {testingNotification ? 'Sending...' : 'Send Test Email'}
                     </button>

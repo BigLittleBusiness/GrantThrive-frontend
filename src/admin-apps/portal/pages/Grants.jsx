@@ -175,7 +175,7 @@ const Grants = () => {
         {isCouncilUser && (
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-blue-600 hover:bg-blue-700">
+              <Button className="bg-green-700 hover:bg-green-800">
                 <Plus className="w-4 h-4 mr-2" />
                 Create Grant
               </Button>

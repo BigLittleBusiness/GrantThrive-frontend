@@ -105,7 +105,7 @@ const GrantMapping = () => {
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center space-x-3">
-            <div className="bg-blue-600 p-2 rounded-lg">
+            <div className="bg-green-700 p-2 rounded-lg">
               <MapPin className="w-6 h-6 text-white" />
             </div>
             <div>

@@ -475,7 +475,7 @@ const ApplicationReviewWorkflow = ({ grantId = 'community-development-grant' }) 
                 Decline
               </Button>
               <Button 
-                className="bg-green-600 hover:bg-green-700"
+                className="bg-green-700 hover:bg-green-800"
                 onClick={() => submitReview(application.id, 'approved', calculateTotalScore(), reviewData.comments)}
               >
                 <CheckCircle className="h-4 w-4 mr-2" />
@@ -502,7 +502,7 @@ const ApplicationReviewWorkflow = ({ grantId = 'community-development-grant' }) 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-blue-600 text-white p-6">
+      <div className="bg-green-800 text-white p-6">
         <h1 className="text-2xl font-bold">Community Development Grant</h1>
         <div className="flex items-center space-x-4 mt-2">
           <div className="flex items-center space-x-2">

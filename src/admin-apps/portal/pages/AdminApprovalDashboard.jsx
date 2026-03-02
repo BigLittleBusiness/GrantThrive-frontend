@@ -398,7 +398,7 @@ const AdminApprovalDashboard = ({ user, onNavigate, onLogout }) => {
                 <CardContent className="space-y-3">
                   <Button
                     onClick={() => handleApproveApplication(app.id)}
-                    className="w-full bg-green-600 hover:bg-green-700"
+                    className="w-full bg-green-700 hover:bg-green-800"
                   >
                     <Check className="w-4 h-4 mr-2" />
                     Approve Application

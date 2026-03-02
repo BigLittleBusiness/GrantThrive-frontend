@@ -158,7 +158,7 @@ const GrantCreationWizard = () => {
             <div className="xl:col-span-1">
               <div className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 rounded-xl p-8 shadow-lg sticky top-8">
                 <div className="flex items-center mb-6">
-                  <div className="bg-blue-600 p-3 rounded-lg mr-4">
+                  <div className="bg-green-700 p-3 rounded-lg mr-4">
                     <Lightbulb className="h-6 w-6 text-white" />
                   </div>
                   <h3 className="text-xl font-bold text-blue-900">AI Assistant</h3>
@@ -323,7 +323,7 @@ const GrantCreationWizard = () => {
               </div>
               <h3 className="text-2xl font-bold text-yellow-900 mb-4">Application Form Builder</h3>
               <p className="text-lg text-yellow-800 mb-8">This advanced feature allows you to create custom questions for your grant application form, including multiple choice, text responses, file uploads, and conditional logic.</p>
-              <button className="bg-yellow-600 hover:bg-yellow-700 text-white px-8 py-4 rounded-xl transition-all duration-300 font-semibold text-lg shadow-lg">
+              <button className="bg-green-700 hover:bg-green-800 text-white px-8 py-4 rounded-xl transition-all duration-300 font-semibold text-lg shadow-lg">
                 Launch Form Builder
               </button>
             </div>
@@ -379,12 +379,12 @@ const GrantCreationWizard = () => {
             </div>
 
             <div className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 rounded-xl p-12 text-center shadow-lg">
-              <div className="bg-blue-600 p-4 rounded-xl mx-auto w-fit mb-6">
+              <div className="bg-green-700 p-4 rounded-xl mx-auto w-fit mb-6">
                 <CheckCircle className="h-12 w-12 text-white" />
               </div>
               <h3 className="text-2xl font-bold text-blue-900 mb-4">Ready to Publish</h3>
               <p className="text-lg text-blue-800 mb-8">Your grant program is ready to be published and made available to applicants in the community.</p>
-              <button className="bg-blue-600 hover:bg-blue-700 text-white px-12 py-4 rounded-xl transition-all duration-300 font-bold text-lg shadow-lg">
+              <button className="bg-green-700 hover:bg-green-800 text-white px-12 py-4 rounded-xl transition-all duration-300 font-bold text-lg shadow-lg">
                 Publish Grant Program
               </button>
             </div>
@@ -508,7 +508,7 @@ const GrantCreationWizard = () => {
             className={`flex items-center px-8 py-4 rounded-xl font-bold text-lg transition-all duration-300 ${
               currentStep === 4
                 ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                : 'bg-blue-600 text-white hover:bg-blue-700 shadow-lg'
+                : 'bg-green-700 text-white hover:bg-green-800 shadow-lg'
             }`}
           >
             Next

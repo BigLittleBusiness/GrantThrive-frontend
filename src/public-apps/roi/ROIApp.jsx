@@ -623,7 +623,7 @@ function App() {
                 their grant management with GrantThrive's community-centric platform.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
+                <Button size="lg" className="bg-green-700 hover:bg-green-800">
                   Schedule a Demo
                 </Button>
                 <Button 

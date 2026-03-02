@@ -175,7 +175,7 @@ const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <Button className="h-14 bg-blue-600 hover:bg-blue-700" onClick={() => onNavigate('grants')}>
+        <Button className="h-14 bg-green-700 hover:bg-green-800" onClick={() => onNavigate('grants')}>
           <Plus className="w-5 h-5 mr-2" />
           Apply for Grant
         </Button>
@@ -382,7 +382,7 @@ const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
                         <span className="font-semibold">{grant.applicants}</span>
                       </div>
                     </div>
-                    <Button className="w-full bg-blue-600 hover:bg-blue-700" size="sm" onClick={() => onNavigate('application-form')}>
+                    <Button className="w-full bg-green-700 hover:bg-green-800" size="sm" onClick={() => onNavigate('application-form')}>
                       Apply Now
                     </Button>
                   </div>

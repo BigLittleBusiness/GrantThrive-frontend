@@ -256,7 +256,7 @@ const WinnersShowcase = () => {
                 Discover the amazing projects and initiatives that are making a real difference in our community
               </p>
               <div className="flex gap-4">
-                <Button className="bg-orange-500 hover:bg-orange-600">
+                <Button className="bg-green-700 hover:bg-green-800">
                   <Award className="w-4 h-4 mr-2" />
                   Apply for Grant
                 </Button>
@@ -515,7 +515,7 @@ const WinnersShowcase = () => {
             Join the hundreds of organizations that have transformed their communities with grant funding
           </p>
           <div className="flex justify-center gap-4">
-            <Button className="bg-orange-500 hover:bg-orange-600">
+            <Button className="bg-green-700 hover:bg-green-800">
               <Award className="w-4 h-4 mr-2" />
               Apply for a Grant
             </Button>

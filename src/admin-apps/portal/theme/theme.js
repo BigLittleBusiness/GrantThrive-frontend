@@ -1,12 +1,13 @@
 import { createTheme } from '@mui/material/styles';
 
 // GrantThrive Design System Theme
+// Primary colour updated to GrantThrive Green (#15803d) — aligned with marketing brand
 export const grantThriveTheme = createTheme({
   palette: {
     primary: {
-      main: '#1976d2', // GrantThrive Blue
-      light: '#42a5f5',
-      dark: '#1565c0',
+      main: '#15803d', // GrantThrive Green
+      light: '#22c55e',
+      dark: '#166534',
       contrastText: '#ffffff',
     },
     secondary: {
@@ -155,7 +156,7 @@ export const grantThriveTheme = createTheme({
           '& .MuiOutlinedInput-root': {
             borderRadius: 8,
             '&:hover .MuiOutlinedInput-notchedOutline': {
-              borderColor: '#1976d2',
+              borderColor: '#15803d',
             },
           },
         },
@@ -192,7 +193,7 @@ export const grantThriveTheme = createTheme({
 
 // Custom theme extensions
 export const customColors = {
-  grantThriveBlue: '#1976d2',
+  grantThriveGreen: '#15803d',
   successGreen: '#4caf50',
   growthTeal: '#00acc1',
   innovationPurple: '#7b1fa2',

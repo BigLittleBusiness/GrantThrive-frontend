@@ -210,7 +210,7 @@ const PricingPage = () => {
   return (
     <div className="min-h-screen bg-white">
       {/* Navigation */}
-      <nav className="bg-blue-700 text-white px-6 py-4">
+      <nav className="bg-green-800 text-white px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="text-2xl font-bold">GAP</div>
           <div className="hidden md:flex space-x-8">
@@ -219,7 +219,7 @@ const PricingPage = () => {
             <a href="#about" className="hover:text-blue-200 transition-colors">About</a>
             <a href="#contact" className="hover:text-blue-200 transition-colors">Contact</a>
           </div>
-          <Button className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold">
+          <Button className="bg-green-700 hover:bg-green-800 text-white font-semibold">
             Get Started
           </Button>
         </div>
@@ -315,7 +315,7 @@ const PricingPage = () => {
                   </div>
                   
                   <Button 
-                    className={`w-full ${plan.popular ? 'bg-green-600 hover:bg-green-700' : 'bg-yellow-500 hover:bg-yellow-600'} text-black font-semibold`}
+                    className={`w-full ${plan.popular ? 'bg-green-700 hover:bg-green-800' : 'bg-green-700 hover:bg-green-800'} text-black font-semibold`}
                   >
                     {plan.monthlyPrice === 'Custom' ? 'Contact Sales' : 'Choose Plan'}
                     <ArrowRight className="ml-2 h-4 w-4" />
@@ -400,7 +400,7 @@ const PricingPage = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-blue-700 text-white">
+      <section className="py-20 bg-green-800 text-white">
         <div className="max-w-4xl mx-auto px-6 text-center">
           <h2 className="text-4xl font-bold mb-6">
             Ready to Get Started?
@@ -409,7 +409,7 @@ const PricingPage = () => {
             Start your free trial today and see how GrantThrive can transform your grant management process.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold">
+            <Button size="lg" className="bg-green-700 hover:bg-green-800 text-white font-semibold">
               Start Free Trial
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>

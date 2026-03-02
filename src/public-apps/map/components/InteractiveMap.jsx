@@ -273,7 +273,7 @@ const InteractiveMap = ({ grants, filters }) => {
                   href={selectedMarker.grant.url} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="flex-1 bg-blue-600 text-white text-center py-2 px-4 rounded hover:bg-blue-700 transition-colors text-sm"
+                  className="flex-1 bg-green-700 text-white text-center py-2 px-4 rounded hover:bg-green-800 transition-colors text-sm"
                 >
                   View Details
                 </a>

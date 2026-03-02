@@ -799,7 +799,7 @@ const ApplicationForm = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-blue-600 text-white">
+      <div className="bg-green-800 text-white">
         <div className="max-w-4xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -901,7 +901,7 @@ const ApplicationForm = () => {
             </Button>
             
             {currentStep < 7 ? (
-              <Button onClick={nextStep} className="bg-orange-500 hover:bg-orange-600">
+              <Button onClick={nextStep} className="bg-green-700 hover:bg-green-800">
                 Next
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>

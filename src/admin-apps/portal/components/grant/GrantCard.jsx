@@ -193,7 +193,7 @@ const GrantCard = ({
                   <Button
                     size="sm"
                     onClick={() => onApply && onApply(grant)}
-                    className="bg-green-600 hover:bg-green-700"
+                    className="bg-green-700 hover:bg-green-800"
                   >
                     Apply Now
                   </Button>

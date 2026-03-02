@@ -208,7 +208,7 @@ const Applications = () => {
         {isCommunityUser && (
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-green-600 hover:bg-green-700">
+              <Button className="bg-green-700 hover:bg-green-800">
                 <Plus className="w-4 h-4 mr-2" />
                 New Application
               </Button>
@@ -507,14 +507,14 @@ const Applications = () => {
                         <Button
                           size="sm"
                           onClick={() => handleStatusUpdate(application.id, 'under_review')}
-                          className="bg-yellow-600 hover:bg-yellow-700"
+                          className="bg-green-700 hover:bg-green-800"
                         >
                           Review
                         </Button>
                         <Button
                           size="sm"
                           onClick={() => handleStatusUpdate(application.id, 'approved')}
-                          className="bg-green-600 hover:bg-green-700"
+                          className="bg-green-700 hover:bg-green-800"
                         >
                           Approve
                         </Button>

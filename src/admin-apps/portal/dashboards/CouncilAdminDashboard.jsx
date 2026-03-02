@@ -149,7 +149,7 @@ const CouncilAdminDashboard = ({ user, onNavigate, onLogout }) => {
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
         <Button 
-          className="h-14 bg-blue-600 hover:bg-blue-700"
+          className="h-14 bg-green-700 hover:bg-green-800"
           onClick={() => onNavigate('create-grant')}
         >
           <Plus className="w-5 h-5 mr-2" />
