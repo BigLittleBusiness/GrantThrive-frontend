@@ -11,7 +11,7 @@
 
 import React from 'react';
 import { useTenant } from './TenantContext';
-import gtLogo from '../assets/grantthrive_logo_growth_concept.png';
+import gtLogo from '../assets/grantthrive_official_logo.png';
 
 export default function TenantHeader({ className = '' }) {
   const { council, isLoading } = useTenant();

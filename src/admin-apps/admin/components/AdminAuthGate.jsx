@@ -31,7 +31,7 @@ function LoadingScreen() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-950">
       <div className="flex flex-col items-center gap-4 text-white">
-        <Loader2 className="w-10 h-10 animate-spin text-blue-400" aria-hidden="true" />
+        <Loader2 className="w-10 h-10 animate-spin text-green-500" aria-hidden="true" />
         <p className="text-gray-400 text-sm">Verifying credentials…</p>
       </div>
     </div>

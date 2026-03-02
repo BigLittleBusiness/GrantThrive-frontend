@@ -280,8 +280,8 @@ export default function AdminLogin({ onAuthenticated }) {
             draggable={false}
           />
           <div className="flex items-center gap-2 mb-1">
-            <Shield className="w-4 h-4 text-blue-400" aria-hidden="true" />
-            <span className="text-xs font-semibold tracking-widest text-blue-400 uppercase">
+            <Shield className="w-4 h-4 text-green-500" aria-hidden="true" />
+            <span className="text-xs font-semibold tracking-widest text-green-500 uppercase">
               System Administration
             </span>
           </div>
@@ -392,7 +392,7 @@ export default function AdminLogin({ onAuthenticated }) {
                     disabled={isDisabled}
                     aria-required="true"
                     aria-describedby={hasError ? 'admin-login-error' : undefined}
-                    className="pl-10 bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500/20 disabled:opacity-50"
+                    className="pl-10 bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-green-500 focus:ring-green-500/20 disabled:opacity-50"
                   />
                 </div>
               </div>
@@ -421,7 +421,7 @@ export default function AdminLogin({ onAuthenticated }) {
                     required
                     disabled={isDisabled}
                     aria-required="true"
-                    className="pl-10 pr-11 bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500/20 disabled:opacity-50"
+                    className="pl-10 pr-11 bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-green-500 focus:ring-green-500/20 disabled:opacity-50"
                   />
                   <button
                     type="button"
@@ -446,7 +446,7 @@ export default function AdminLogin({ onAuthenticated }) {
                   checked={rememberMe}
                   onChange={e => setRememberMe(e.target.checked)}
                   disabled={isDisabled}
-                  className="w-4 h-4 rounded border-gray-600 bg-gray-800 text-blue-500 focus:ring-blue-500/20 cursor-pointer"
+                  className="w-4 h-4 rounded border-gray-600 bg-gray-800 text-green-500 focus:ring-green-500/20 cursor-pointer"
                 />
                 <label
                   htmlFor="admin-remember"
@@ -460,7 +460,7 @@ export default function AdminLogin({ onAuthenticated }) {
               <Button
                 type="submit"
                 disabled={isDisabled || !email || !password}
-                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-green-700 hover:bg-green-800 text-white font-semibold py-2.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label={isLoading ? 'Signing in…' : 'Sign in to Admin Dashboard'}
               >
                 {isLoading ? (
@@ -492,7 +492,7 @@ export default function AdminLogin({ onAuthenticated }) {
 
         {/* ── Security notice ─────────────────────────────────────────────────── */}
         <div className="mt-6 flex items-start gap-3 bg-gray-900/60 border border-gray-800 rounded-xl px-4 py-4">
-          <Shield className="w-4 h-4 text-blue-400 mt-0.5 shrink-0" aria-hidden="true" />
+          <Shield className="w-4 h-4 text-green-500 mt-0.5 shrink-0" aria-hidden="true" />
           <div>
             <p className="text-xs text-gray-400 leading-relaxed">
               <span className="text-gray-300 font-medium">Authorised access only.</span>{' '}
