@@ -975,12 +975,12 @@ function ROICalculatorPage() {
 // Full Resources Page
 function ResourcesPage() {
   const resources = [
-    { icon: BookOpen, title: "Grant Writing Guide", description: "A step-by-step guide to writing compelling grant applications that get approved.", category: "Guide", link: "#" },
-    { icon: FileText, title: "Application Checklist", description: "A printable checklist covering everything applicants need before submitting.", category: "Template", link: "#" },
-    { icon: BarChart3, title: "Council ROI Report Template", description: "A ready-to-use template for reporting grant program outcomes to your council.", category: "Template", link: "#" },
-    { icon: Users, title: "Community Engagement Playbook", description: "Best practices for driving community participation in your grant programs.", category: "Guide", link: "#" },
-    { icon: Shield, title: "Compliance & Governance Guide", description: "Understand your obligations under Australian grant administration frameworks.", category: "Guide", link: "#" },
-    { icon: TrendingUp, title: "Grant Program Metrics Guide", description: "Learn which KPIs matter most and how to measure grant program success.", category: "Guide", link: "#" },
+    { icon: BookOpen, title: "Grant Writing Guide", description: "A step-by-step guide to writing compelling grant applications that get approved.", category: "Guide", link: "/resources/GrantThrive_Grant_Writing_Guide.pdf" },
+    { icon: FileText, title: "Application Checklist", description: "A printable checklist covering everything applicants need before submitting.", category: "Template", link: "/resources/GrantThrive_Application_Checklist.pdf" },
+    { icon: BarChart3, title: "Council ROI Report Template", description: "A ready-to-use template for reporting grant program outcomes to your council.", category: "Template", link: "/resources/GrantThrive_Council_ROI_Report_Template.pdf" },
+    { icon: Users, title: "Community Engagement Playbook", description: "Best practices for driving community participation in your grant programs.", category: "Guide", link: "/resources/GrantThrive_Community_Engagement_Playbook.pdf" },
+    { icon: Shield, title: "Compliance & Governance Guide", description: "Understand your obligations under Australian grant administration frameworks.", category: "Guide", link: "/resources/GrantThrive_Compliance_Governance_Guide.pdf" },
+    { icon: TrendingUp, title: "Grant Program Metrics Guide", description: "Learn which KPIs matter most and how to measure grant program success.", category: "Guide", link: "/resources/GrantThrive_Grant_Program_Metrics_Guide.pdf" },
   ]
 
   return (
