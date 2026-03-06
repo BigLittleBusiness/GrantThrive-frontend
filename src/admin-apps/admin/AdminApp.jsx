@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import CouncilManagement from './pages/CouncilManagement.jsx';
+import SystemAdminManagement from './pages/SystemAdminManagement.jsx';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card';
 import { Badge } from '@shared/components/ui/badge';
 import { Button } from '@shared/components/ui/button';
@@ -45,6 +46,7 @@ import {
   Building2,
   CreditCard,
   UserCheck,
+  UserCog,
   AlertCircle,
   Info
 } from 'lucide-react';
@@ -89,6 +91,8 @@ const AdminDashboard = () => {
     { id: 'overview',  label: 'Overview',           icon: LayoutDashboard },
     { id: 'councils',  label: 'Council Management',  icon: Building2 },
     { id: 'users',     label: 'User Management',     icon: Users },
+    { id: 'staff',     label: 'System Admins',         icon: UserCog },
+
     { id: 'data',      label: 'Data Pipeline',       icon: Database },
     { id: 'analytics', label: 'Analytics',           icon: BarChart3 },
     { id: 'support',   label: 'Support',             icon: MessageSquare },
@@ -459,8 +463,11 @@ const AdminDashboard = () => {
           {/* Council Management */}
           {activeTab === 'councils' && <CouncilManagement />}
 
+          {/* System Admin Management */}
+          {activeTab === 'staff' && <SystemAdminManagement />}
+
           {/* Placeholder for tabs still under development */}
-          {activeTab !== 'overview' && activeTab !== 'councils' && (
+          {activeTab !== 'overview' && activeTab !== 'councils' && activeTab !== 'staff' && (
             <div className="text-center py-12">
               <div className="text-gray-400 mb-4">
                 <Settings className="w-16 h-16 mx-auto" />
