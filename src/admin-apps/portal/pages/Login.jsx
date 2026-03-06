@@ -32,62 +32,60 @@ const Login = ({ onLogin }) => {
       [field]: value
     }));
   };
+  
+const handleLogin = async (e) => {
+  e.preventDefault();
+  setIsLoading(true);
+  setLoginAttempt(null);
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setLoginAttempt(null);
+  try {
+    const response = await fetch("http://127.0.0.1:5000/auth/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: formData.email.trim(),
+        password: formData.password,
+      }),
+    });
 
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    const data = await response.json();
 
-    // Find matching account
-    const account = demoAccounts.find(
-      acc => acc.email.toLowerCase() === formData.email.toLowerCase() && 
-             acc.password === formData.password
-    );
-
-    if (!account) {
+    if (!response.ok) {
       setLoginAttempt({
         success: false,
-        message: 'Invalid email or password. Please check your credentials and try again.'
+        message: data.message || data.error || "Login failed. Please try again.",
+        isPending: data.status === "pending_approval",
       });
-      setIsLoading(false);
       return;
     }
 
-    if (account.status === 'pending_approval') {
-      setLoginAttempt({
-        success: false,
-        message: 'Your account is pending approval. Please wait for administrator verification.',
-        isPending: true
-      });
-      setIsLoading(false);
-      return;
+    if (data.token) {
+      localStorage.setItem("authToken", data.token);
     }
 
-    // Successful login
+    if (data.user) {
+      localStorage.setItem("authUser", JSON.stringify(data.user));
+    }
+
     setLoginAttempt({
       success: true,
-      message: `Welcome back, ${account.name}!`,
-      account: account
+      message: `Welcome back, ${data.user.full_name || data.user.first_name || "User"}!`,
+      account: data.user,
     });
 
-    // Call the onLogin callback with user data
-    setTimeout(() => {
-      onLogin(account);
-    }, 1500);
-
+    onLogin?.(data.user);
+  } catch (error) {
+    console.error("Login error:", error);
+    setLoginAttempt({
+      success: false,
+      message: "Unable to connect to the server. Please try again.",
+    });
+  } finally {
     setIsLoading(false);
-  };
-
-  const fillDemoCredentials = (account) => {
-    setFormData({
-      email: account.email,
-      password: account.password,
-      rememberMe: false
-    });
-  };
+  }
+};
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-8">
@@ -213,7 +211,7 @@ const Login = ({ onLogin }) => {
             <div className="text-center pt-4 border-t">
               <p className="text-sm text-gray-600">
                 Don't have an account?{' '}
-                <a href="/register" className="text-blue-600 hover:text-blue-500 font-medium">
+                <a href="/portal/register" className="text-blue-600 hover:text-blue-500 font-medium">
                   Register here
                 </a>
               </p>

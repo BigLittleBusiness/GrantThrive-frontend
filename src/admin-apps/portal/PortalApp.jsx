@@ -52,8 +52,7 @@ function PortalInner() {
       localStorage.removeItem('gt_auth_token');
       localStorage.removeItem('gt_auth_user');
       setCurrentUser(null);
-      // Important: go to RELATIVE route inside /portal/*
-      navigate('login', { replace: true });
+      navigate('/portal/login', { replace: true });
     };
 
     window.addEventListener('gt:logout', handleGlobalLogout);
@@ -63,14 +62,14 @@ function PortalInner() {
   const handleLogin = (userData) => {
     localStorage.setItem('gt_auth_user', JSON.stringify(userData));
     setCurrentUser(userData);
-    navigate('dashboard', { replace: true });
+    navigate('/portal/dashboard', { replace: true });
   };
 
   const handleLogout = () => {
     localStorage.removeItem('gt_auth_token');
     localStorage.removeItem('gt_auth_user');
     setCurrentUser(null);
-    navigate('login', { replace: true });
+    navigate('/portal/login', { replace: true });
   };
 
   // Show a minimal loading screen while the tenant is being resolved
@@ -85,22 +84,20 @@ function PortalInner() {
     );
   }
 
-  // Are we on /portal/login or /portal/register?
-  // location.pathname is absolute, but we compare safely.
   const isAuthRoute =
-    location.pathname.endsWith('/portal/login') ||
-    location.pathname.endsWith('/portal/register');
+    location.pathname === '/portal/login' ||
+    location.pathname === '/portal/register';
 
   // Guard: If not logged in, only allow auth routes
   if (!currentUser && !isAuthRoute) {
-    return <Navigate to="login" replace />;
+    return <Navigate to="/portal/login" replace />;
   }
 
   const pageProps = { user: currentUser, council, onLogout: handleLogout };
 
-  // Role based dashboard
   const Dashboard = () => {
     const role = currentUser?.role || currentUser?.userType;
+
     switch (role) {
       case 'council_admin':
         return <CouncilAdminDashboard {...pageProps} />;
@@ -117,7 +114,7 @@ function PortalInner() {
 
   return (
     <Routes>
-      {/* Auth routes (RELATIVE paths) */}
+      {/* Auth routes */}
       <Route path="login" element={<Login council={council} onLogin={handleLogin} />} />
       <Route path="register" element={<Registration council={council} onLogin={handleLogin} />} />
 
@@ -137,13 +134,13 @@ function PortalInner() {
       <Route path="grant-map" element={<PublicGrantMap {...pageProps} />} />
 
       {/* Default under /portal */}
-      <Route path="" element={<Navigate to="dashboard" replace />} />
+      <Route index element={<Navigate to="dashboard" replace />} />
       <Route path="*" element={<Navigate to="dashboard" replace />} />
     </Routes>
   );
 }
 
-// ── Root export (wraps everything in TenantProvider) ─────────────────────────
+// ── Root export ───────────────────────────────────────────────────────────────
 export default function PortalApp() {
   return (
     <TenantProvider>
