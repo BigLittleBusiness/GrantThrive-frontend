@@ -3,27 +3,33 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 
-// Unified GrantThrive frontend — all five apps in a single Vite project
-// Routes:
-//   /            → Marketing website (public, no auth)
-//   /features    → Marketing features page
-//   /pricing     → Marketing pricing page
-//   /roi-calculator → Marketing ROI calculator page
-//   /resources   → Marketing resources page
-//   /contact     → Marketing contact page
-//   /admin/*     → Admin dashboard (system_admin only, SSO-gated)
-//   /app/*       → Council portal (council_admin, council_staff, community_member)
-//   /map         → Interactive grant map (public, no auth)
-//   /roi         → ROI calculator (public, no auth)
-//
-// Domain: grantthrive.com
+// Unified GrantThrive frontend — all apps in one Vite project
+// Dev frontend: http://localhost:5173
+// Backend API:  http://127.0.0.1:5000
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
       '@shared': path.resolve(__dirname, './src/shared'),
     },
   },
+
+  server: {
+    port: 5173,
+    proxy: {
+      '/api': 'http://127.0.0.1:5000',
+      '/auth': 'http://127.0.0.1:5000',
+      '/public': 'http://127.0.0.1:5000',
+      '/mapping': 'http://127.0.0.1:5000',
+      '/reports': 'http://127.0.0.1:5000',
+      '/voting': 'http://127.0.0.1:5000',
+      '/workflows': 'http://127.0.0.1:5000',
+      '/dashboard': 'http://127.0.0.1:5000',
+      '/search': 'http://127.0.0.1:5000',
+      '/grant': 'http://127.0.0.1:5000'
+    }
+  }
 })

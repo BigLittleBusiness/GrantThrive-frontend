@@ -26,70 +26,6 @@ const Login = ({ onLogin }) => {
   const [loginAttempt, setLoginAttempt] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Demo accounts for different user types
-  const demoAccounts = [
-    {
-      email: 'sarah.johnson@melbourne.vic.gov.au',
-      password: 'demo123',
-      userType: 'council_admin',
-      name: 'Sarah Johnson',
-      organization: 'Melbourne City Council',
-      role: 'Council Administrator',
-      status: 'active',
-      avatar: 'SJ'
-    },
-    {
-      email: 'michael.chen@melbourne.vic.gov.au',
-      password: 'demo123',
-      userType: 'council_staff',
-      name: 'Michael Chen',
-      organization: 'Melbourne City Council',
-      role: 'Council Staff',
-      status: 'active',
-      avatar: 'MC'
-    },
-    {
-      email: 'james.smith@auckland.govt.nz',
-      password: 'demo123',
-      userType: 'council_staff',
-      name: 'James Smith',
-      organization: 'Auckland Council',
-      role: 'Council Staff (NZ)',
-      status: 'active',
-      avatar: 'JS'
-    },
-    {
-      email: 'emma.thompson@communityarts.org.au',
-      password: 'demo123',
-      userType: 'community_member',
-      name: 'Emma Thompson',
-      organization: 'Community Arts Collective',
-      role: 'Community Member',
-      status: 'active',
-      avatar: 'ET'
-    },
-    {
-      email: 'david.wilson@grantsuccess.com.au',
-      password: 'demo123',
-      userType: 'professional_consultant',
-      name: 'David Wilson',
-      organization: 'Grant Success Partners',
-      role: 'Professional Consultant',
-      status: 'active',
-      avatar: 'DW'
-    },
-    {
-      email: 'pending.staff@council.gov.au',
-      password: 'demo123',
-      userType: 'council_staff',
-      name: 'Pending Staff',
-      organization: 'Sample Council',
-      role: 'Council Staff',
-      status: 'pending_approval',
-      avatar: 'PS'
-    }
-  ];
-
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
       ...prev,
@@ -273,50 +209,6 @@ const Login = ({ onLogin }) => {
                 {isLoading ? 'Signing in...' : 'Sign In'}
               </Button>
             </form>
-
-            {/* Demo Accounts */}
-            <div className="border-t pt-6">
-              <h3 className="text-sm font-medium text-gray-900 mb-4 text-center">
-                Demo Accounts
-              </h3>
-              <div className="space-y-2">
-                {demoAccounts.filter(acc => acc.status === 'active').map((account, index) => (
-                  <button
-                    key={index}
-                    onClick={() => fillDemoCredentials(account)}
-                    className="w-full p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-green-700 rounded-full flex items-center justify-center text-white text-xs font-semibold">
-                          {account.avatar}
-                        </div>
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{account.name}</div>
-                          <div className="text-xs text-gray-600">{account.organization}</div>
-                        </div>
-                      </div>
-                      <Badge variant="secondary" className="text-xs">
-                        {account.role}
-                      </Badge>
-                    </div>
-                  </button>
-                ))}
-              </div>
-              
-              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="flex items-start gap-2">
-                  <Shield className="w-4 h-4 text-blue-600 mt-0.5" />
-                  <div>
-                    <p className="text-xs text-blue-900 font-medium">Demo Mode</p>
-                    <p className="text-xs text-blue-800">
-                      Click any account above to auto-fill credentials. Password: demo123
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
             {/* Registration Link */}
             <div className="text-center pt-4 border-t">
               <p className="text-sm text-gray-600">
@@ -326,7 +218,6 @@ const Login = ({ onLogin }) => {
                 </a>
               </p>
             </div>
-
             {/* Account Status Info */}
             <div className="bg-gray-50 rounded-lg p-4">
               <h4 className="text-sm font-medium text-gray-900 mb-2">Account Status Information</h4>
