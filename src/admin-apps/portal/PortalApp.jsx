@@ -1,6 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { TenantProvider, useTenant } from '@shared/tenancy/TenantContext';
-import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import {
+  Routes,
+  Route,
+  Navigate,
+  useNavigate,
+  useLocation,
+} from 'react-router-dom';
 
 import Login from './pages/Login.jsx';
 import Registration from './pages/Registration.jsx';
@@ -9,7 +15,6 @@ import AdminApprovalDashboard from './pages/AdminApprovalDashboard.jsx';
 import CouncilAdminDashboard from './dashboards/CouncilAdminDashboard.jsx';
 import CouncilStaffDashboard from './dashboards/CouncilStaffDashboard.jsx';
 import CommunityMemberDashboard from './dashboards/CommunityMemberDashboard.jsx';
-import ProfessionalConsultantDashboard from './dashboards/ProfessionalConsultantDashboard.jsx';
 
 import GrantsListing from './pages/GrantsListing.jsx';
 import GrantDetails from './pages/GrantDetails.jsx';
@@ -23,7 +28,63 @@ import QRCodeManagement from './pages/QRCodeManagement.jsx';
 import CommunityVoting from './pages/CommunityVoting.jsx';
 import PublicGrantMap from './pages/PublicGrantMap.jsx';
 
-// ── Inner app (has access to TenantContext) ───────────────────────────────────
+// ── RBAC constants ────────────────────────────────────────────────────────────
+const ROLES = {
+  COUNCIL_ADMIN: 'council_admin',
+  COUNCIL_STAFF: 'council_staff',
+  COMMUNITY_MEMBER: 'community_member',
+};
+
+const ROLE_HOME = {
+  [ROLES.COUNCIL_ADMIN]: '/portal/council/dashboard',
+  [ROLES.COUNCIL_STAFF]: '/portal/staff/dashboard',
+  [ROLES.COMMUNITY_MEMBER]: '/portal/community/dashboard',
+};
+
+function getUserRole(user) {
+  return user?.role || user?.userType || null;
+}
+
+function isAllowedRole(user, allowedRoles = []) {
+  const role = getUserRole(user);
+  return allowedRoles.includes(role);
+}
+
+// ── Simple access denied screen ──────────────────────────────────────────────
+function AccessDenied({ onLogout }) {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-6">
+      <div className="w-full max-w-md rounded-2xl border border-red-200 bg-white p-8 text-center shadow-sm">
+        <h1 className="text-2xl font-bold text-red-700">Access denied</h1>
+        <p className="mt-3 text-sm text-gray-600">
+          You do not have permission to access this section.
+        </p>
+        <button
+          type="button"
+          onClick={onLogout}
+          className="mt-6 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+        >
+          Sign out
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Route guard ───────────────────────────────────────────────────────────────
+function ProtectedRoute({ user, allowedRoles, onLogout, children }) {
+  if (!user) {
+    return <Navigate to="/portal/login" replace />;
+  }
+
+  if (!isAllowedRole(user, allowedRoles)) {
+    return <AccessDenied onLogout={onLogout} />;
+  }
+
+  return children;
+}
+
+// ── Inner app (has access to TenantContext) ──────────────────────────────────
 function PortalInner() {
   const { council, isLoading: tenantLoading } = useTenant();
   const [currentUser, setCurrentUser] = useState(null);
@@ -46,7 +107,7 @@ function PortalInner() {
     }
   }, []);
 
-  // Listen for global logout events (dispatched by useTenantApi on 401)
+  // Listen for global logout events
   useEffect(() => {
     const handleGlobalLogout = () => {
       localStorage.removeItem('gt_auth_token');
@@ -62,7 +123,9 @@ function PortalInner() {
   const handleLogin = (userData) => {
     localStorage.setItem('gt_auth_user', JSON.stringify(userData));
     setCurrentUser(userData);
-    navigate('/portal/dashboard', { replace: true });
+
+    const role = getUserRole(userData);
+    navigate(ROLE_HOME[role] || '/portal/community/dashboard', { replace: true });
   };
 
   const handleLogout = () => {
@@ -71,6 +134,8 @@ function PortalInner() {
     setCurrentUser(null);
     navigate('/portal/login', { replace: true });
   };
+
+  const role = useMemo(() => getUserRole(currentUser), [currentUser]);
 
   // Show a minimal loading screen while the tenant is being resolved
   if (tenantLoading) {
@@ -88,59 +153,403 @@ function PortalInner() {
     location.pathname === '/portal/login' ||
     location.pathname === '/portal/register';
 
-  // Guard: If not logged in, only allow auth routes
+  // If not logged in, only allow auth routes
   if (!currentUser && !isAuthRoute) {
     return <Navigate to="/portal/login" replace />;
   }
 
-  const pageProps = { user: currentUser, council, onLogout: handleLogout };
+  // If logged in and user lands on auth pages, redirect to correct dashboard
+  if (currentUser && isAuthRoute) {
+    return <Navigate to={ROLE_HOME[role] || '/portal/community/dashboard'} replace />;
+  }
 
-  const Dashboard = () => {
-    const role = currentUser?.role || currentUser?.userType;
-
-    switch (role) {
-      case 'council_admin':
-        return <CouncilAdminDashboard {...pageProps} />;
-      case 'council_staff':
-        return <CouncilStaffDashboard {...pageProps} />;
-      case 'community_member':
-        return <CommunityMemberDashboard {...pageProps} />;
-      case 'professional_consultant':
-        return <ProfessionalConsultantDashboard {...pageProps} />;
-      default:
-        return <CommunityMemberDashboard {...pageProps} />;
-    }
+  const pageProps = {
+    user: currentUser,
+    council,
+    onLogout: handleLogout,
   };
 
   return (
     <Routes>
       {/* Auth routes */}
-      <Route path="login" element={<Login council={council} onLogin={handleLogin} />} />
-      <Route path="register" element={<Registration council={council} onLogin={handleLogin} />} />
+      <Route
+        path="login"
+        element={<Login council={council} onLogin={handleLogin} />}
+      />
+      <Route
+        path="register"
+        element={<Registration council={council} onLogin={handleLogin} />}
+      />
 
-      {/* App routes */}
-      <Route path="dashboard" element={<Dashboard />} />
-      <Route path="admin-approvals" element={<AdminApprovalDashboard {...pageProps} />} />
-      <Route path="create-grant" element={<GrantCreationWizard {...pageProps} />} />
-      <Route path="grants" element={<GrantsListing {...pageProps} />} />
-      <Route path="grant-details" element={<GrantDetails {...pageProps} />} />
-      <Route path="application-form" element={<ApplicationForm {...pageProps} />} />
-      <Route path="community-forum" element={<CommunityForum {...pageProps} />} />
-      <Route path="resource-hub" element={<ResourceHub {...pageProps} />} />
-      <Route path="winners-showcase" element={<WinnersShowcase {...pageProps} />} />
-      <Route path="communication-settings" element={<CommunicationSettings {...pageProps} />} />
-      <Route path="qr-code-management" element={<QRCodeManagement {...pageProps} />} />
-      <Route path="community-voting" element={<CommunityVoting {...pageProps} />} />
-      <Route path="grant-map" element={<PublicGrantMap {...pageProps} />} />
+      {/* Generic /portal entry */}
+      <Route
+        index
+        element={
+          currentUser ? (
+            <Navigate to={ROLE_HOME[role] || '/portal/community/dashboard'} replace />
+          ) : (
+            <Navigate to="/portal/login" replace />
+          )
+        }
+      />
 
-      {/* Default under /portal */}
-      <Route index element={<Navigate to="dashboard" replace />} />
-      <Route path="*" element={<Navigate to="dashboard" replace />} />
+      {/* ── Council Admin Routes ───────────────────────────────────────── */}
+      <Route
+        path="council/dashboard"
+        element={
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COUNCIL_ADMIN]}
+            onLogout={handleLogout}
+          >
+            <CouncilAdminDashboard {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="council/admin-approvals"
+        element={
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COUNCIL_ADMIN]}
+            onLogout={handleLogout}
+          >
+            <AdminApprovalDashboard {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="council/create-grant"
+        element={
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COUNCIL_ADMIN]}
+            onLogout={handleLogout}
+          >
+            <GrantCreationWizard {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="council/grants"
+        element={
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COUNCIL_ADMIN]}
+            onLogout={handleLogout}
+          >
+            <GrantsListing {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="council/grant-details"
+        element={
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COUNCIL_ADMIN]}
+            onLogout={handleLogout}
+          >
+            <GrantDetails {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="council/communication-settings"
+        element={
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COUNCIL_ADMIN]}
+            onLogout={handleLogout}
+          >
+            <CommunicationSettings {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="council/qr-code-management"
+        element={
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COUNCIL_ADMIN]}
+            onLogout={handleLogout}
+          >
+            <QRCodeManagement {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="council/community-voting"
+        element={
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COUNCIL_ADMIN]}
+            onLogout={handleLogout}
+          >
+            <CommunityVoting {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="council/grant-map"
+        element={
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COUNCIL_ADMIN]}
+            onLogout={handleLogout}
+          >
+            <PublicGrantMap {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="council/resource-hub"
+        element={
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COUNCIL_ADMIN]}
+            onLogout={handleLogout}
+          >
+            <ResourceHub {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ── Council Staff Routes ───────────────────────────────────────── */}
+      <Route
+        path="staff/dashboard"
+        element={
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COUNCIL_STAFF]}
+            onLogout={handleLogout}
+          >
+            <CouncilStaffDashboard {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="staff/grants"
+        element={
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COUNCIL_STAFF]}
+            onLogout={handleLogout}
+          >
+            <GrantsListing {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="staff/grant-details"
+        element={
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COUNCIL_STAFF]}
+            onLogout={handleLogout}
+          >
+            <GrantDetails {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="staff/admin-approvals"
+        element={
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COUNCIL_STAFF]}
+            onLogout={handleLogout}
+          >
+            <AdminApprovalDashboard {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="staff/community-voting"
+        element={
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COUNCIL_STAFF]}
+            onLogout={handleLogout}
+          >
+            <CommunityVoting {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="staff/grant-map"
+        element={
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COUNCIL_STAFF]}
+            onLogout={handleLogout}
+          >
+            <PublicGrantMap {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="staff/resource-hub"
+        element={
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COUNCIL_STAFF]}
+            onLogout={handleLogout}
+          >
+            <ResourceHub {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ── Community Member Routes ────────────────────────────────────── */}
+      <Route
+        path="community/dashboard"
+        element={
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COMMUNITY_MEMBER]}
+            onLogout={handleLogout}
+          >
+            <CommunityMemberDashboard {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="community/grants"
+        element={
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COMMUNITY_MEMBER]}
+            onLogout={handleLogout}
+          >
+            <GrantsListing {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="community/grant-details"
+        element={
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COMMUNITY_MEMBER]}
+            onLogout={handleLogout}
+          >
+            <GrantDetails {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="community/application-form"
+        element={
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COMMUNITY_MEMBER]}
+            onLogout={handleLogout}
+          >
+            <ApplicationForm {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="community/community-forum"
+        element={
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COMMUNITY_MEMBER]}
+            onLogout={handleLogout}
+          >
+            <CommunityForum {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="community/resource-hub"
+        element={
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COMMUNITY_MEMBER]}
+            onLogout={handleLogout}
+          >
+            <ResourceHub {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="community/winners-showcase"
+        element={
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COMMUNITY_MEMBER]}
+            onLogout={handleLogout}
+          >
+            <WinnersShowcase {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="community/community-voting"
+        element={
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COMMUNITY_MEMBER]}
+            onLogout={handleLogout}
+          >
+            <CommunityVoting {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="community/grant-map"
+        element={
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COMMUNITY_MEMBER]}
+            onLogout={handleLogout}
+          >
+            <PublicGrantMap {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Fallback */}
+      <Route
+        path="*"
+        element={
+          currentUser ? (
+            <Navigate to={ROLE_HOME[role] || '/portal/community/dashboard'} replace />
+          ) : (
+            <Navigate to="/portal/login" replace />
+          )
+        }
+      />
     </Routes>
   );
 }
 
-// ── Root export ───────────────────────────────────────────────────────────────
+// ── Root export ──────────────────────────────────────────────────────────────
 export default function PortalApp() {
   return (
     <TenantProvider>

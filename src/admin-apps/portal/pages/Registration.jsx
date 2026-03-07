@@ -1,731 +1,834 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card.jsx';
+import React, { useMemo, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@shared/components/ui/card.jsx';
 import { Button } from '@shared/components/ui/button.jsx';
 import { Input } from '@shared/components/ui/input.jsx';
 import { Badge } from '@shared/components/ui/badge.jsx';
-import { 
-  Building, 
-  Users, 
-  Briefcase, 
-  Shield, 
-  CheckCircle, 
+import {
+  Building2,
+  Users,
+  ShieldCheck,
+  CheckCircle2,
   AlertCircle,
   Mail,
   Phone,
   MapPin,
-  FileText,
   Upload,
   ArrowRight,
-  ArrowLeft
+  ArrowLeft,
+  UserCircle2,
+  LockKeyhole,
 } from 'lucide-react';
 
-const Registration = () => {
+const ROLE_OPTIONS = [
+  {
+    id: 'community_member',
+    name: 'Community Member',
+    description: 'For individuals or organisations applying for grants and participating in the community portal.',
+    icon: Users,
+    badge: 'Instant access',
+    tone: 'purple',
+    requirements: [
+      'Valid email address',
+      'Basic personal details',
+      'Organisation details if applying on behalf of a group',
+      'Most accounts can start immediately',
+    ],
+  },
+  {
+    id: 'council_staff',
+    name: 'Council Staff',
+    description: 'For council team members who review applications or manage grant workflows.',
+    icon: Building2,
+    badge: 'Verification required',
+    tone: 'green',
+    requirements: [
+      'Official council email required',
+      'Council name, department, and role',
+      'Review by council admin or GrantThrive admin',
+      'Usually approved within 1–2 business days',
+    ],
+  },
+];
+
+const STEP_TITLES = [
+  'Choose account type',
+  'Personal details',
+  'Organisation details',
+  'Verification',
+  'Complete',
+];
+
+const toneClasses = {
+  purple: {
+    ring: 'ring-purple-200',
+    border: 'border-purple-300',
+    bgSoft: 'bg-purple-50',
+    iconBg: 'bg-purple-100',
+    iconText: 'text-purple-700',
+    badge: 'bg-purple-100 text-purple-800 border-purple-200',
+    accent: 'text-purple-700',
+  },
+  green: {
+    ring: 'ring-green-200',
+    border: 'border-green-300',
+    bgSoft: 'bg-green-50',
+    iconBg: 'bg-green-100',
+    iconText: 'text-green-700',
+    badge: 'bg-green-100 text-green-800 border-green-200',
+    accent: 'text-green-700',
+  },
+};
+
+function validateGovernmentEmail(email) {
+  const value = email.trim().toLowerCase();
+  const auGov = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.gov\.au$/;
+  const nzGov = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.govt\.nz$/;
+  return auGov.test(value) || nzGov.test(value);
+}
+
+function getRoleLabel(userType) {
+  return ROLE_OPTIONS.find((item) => item.id === userType)?.name || '';
+}
+
+export default function Registration({ onLogin }) {
   const [step, setStep] = useState(1);
   const [userType, setUserType] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+
   const [formData, setFormData] = useState({
-    // Personal Information
     firstName: '',
     lastName: '',
     email: '',
     phone: '',
-    
-    // Organization Information
     organizationName: '',
     organizationType: '',
     abn: '',
     address: '',
-    website: '',
-    
-    // Role-specific Information
+    councilName: '',
     position: '',
     department: '',
-    yearsExperience: '',
-    
-    // Verification Documents
     documents: [],
-    
-    // Council-specific
-    councilName: '',
-    councilEmail: '',
-    supervisorName: '',
-    supervisorEmail: ''
   });
 
-  const userTypes = [
-    {
-      id: 'community_member',
-      name: 'Community Member',
-      description: 'Individual or community organization seeking grants',
-      icon: Users,
-      color: 'purple',
-      requirements: [
-        'Valid email address',
-        'Organization details (if applicable)',
-        'Instant approval for most applications'
-      ],
-      verificationLevel: 'Basic'
-    },
-    {
-      id: 'professional_consultant',
-      name: 'Professional Consultant',
-      description: 'Grant writing professional or consulting service',
-      icon: Briefcase,
-      color: 'orange',
-      requirements: [
-        'Professional credentials verification',
-        'Business registration documents',
-        'Portfolio or experience evidence',
-        'Admin review required (2-3 business days)'
-      ],
-      verificationLevel: 'Enhanced'
-    },
-    {
-      id: 'council_staff',
-      name: 'Council Staff Member',
-      description: 'Local government employee with grant responsibilities',
-      icon: Building,
-      color: 'green',
-      requirements: [
-        'Official government email address required (.gov.au or .govt.nz)',
-        'Position and department information',
-        'Admin verification (1-2 business days)',
-        'Documents may be requested if needed for verification'
-      ],
-      verificationLevel: 'High Security'
+  const selectedRole = ROLE_OPTIONS.find((item) => item.id === userType);
+  const selectedTone = toneClasses[selectedRole?.tone || 'green'];
+
+  const emailError =
+    userType === 'council_staff' && formData.email && !validateGovernmentEmail(formData.email)
+      ? 'Please use your official council email (.gov.au or .govt.nz).'
+      : '';
+
+  const canContinueStep2 =
+    formData.firstName.trim() &&
+    formData.lastName.trim() &&
+    formData.email.trim() &&
+    formData.phone.trim() &&
+    !emailError;
+
+  const canContinueStep3 = useMemo(() => {
+    if (userType === 'council_staff') {
+      return (
+        formData.councilName.trim() &&
+        formData.position.trim() &&
+        formData.department.trim()
+      );
     }
-  ];
 
-  // Government email domain validation for Australia and New Zealand
-  const validateGovernmentEmail = (email) => {
-    const emailLower = email.toLowerCase();
-    
-    // Australian government domains (.gov.au)
-    const australianGovPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.gov\.au$/;
-    
-    // New Zealand government domains (.govt.nz)
-    const newZealandGovPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.govt\.nz$/;
-    
-    return australianGovPattern.test(emailLower) || newZealandGovPattern.test(emailLower);
-  };
-
-  const getEmailDomainExample = () => {
-    return 'name@council.gov.au or name@council.govt.nz';
-  };
+    return (
+      formData.organizationType.trim() &&
+      formData.address.trim() &&
+      (formData.organizationType === 'individual' || formData.organizationName.trim())
+    );
+  }, [formData, userType]);
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
-  const renderUserTypeSelection = () => (
-    <div className="space-y-6">
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-4">Join GrantThrive</h2>
-        <p className="text-lg text-gray-600">
-          Choose your account type to get started with the appropriate verification process
-        </p>
-      </div>
+  const handleSubmit = () => {
+    setSubmitted(true);
+    setStep(5);
+  };
 
-      <div className="grid gap-6">
-        {userTypes.map((type) => {
-          const IconComponent = type.icon;
+  const renderStepHeader = (title, description) => (
+    <div className="mb-8">
+      <h2 className="text-2xl font-bold tracking-tight text-slate-900">{title}</h2>
+      <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
+    </div>
+  );
+
+  const renderRoleSelection = () => (
+    <div>
+      {renderStepHeader(
+        'Create your GrantThrive portal account',
+        'Choose the account type that best matches how you will use the portal.'
+      )}
+
+      <div className="grid gap-5">
+        {ROLE_OPTIONS.map((type) => {
+          const Icon = type.icon;
+          const tone = toneClasses[type.tone];
+          const isSelected = userType === type.id;
+
           return (
-            <Card 
+            <button
               key={type.id}
-              className={`cursor-pointer transition-all duration-300 border-2 hover:shadow-lg ${
-                userType === type.id 
-                  ? `border-${type.color}-500 bg-${type.color}-50` 
-                  : 'border-gray-200 hover:border-gray-300'
-              }`}
+              type="button"
               onClick={() => setUserType(type.id)}
+              className={[
+                'w-full rounded-2xl border bg-white p-5 text-left transition-all duration-200',
+                'hover:shadow-md focus:outline-none focus:ring-2',
+                isSelected
+                  ? `${tone.border} ${tone.bgSoft} ${tone.ring} shadow-sm`
+                  : 'border-slate-200 hover:border-slate-300 focus:ring-slate-200',
+              ].join(' ')}
             >
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  <div className={`p-3 rounded-full bg-${type.color}-100`}>
-                    <IconComponent className={`w-6 h-6 text-${type.color}-600`} />
-                  </div>
-                  
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-xl font-semibold text-gray-900">{type.name}</h3>
-                      <Badge variant={type.verificationLevel === 'High Security' ? 'destructive' : 
-                                   type.verificationLevel === 'Enhanced' ? 'default' : 'secondary'}>
-                        {type.verificationLevel}
-                      </Badge>
-                    </div>
-                    
-                    <p className="text-gray-600 mb-4">{type.description}</p>
-                    
-                    <div className="space-y-2">
-                      <h4 className="font-medium text-gray-900">Requirements:</h4>
-                      <ul className="space-y-1">
-                        {type.requirements.map((req, index) => (
-                          <li key={index} className="flex items-center gap-2 text-sm text-gray-600">
-                            <CheckCircle className="w-4 h-4 text-green-500" />
-                            {req}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                  
-                  {userType === type.id && (
-                    <CheckCircle className={`w-6 h-6 text-${type.color}-600`} />
-                  )}
+              <div className="flex items-start gap-4">
+                <div className={`rounded-2xl p-3 ${tone.iconBg}`}>
+                  <Icon className={`h-6 w-6 ${tone.iconText}`} />
                 </div>
-              </CardContent>
-            </Card>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <h3 className="text-lg font-semibold text-slate-900">{type.name}</h3>
+                    <span
+                      className={`rounded-full border px-2.5 py-1 text-xs font-medium ${tone.badge}`}
+                    >
+                      {type.badge}
+                    </span>
+                  </div>
+
+                  <p className="mt-2 text-sm text-slate-600">{type.description}</p>
+
+                  <div className="mt-4">
+                    <p className="mb-2 text-sm font-medium text-slate-900">What you’ll need</p>
+                    <ul className="space-y-2">
+                      {type.requirements.map((item) => (
+                        <li key={item} className="flex items-start gap-2 text-sm text-slate-600">
+                          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                {isSelected && <CheckCircle2 className={`h-6 w-6 shrink-0 ${tone.accent}`} />}
+              </div>
+            </button>
           );
         })}
       </div>
 
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div className="mt-6 rounded-2xl border border-blue-200 bg-blue-50 p-4">
         <div className="flex items-start gap-3">
-          <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
+          <ShieldCheck className="mt-0.5 h-5 w-5 text-blue-700" />
           <div>
-            <h4 className="font-medium text-blue-900 mb-1">Security Notice</h4>
-            <p className="text-sm text-blue-800">
-              Government staff accounts require verification by your organization's GrantThrive administrator. 
-              Attempting to register with false credentials is prohibited and may result in account suspension.
-              Valid government email domains: .gov.au (Australia) and .govt.nz (New Zealand).
+            <p className="font-medium text-blue-900">Security and access</p>
+            <p className="mt-1 text-sm text-blue-800">
+              Council staff accounts are verified before access is granted. Council admins are
+              typically provisioned through onboarding or invite-based setup, not public sign-up.
             </p>
           </div>
         </div>
       </div>
 
-      {userType && (
-        <Button 
+      <div className="mt-8 flex justify-end">
+        <Button
+          type="button"
           onClick={() => setStep(2)}
-          className="w-full bg-green-700 hover:bg-green-800"
+          disabled={!userType}
+          className="h-11 rounded-xl bg-emerald-700 px-6 hover:bg-emerald-800"
         >
-          Continue with {userTypes.find(t => t.id === userType)?.name}
-          <ArrowRight className="w-4 h-4 ml-2" />
+          Continue
+          <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
-      )}
+      </div>
     </div>
   );
 
-  const renderPersonalInformation = () => (
-    <div className="space-y-6">
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Personal Information</h2>
-        <p className="text-gray-600">
-          Registering as: <Badge className="ml-2">{userTypes.find(t => t.id === userType)?.name}</Badge>
-        </p>
+  const renderPersonalInfo = () => (
+    <div>
+      {renderStepHeader(
+        'Personal details',
+        'Tell us who you are. These details help us create and secure your account.'
+      )}
+
+      <div className="mb-6 flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <UserCircle2 className="h-5 w-5 text-slate-600" />
+        <div className="text-sm text-slate-700">
+          Registering as <span className="font-semibold">{getRoleLabel(userType)}</span>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            First Name *
-          </label>
+          <label className="mb-2 block text-sm font-medium text-slate-700">First name *</label>
           <Input
             value={formData.firstName}
             onChange={(e) => handleInputChange('firstName', e.target.value)}
             placeholder="Enter your first name"
-            required
+            className="h-11 rounded-xl"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Last Name *
-          </label>
+          <label className="mb-2 block text-sm font-medium text-slate-700">Last name *</label>
           <Input
             value={formData.lastName}
             onChange={(e) => handleInputChange('lastName', e.target.value)}
             placeholder="Enter your last name"
-            required
+            className="h-11 rounded-xl"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Email Address *
+          <label className="mb-2 block text-sm font-medium text-slate-700">
+            Email address *
             {userType === 'council_staff' && (
-              <span className="text-red-600 text-xs ml-1">(Must be official government email)</span>
+              <span className="ml-1 text-xs text-rose-600">Official council email only</span>
             )}
           </label>
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <Input
               type="email"
               value={formData.email}
               onChange={(e) => handleInputChange('email', e.target.value)}
-              placeholder={userType === 'council_staff' ? getEmailDomainExample() : 'your.email@example.com'}
-              className="pl-10"
-              required
+              placeholder={
+                userType === 'council_staff'
+                  ? 'name@council.gov.au or name@council.govt.nz'
+                  : 'your.email@example.com'
+              }
+              className={`h-11 rounded-xl pl-10 ${emailError ? 'border-rose-300 focus-visible:ring-rose-200' : ''}`}
             />
           </div>
-          {userType === 'council_staff' && formData.email && !validateGovernmentEmail(formData.email) && (
-            <div className="flex items-center gap-2 mt-2 text-red-600 text-sm">
-              <AlertCircle className="w-4 h-4" />
-              Please use your official government email address (.gov.au for Australia or .govt.nz for New Zealand)
+          {emailError && (
+            <div className="mt-2 flex items-center gap-2 text-sm text-rose-600">
+              <AlertCircle className="h-4 w-4" />
+              <span>{emailError}</span>
             </div>
           )}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Phone Number *
-          </label>
+          <label className="mb-2 block text-sm font-medium text-slate-700">Phone number *</label>
           <div className="relative">
-            <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <Input
               type="tel"
               value={formData.phone}
               onChange={(e) => handleInputChange('phone', e.target.value)}
-              placeholder="+61 4XX XXX XXX"
-              className="pl-10"
-              required
+              placeholder="+61 or +64 number"
+              className="h-11 rounded-xl pl-10"
             />
           </div>
         </div>
       </div>
 
-      <div className="flex gap-4">
-        <Button 
-          variant="outline" 
-          onClick={() => setStep(1)}
-          className="flex-1"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
+      <div className="mt-8 flex gap-3">
+        <Button type="button" variant="outline" onClick={() => setStep(1)} className="h-11 flex-1 rounded-xl">
+          <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </Button>
-        <Button 
+        <Button
+          type="button"
           onClick={() => setStep(3)}
-          className="flex-1 bg-green-700 hover:bg-green-800"
-          disabled={!formData.firstName || !formData.lastName || !formData.email || !formData.phone}
+          disabled={!canContinueStep2}
+          className="h-11 flex-1 rounded-xl bg-emerald-700 hover:bg-emerald-800"
         >
           Continue
-          <ArrowRight className="w-4 h-4 ml-2" />
+          <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
       </div>
     </div>
   );
 
-  const renderOrganizationInformation = () => (
-    <div className="space-y-6">
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Organization Information</h2>
-        <p className="text-gray-600">
-          {userType === 'council_staff' 
-            ? 'Verify your council employment details'
-            : 'Tell us about your organization'
-          }
-        </p>
-      </div>
+  const renderOrganisationInfo = () => (
+    <div>
+      {renderStepHeader(
+        userType === 'council_staff' ? 'Council details' : 'Organisation details',
+        userType === 'council_staff'
+          ? 'Help us verify your council role and where you work.'
+          : 'Tell us about the organisation or individual account using GrantThrive.'
+      )}
 
       {userType === 'council_staff' ? (
-        <div className="space-y-6">
+        <div className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Council Name *
-            </label>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Council name *</label>
             <Input
               value={formData.councilName}
               onChange={(e) => handleInputChange('councilName', e.target.value)}
-              placeholder="e.g., Melbourne City Council"
-              required
+              placeholder="e.g. Melbourne City Council"
+              className="h-11 rounded-xl"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Position/Job Title *
-            </label>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Position / job title *</label>
             <Input
               value={formData.position}
               onChange={(e) => handleInputChange('position', e.target.value)}
-              placeholder="e.g., Grants Officer, Community Development Manager"
-              required
+              placeholder="e.g. Grants Officer"
+              className="h-11 rounded-xl"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Department *
-            </label>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Department *</label>
             <Input
               value={formData.department}
               onChange={(e) => handleInputChange('department', e.target.value)}
-              placeholder="e.g., Community Services, Economic Development"
-              required
+              placeholder="e.g. Community Services"
+              className="h-11 rounded-xl"
             />
           </div>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
             <div className="flex items-start gap-3">
-              <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
+              <LockKeyhole className="mt-0.5 h-5 w-5 text-blue-700" />
               <div>
-                <h4 className="font-medium text-blue-900 mb-1">Verification Process</h4>
-                <p className="text-sm text-blue-800">
-                  Your application will be reviewed by the GrantThrive administrator at your organization. 
-                  They may contact you directly if additional verification is needed. 
-                  Most applications are processed within 1-2 business days.
+                <p className="font-medium text-blue-900">Verification flow</p>
+                <p className="mt-1 text-sm text-blue-800">
+                  Your request may be reviewed by a council admin or the GrantThrive platform team
+                  before access is approved.
                 </p>
               </div>
             </div>
           </div>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Organization Name *
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              Organisation type *
             </label>
-            <Input
-              value={formData.organizationName}
-              onChange={(e) => handleInputChange('organizationName', e.target.value)}
-              placeholder="Enter your organization name"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Organization Type *
-            </label>
-            <select 
-              className="w-full p-2 border border-gray-300 rounded-md"
+            <select
+              className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none focus:border-slate-400"
               value={formData.organizationType}
               onChange={(e) => handleInputChange('organizationType', e.target.value)}
-              required
             >
-              <option value="">Select organization type</option>
-              <option value="nonprofit">Non-profit Organization</option>
-              <option value="community_group">Community Group</option>
-              <option value="sports_club">Sports Club</option>
-              <option value="arts_organization">Arts Organization</option>
-              <option value="business">Business/Enterprise</option>
-              <option value="consulting">Consulting Firm</option>
+              <option value="">Select organisation type</option>
               <option value="individual">Individual</option>
+              <option value="nonprofit">Non-profit organisation</option>
+              <option value="community_group">Community group</option>
+              <option value="sports_club">Sports club</option>
+              <option value="arts_organization">Arts organisation</option>
+              <option value="business">Business / enterprise</option>
               <option value="other">Other</option>
             </select>
           </div>
 
           {formData.organizationType !== 'individual' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                ABN (if applicable)
-              </label>
+              <label className="mb-2 block text-sm font-medium text-slate-700">Organisation name *</label>
+              <Input
+                value={formData.organizationName}
+                onChange={(e) => handleInputChange('organizationName', e.target.value)}
+                placeholder="Enter your organisation name"
+                className="h-11 rounded-xl"
+              />
+            </div>
+          )}
+
+          {formData.organizationType && formData.organizationType !== 'individual' && (
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">ABN (optional)</label>
               <Input
                 value={formData.abn}
                 onChange={(e) => handleInputChange('abn', e.target.value)}
                 placeholder="XX XXX XXX XXX"
+                className="h-11 rounded-xl"
               />
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Address *
-            </label>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Address *</label>
             <div className="relative">
-              <MapPin className="absolute left-3 top-3 text-gray-400 w-4 h-4" />
+              <MapPin className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
               <textarea
-                className="w-full pl-10 p-2 border border-gray-300 rounded-md"
-                rows="3"
+                rows="4"
                 value={formData.address}
                 onChange={(e) => handleInputChange('address', e.target.value)}
-                placeholder="Full address including postcode"
-                required
+                placeholder="Enter your address including postcode"
+                className="w-full rounded-xl border border-slate-300 py-2.5 pl-10 pr-3 text-sm text-slate-900 outline-none focus:border-slate-400"
               />
             </div>
           </div>
-
-          {userType === 'professional_consultant' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Years of Experience *
-              </label>
-              <select 
-                className="w-full p-2 border border-gray-300 rounded-md"
-                value={formData.yearsExperience}
-                onChange={(e) => handleInputChange('yearsExperience', e.target.value)}
-                required
-              >
-                <option value="">Select experience level</option>
-                <option value="0-2">0-2 years</option>
-                <option value="3-5">3-5 years</option>
-                <option value="6-10">6-10 years</option>
-                <option value="10+">10+ years</option>
-              </select>
-            </div>
-          )}
         </div>
       )}
 
-      <div className="flex gap-4">
-        <Button 
-          variant="outline" 
-          onClick={() => setStep(2)}
-          className="flex-1"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
+      <div className="mt-8 flex gap-3">
+        <Button type="button" variant="outline" onClick={() => setStep(2)} className="h-11 flex-1 rounded-xl">
+          <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </Button>
-        <Button 
+        <Button
+          type="button"
           onClick={() => setStep(4)}
-          className="flex-1 bg-green-700 hover:bg-green-800"
+          disabled={!canContinueStep3}
+          className="h-11 flex-1 rounded-xl bg-emerald-700 hover:bg-emerald-800"
         >
           Continue
-          <ArrowRight className="w-4 h-4 ml-2" />
+          <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
       </div>
     </div>
   );
 
-  const renderDocumentUpload = () => (
-    <div className="space-y-6">
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Document Verification</h2>
-        <p className="text-gray-600">
-          Upload required documents for account verification
+  const renderVerification = () => (
+    <div>
+      {renderStepHeader(
+        'Verification and review',
+        'Upload supporting information if applicable, then submit your registration request.'
+      )}
+
+      <div className="space-y-5">
+        {userType === 'council_staff' ? (
+          <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-8 text-center">
+            <Upload className="mx-auto h-10 w-10 text-slate-400" />
+            <h3 className="mt-4 text-lg font-semibold text-slate-900">
+              Upload proof of council identity
+            </h3>
+            <p className="mt-2 text-sm text-slate-600">
+              Employee ID, staff card, or council-issued business identification.
+            </p>
+            <Button type="button" variant="outline" className="mt-5 rounded-xl">
+              <Upload className="mr-2 h-4 w-4" />
+              Upload document
+            </Button>
+          </div>
+        ) : formData.organizationType !== 'individual' ? (
+          <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-8 text-center">
+            <Upload className="mx-auto h-10 w-10 text-slate-400" />
+            <h3 className="mt-4 text-lg font-semibold text-slate-900">
+              Upload supporting organisation documents
+            </h3>
+            <p className="mt-2 text-sm text-slate-600">
+              Optional: constitution, registration certificate, or proof of organisation.
+            </p>
+            <Button type="button" variant="outline" className="mt-5 rounded-xl">
+              <Upload className="mr-2 h-4 w-4" />
+              Upload document
+            </Button>
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+            <div className="flex items-start gap-3">
+              <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-700" />
+              <div>
+                <p className="font-medium text-emerald-900">No additional documents required</p>
+                <p className="mt-1 text-sm text-emerald-800">
+                  You can continue and complete your registration now.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
+          <div className="flex items-start gap-3">
+            <ShieldCheck className="mt-0.5 h-5 w-5 text-blue-700" />
+            <div>
+              <p className="font-medium text-blue-900">Document security</p>
+              <p className="mt-1 text-sm text-blue-800">
+                Any uploaded materials are used only for account verification and stored securely.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-8 flex gap-3">
+        <Button type="button" variant="outline" onClick={() => setStep(3)} className="h-11 flex-1 rounded-xl">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back
+        </Button>
+        <Button
+          type="button"
+          onClick={handleSubmit}
+          className="h-11 flex-1 rounded-xl bg-emerald-700 hover:bg-emerald-800"
+        >
+          Submit registration
+          <ArrowRight className="ml-2 h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+
+  const renderComplete = () => (
+    <div>
+      <div className="text-center">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
+          <CheckCircle2 className="h-9 w-9 text-emerald-700" />
+        </div>
+        <h2 className="mt-5 text-2xl font-bold text-slate-900">Registration submitted</h2>
+        <p className="mt-2 text-sm text-slate-600">
+          We’ve received your request and sent a confirmation to <strong>{formData.email}</strong>.
         </p>
       </div>
 
-      <div className="space-y-6">
-        {userType === 'council_staff' && (
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-            <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Employee ID or Business Card</h3>
-            <p className="text-gray-600 mb-4">
-              Upload a photo of your council employee ID or business card
-            </p>
-            <Button variant="outline">
-              <Upload className="w-4 h-4 mr-2" />
-              Upload Document
-            </Button>
-          </div>
-        )}
-
-        {userType === 'professional_consultant' && (
-          <>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-              <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Professional Credentials</h3>
-              <p className="text-gray-600 mb-4">
-                Upload certificates, qualifications, or professional memberships
-              </p>
-              <Button variant="outline">
-                <Upload className="w-4 h-4 mr-2" />
-                Upload Credentials
-              </Button>
-            </div>
-
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-              <Briefcase className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Portfolio or Work Samples</h3>
-              <p className="text-gray-600 mb-4">
-                Upload examples of successful grant applications or consulting work
-              </p>
-              <Button variant="outline">
-                <Upload className="w-4 h-4 mr-2" />
-                Upload Portfolio
-              </Button>
-            </div>
-          </>
-        )}
-
-        {userType === 'community_member' && formData.organizationType !== 'individual' && (
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-            <Building className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Organization Documents</h3>
-            <p className="text-gray-600 mb-4">
-              Upload incorporation certificate, constitution, or registration documents (optional)
-            </p>
-            <Button variant="outline">
-              <Upload className="w-4 h-4 mr-2" />
-              Upload Documents
-            </Button>
-          </div>
-        )}
-      </div>
-
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <div className="flex items-start gap-3">
-          <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
-          <div>
-            <h4 className="font-medium text-blue-900 mb-1">Document Security</h4>
-            <p className="text-sm text-blue-800">
-              All uploaded documents are encrypted and stored securely. They are only used for verification purposes 
-              and are not shared with third parties.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex gap-4">
-        <Button 
-          variant="outline" 
-          onClick={() => setStep(3)}
-          className="flex-1"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
-        </Button>
-        <Button 
-          onClick={() => setStep(5)}
-          className="flex-1 bg-green-700 hover:bg-green-800"
-        >
-          Continue
-          <ArrowRight className="w-4 h-4 ml-2" />
-        </Button>
-      </div>
-    </div>
-  );
-
-  const renderSubmission = () => {
-    const selectedUserType = userTypes.find(t => t.id === userType);
-    
-    return (
-      <div className="space-y-6">
-        <div className="text-center mb-8">
-          <CheckCircle className="w-16 h-16 text-green-600 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Registration Submitted!</h2>
-          <p className="text-gray-600">
-            Your application has been received and is being processed
-          </p>
-        </div>
-
-        <Card>
+      <div className="mt-8 grid gap-5 lg:grid-cols-2">
+        <Card className="rounded-2xl border-slate-200 shadow-none">
           <CardHeader>
-            <CardTitle>What happens next?</CardTitle>
+            <CardTitle className="text-lg">Next steps</CardTitle>
+            <CardDescription>
+              What happens after you finish this registration.
+            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3 text-sm text-slate-700">
             {userType === 'community_member' ? (
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  <span>Account activated immediately</span>
+              <>
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-600" />
+                  <span>Your portal account can usually be activated immediately.</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  <span>Welcome email sent to {formData.email}</span>
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-600" />
+                  <span>You can begin browsing grants and managing applications.</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  <span>You can start browsing and applying for grants</span>
-                </div>
-              </div>
+              </>
             ) : (
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-yellow-500 text-white flex items-center justify-center text-xs">1</div>
-                  <span>Document verification (1-2 business days)</span>
+              <>
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 text-amber-600" />
+                  <span>Your request enters council/admin verification.</span>
                 </div>
-                {userType === 'council_staff' && (
-                  <div className="flex items-center gap-3">
-                    <div className="w-5 h-5 rounded-full bg-yellow-500 text-white flex items-center justify-center text-xs">2</div>
-                    <span>Supervisor confirmation via email</span>
-                  </div>
-                )}
-                <div className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs">
-                    {userType === 'council_staff' ? '3' : '2'}
-                  </div>
-                  <span>Admin review and approval</span>
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 text-amber-600" />
+                  <span>Approval usually takes 1–2 business days.</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-green-500 text-white flex items-center justify-center text-xs">
-                    {userType === 'council_staff' ? '4' : '3'}
-                  </div>
-                  <span>Account activation email sent</span>
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-600" />
+                  <span>You will receive access details by email once approved.</span>
                 </div>
-              </div>
+              </>
             )}
           </CardContent>
         </Card>
 
-        <div className="bg-gray-50 rounded-lg p-6">
-          <h3 className="font-medium text-gray-900 mb-4">Registration Summary</h3>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-gray-600">Account Type:</span>
-              <span className="font-medium">{selectedUserType?.name}</span>
+        <Card className="rounded-2xl border-slate-200 shadow-none">
+          <CardHeader>
+            <CardTitle className="text-lg">Summary</CardTitle>
+            <CardDescription>Your submitted account details.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <div className="flex justify-between gap-4">
+              <span className="text-slate-500">Account type</span>
+              <span className="font-medium text-slate-900">{getRoleLabel(userType)}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Name:</span>
-              <span className="font-medium">{formData.firstName} {formData.lastName}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Email:</span>
-              <span className="font-medium">{formData.email}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Organization:</span>
-              <span className="font-medium">
-                {userType === 'council_staff' ? formData.councilName : formData.organizationName}
+            <div className="flex justify-between gap-4">
+              <span className="text-slate-500">Name</span>
+              <span className="font-medium text-slate-900">
+                {formData.firstName} {formData.lastName}
               </span>
             </div>
-          </div>
-        </div>
-
-        <Button 
-          onClick={() => window.location.href = '/login'}
-          className="w-full bg-green-700 hover:bg-green-800"
-        >
-          {userType === 'community_member' ? 'Login to Your Account' : 'Return to Login'}
-        </Button>
-      </div>
-    );
-  };
-
-  const steps = [
-    { number: 1, title: 'Account Type', component: renderUserTypeSelection },
-    { number: 2, title: 'Personal Info', component: renderPersonalInformation },
-    { number: 3, title: 'Organization', component: renderOrganizationInformation },
-    { number: 4, title: 'Verification', component: renderDocumentUpload },
-    { number: 5, title: 'Complete', component: renderSubmission }
-  ];
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8">
-      <div className="max-w-4xl mx-auto px-4">
-        {/* Progress Bar */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            {steps.map((stepItem, index) => (
-              <div key={stepItem.number} className="flex items-center">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium ${
-                  step >= stepItem.number 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-gray-200 text-gray-600'
-                }`}>
-                  {step > stepItem.number ? (
-                    <CheckCircle className="w-5 h-5" />
-                  ) : (
-                    stepItem.number
-                  )}
-                </div>
-                {index < steps.length - 1 && (
-                  <div className={`w-16 h-1 mx-2 ${
-                    step > stepItem.number ? 'bg-blue-600' : 'bg-gray-200'
-                  }`} />
-                )}
-              </div>
-            ))}
-          </div>
-          <div className="text-center">
-            <h1 className="text-sm font-medium text-gray-600">
-              Step {step} of {steps.length}: {steps[step - 1]?.title}
-            </h1>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <Card className="bg-white shadow-xl">
-          <CardContent className="p-8">
-            {steps[step - 1]?.component()}
+            <div className="flex justify-between gap-4">
+              <span className="text-slate-500">Email</span>
+              <span className="font-medium text-slate-900">{formData.email}</span>
+            </div>
+            <div className="flex justify-between gap-4">
+              <span className="text-slate-500">Organisation</span>
+              <span className="font-medium text-slate-900">
+                {userType === 'council_staff'
+                  ? formData.councilName
+                  : formData.organizationType === 'individual'
+                    ? 'Individual'
+                    : formData.organizationName}
+              </span>
+            </div>
           </CardContent>
         </Card>
       </div>
+
+      <div className="mt-8">
+        <Button
+          type="button"
+          onClick={() => {
+            if (typeof onLogin === 'function' && userType === 'community_member') {
+              onLogin({
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                email: formData.email,
+                role: 'community_member',
+              });
+              return;
+            }
+
+            window.location.href = '/portal/login';
+          }}
+          className="h-11 w-full rounded-xl bg-emerald-700 hover:bg-emerald-800"
+        >
+          {userType === 'community_member' ? 'Continue to portal' : 'Return to login'}
+        </Button>
+      </div>
     </div>
   );
-};
 
-export default Registration;
+  const renderCurrentStep = () => {
+    if (step === 1) return renderRoleSelection();
+    if (step === 2) return renderPersonalInfo();
+    if (step === 3) return renderOrganisationInfo();
+    if (step === 4) return renderVerification();
+    return renderComplete();
+  };
 
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50">
+      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mb-8 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-800">
+              <ShieldCheck className="h-3.5 w-3.5" />
+              Secure portal onboarding
+            </div>
+            <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-900">
+              Register for GrantThrive Portal
+            </h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+              Create your portal account to apply for grants, manage council workflows, or
+              participate in community grant programs.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Step</p>
+            <p className="mt-1 text-sm font-semibold text-slate-900">
+              {step} of {STEP_TITLES.length} — {STEP_TITLES[step - 1]}
+            </p>
+          </div>
+        </div>
+
+        {/* <div className="mb-8 overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex flex-wrap items-center gap-3">
+            {STEP_TITLES.map((title, index) => {
+              const stepNumber = index + 1;
+              const active = step === stepNumber;
+              const complete = step > stepNumber;
+
+              return (
+                <div key={title} className="flex items-center gap-3">
+                  <div
+                    className={[
+                      'flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold',
+                      complete
+                        ? 'bg-emerald-600 text-white'
+                        : active
+                          ? 'bg-slate-900 text-white'
+                          : 'bg-slate-100 text-slate-500',
+                    ].join(' ')}
+                  >
+                    {complete ? <CheckCircle2 className="h-4 w-4" /> : stepNumber}
+                  </div>
+                  <span
+                    className={`text-sm ${
+                      active || complete ? 'font-medium text-slate-900' : 'text-slate-500'
+                    }`}
+                  >
+                    {title}
+                  </span>
+                  {stepNumber < STEP_TITLES.length && (
+                    <div className="hidden h-px w-8 bg-slate-200 md:block" />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div> */}
+        <div className="mb-8 rounded-3xl border border-slate-200 bg-white px-6 py-5 shadow-sm">
+  <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+        Registration progress
+      </p>
+      <h2 className="mt-1 text-2xl font-bold tracking-tight text-slate-900">
+        Step {step} of {STEP_TITLES.length}
+      </h2>
+    </div>
+
+    <div className="inline-flex w-fit items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm font-medium text-slate-700">
+      {STEP_TITLES[step - 1]}
+    </div>
+  </div>
+
+  <div className="overflow-x-auto">
+    <div className="flex min-w-max items-start gap-0 py-1">
+      {STEP_TITLES.map((title, index) => {
+        const stepNumber = index + 1;
+        const isComplete = step > stepNumber;
+        const isActive = step === stepNumber;
+
+        return (
+          <React.Fragment key={title}>
+            <div className="flex min-w-[190px] items-start gap-3">
+              <div
+                className={[
+                  'mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-full border text-sm font-semibold transition-all duration-200',
+                  isComplete
+                    ? 'border-emerald-600 bg-emerald-600 text-white shadow-sm'
+                    : isActive
+                      ? 'border-slate-900 bg-slate-900 text-white ring-4 ring-slate-100'
+                      : 'border-slate-200 bg-white text-slate-500',
+                ].join(' ')}
+              >
+                {isComplete ? <CheckCircle2 className="h-5 w-5" /> : stepNumber}
+              </div>
+
+              <div className="min-w-0">
+                <p
+                  className={[
+                    'text-sm font-semibold leading-5',
+                    isComplete || isActive ? 'text-slate-900' : 'text-slate-500',
+                  ].join(' ')}
+                >
+                  {title}
+                </p>
+
+                <p className="mt-1 text-xs leading-4">
+                  {isComplete ? (
+                    <span className="font-medium text-emerald-700">Completed</span>
+                  ) : isActive ? (
+                    <span className="font-medium text-slate-700">Current step</span>
+                  ) : (
+                    <span className="text-slate-400">Upcoming</span>
+                  )}
+                </p>
+              </div>
+            </div>
+
+            {stepNumber < STEP_TITLES.length && (
+              <div className="mx-4 mt-5 h-[2px] w-14 shrink-0 rounded-full bg-slate-200">
+                <div
+                  className={`h-[2px] rounded-full transition-all duration-300 ${
+                    step > stepNumber ? 'w-full bg-emerald-600' : 'w-0 bg-emerald-600'
+                  }`}
+                />
+              </div>
+            )}
+          </React.Fragment>
+        );
+      })}
+    </div>
+  </div>
+</div>
+        <Card className="rounded-3xl border-slate-200 shadow-xl shadow-slate-200/50">
+          <CardContent className="p-6 sm:p-8 lg:p-10">{renderCurrentStep()}</CardContent>
+        </Card>
+
+        {!submitted && (
+          <div className="mt-6 text-center text-sm text-slate-500">
+            Already have an account?{' '}
+            <a href="/portal/login" className="font-medium text-emerald-700 hover:text-emerald-800">
+              Sign in
+            </a>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

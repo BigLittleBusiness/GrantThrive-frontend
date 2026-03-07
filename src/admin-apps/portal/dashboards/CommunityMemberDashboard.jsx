@@ -1,27 +1,26 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card.jsx';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@shared/components/ui/card.jsx';
 import { Badge } from '@shared/components/ui/badge.jsx';
 import { Button } from '@shared/components/ui/button.jsx';
-import { 
-  FileText, 
-  Clock, 
+import {
+  FileText,
+  Clock,
   DollarSign,
-  Star,
   TrendingUp,
-  Users,
   Calendar,
   MessageSquare,
   Trophy,
   BookOpen,
-  Plus,
   Eye,
   ArrowRight,
-  CheckCircle,
+  CheckCircle2,
   AlertCircle,
-  Download,
   Vote,
   Map,
-  LogOut
+  LogOut,
+  Sparkles,
+  Target,
+  FolderOpen,
 } from 'lucide-react';
 
 const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
@@ -31,7 +30,6 @@ const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
     approvedApplications: 2,
     totalFundingReceived: 85000,
     successRate: 67,
-    communityRank: 'Gold Member'
   };
 
   const myApplications = [
@@ -45,7 +43,7 @@ const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
       council: 'Melbourne City Council',
       progress: 60,
       nextStep: 'Awaiting committee review',
-      estimatedDecision: '2024-02-25'
+      estimatedDecision: '2024-02-25',
     },
     {
       id: 2,
@@ -57,7 +55,7 @@ const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
       council: 'Melbourne City Council',
       progress: 100,
       nextStep: 'Funding agreement signed',
-      estimatedDecision: 'Completed'
+      estimatedDecision: 'Completed',
     },
     {
       id: 3,
@@ -69,8 +67,8 @@ const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
       council: 'Melbourne City Council',
       progress: 30,
       nextStep: 'Provide additional documentation',
-      estimatedDecision: '2024-03-01'
-    }
+      estimatedDecision: '2024-03-01',
+    },
   ];
 
   const recommendedGrants = [
@@ -83,7 +81,7 @@ const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
       council: 'Melbourne City Council',
       category: 'Arts & Culture',
       applicants: 18,
-      matchScore: 95
+      matchScore: 95,
     },
     {
       id: 2,
@@ -94,8 +92,8 @@ const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
       council: 'Port Phillip Council',
       category: 'Health',
       applicants: 12,
-      matchScore: 88
-    }
+      matchScore: 88,
+    },
   ];
 
   const upcomingEvents = [
@@ -106,7 +104,7 @@ const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
       time: '2:00 PM - 4:00 PM',
       type: 'Workshop',
       location: 'Melbourne Town Hall',
-      spots: 15
+      spots: 15,
     },
     {
       id: 2,
@@ -115,374 +113,494 @@ const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
       time: '6:00 PM - 7:30 PM',
       type: 'Information Session',
       location: 'Online',
-      spots: 50
+      spots: 50,
+    },
+  ];
+
+  const nextActions = [
+    {
+      id: 1,
+      title: 'Upload supporting documents',
+      detail: 'Senior Citizens Digital Literacy',
+      tone: 'amber',
+    },
+    {
+      id: 2,
+      title: 'Review decision timeline',
+      detail: 'Youth Music Program Expansion',
+      tone: 'blue',
     },
     {
       id: 3,
-      title: 'Successful Applicants Networking Event',
-      date: '2024-03-05',
-      time: '5:30 PM - 8:00 PM',
-      type: 'Networking',
-      location: 'Federation Square',
-      spots: 8
-    }
+      title: 'Explore matched grants',
+      detail: '2 opportunities recommended',
+      tone: 'green',
+    },
   ];
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-AU', {
+  const formatCurrency = (amount) =>
+    new Intl.NumberFormat('en-AU', {
       style: 'currency',
       currency: 'AUD',
       minimumFractionDigits: 0,
     }).format(amount);
-  };
 
-  const getStatusColor = (status) => {
+  const getStatusMeta = (status) => {
     switch (status) {
-      case 'under_review': return 'bg-blue-100 text-blue-800';
-      case 'approved': return 'bg-green-100 text-green-800';
-      case 'in_progress': return 'bg-yellow-100 text-yellow-800';
-      case 'rejected': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'approved': return <CheckCircle className="w-4 h-4" />;
-      case 'under_review': return <Clock className="w-4 h-4" />;
-      case 'in_progress': return <AlertCircle className="w-4 h-4" />;
-      default: return <FileText className="w-4 h-4" />;
+      case 'under_review':
+        return {
+          label: 'Under review',
+          className: 'bg-blue-50 text-blue-700 border-blue-200',
+          icon: <Clock className="h-4 w-4" />,
+        };
+      case 'approved':
+        return {
+          label: 'Approved',
+          className: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+          icon: <CheckCircle2 className="h-4 w-4" />,
+        };
+      case 'in_progress':
+        return {
+          label: 'Action needed',
+          className: 'bg-amber-50 text-amber-700 border-amber-200',
+          icon: <AlertCircle className="h-4 w-4" />,
+        };
+      default:
+        return {
+          label: 'Submitted',
+          className: 'bg-slate-50 text-slate-700 border-slate-200',
+          icon: <FileText className="h-4 w-4" />,
+        };
     }
   };
 
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome to Your Grant Journey!
-          </h1>
-          <p className="text-gray-600">
-            Hello, {user?.name || 'Community Member'}. Discover funding opportunities, track your applications, and connect with the community.
-          </p>
+    <div className="min-h-screen bg-slate-50">
+      <div className="mx-auto max-w-7xl p-6 lg:p-8">
+        {/* Header */}
+        <div className="mb-8 flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-800">
+              <Sparkles className="h-3.5 w-3.5" />
+              Community portal
+            </div>
+            <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-900">
+              Welcome back{user?.name ? `, ${user.name}` : ''}
+            </h1>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+              Track your applications, discover matching grants, and keep your submissions moving.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            <Button
+              className="rounded-xl bg-emerald-700 hover:bg-emerald-800"
+              onClick={() => onNavigate('community/grants')}
+            >
+              Browse grants
+            </Button>
+            <Button
+              variant="outline"
+              className="rounded-xl"
+              onClick={() => onNavigate('community/application-form')}
+            >
+              Continue application
+            </Button>
+            <Button variant="outline" onClick={onLogout} className="rounded-xl">
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
+            </Button>
+          </div>
         </div>
-        <Button variant="outline" onClick={onLogout} className="flex items-center gap-2">
-          <LogOut className="w-4 h-4" />
-          Logout
-        </Button>
-      </div>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <Button className="h-14 bg-green-700 hover:bg-green-800" onClick={() => onNavigate('grants')}>
-          <Plus className="w-5 h-5 mr-2" />
-          Apply for Grant
-        </Button>
-        <Button variant="outline" className="h-14" onClick={() => onNavigate('community-forum')}>
-          <MessageSquare className="w-5 h-5 mr-2" />
-          Join Discussion
-        </Button>
-        <Button variant="outline" className="h-14" onClick={() => onNavigate('community-voting')}>
-          <Vote className="w-5 h-5 mr-2" />
-          Vote on Grants
-        </Button>
-        <Button variant="outline" className="h-14" onClick={() => onNavigate('resource-hub')}>
-          <BookOpen className="w-5 h-5 mr-2" />
-          Resources
-        </Button>
-      </div>
-
-      {/* Secondary Quick Actions */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <Button variant="outline" className="h-12" onClick={() => onNavigate('grant-map')}>
-          <Map className="w-4 h-4 mr-2" />
-          Grant Map
-        </Button>
-        <Button variant="outline" className="h-12" onClick={() => onNavigate('winners-showcase')}>
-          <Trophy className="w-4 h-4 mr-2" />
-          Winners Showcase
-        </Button>
-        <Button variant="outline" className="h-12" onClick={() => onNavigate('grants')}>
-          <FileText className="w-4 h-4 mr-2" />
-          Browse All Grants
-        </Button>
-        <Button variant="outline" className="h-12" onClick={() => onNavigate('application-form')}>
-          <Calendar className="w-4 h-4 mr-2" />
-          New Application
-        </Button>
-      </div>
-
-      {/* Key Metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => onNavigate('grants')}>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">My Applications</p>
-                <p className="text-3xl font-bold text-blue-600">{memberMetrics.totalApplications}</p>
-              </div>
-              <FileText className="w-8 h-8 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Success Rate</p>
-                <p className="text-3xl font-bold text-green-600">{memberMetrics.successRate}%</p>
-              </div>
-              <TrendingUp className="w-8 h-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Funding</p>
-                <p className="text-3xl font-bold text-teal-600">{formatCurrency(memberMetrics.totalFundingReceived)}</p>
-              </div>
-              <DollarSign className="w-8 h-8 text-teal-600" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Community Status</p>
-                <p className="text-lg font-bold text-yellow-600">{memberMetrics.communityRank}</p>
-              </div>
-              <Trophy className="w-8 h-8 text-yellow-600" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* My Applications */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>My Applications</span>
-                <Badge variant="outline">{memberMetrics.activeApplications} Active</Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {myApplications.map((app) => (
-                  <div key={app.id} className="border rounded-lg p-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <h4 className="font-semibold text-gray-900">{app.title}</h4>
-                        <p className="text-sm text-gray-600">{app.program}</p>
-                        <p className="text-sm font-semibold text-green-600">{formatCurrency(app.amount)}</p>
-                      </div>
-                      <Badge className={getStatusColor(app.status)}>
-                        <span className="flex items-center gap-1">
-                          {getStatusIcon(app.status)}
-                          {app.status.replace('_', ' ')}
-                        </span>
-                      </Badge>
-                    </div>
-
-                    <div className="mb-3">
-                      <div className="flex justify-between text-sm mb-1">
-                        <span>Application Progress</span>
-                        <span>{app.progress}%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-blue-600 h-2 rounded-full" 
-                          style={{ width: `${app.progress}%` }}
-                        ></div>
-                      </div>
-                    </div>
-
-                    <div className="text-sm text-gray-600 mb-3">
-                      <p><strong>Next Step:</strong> {app.nextStep}</p>
-                      <p><strong>Expected Decision:</strong> {app.estimatedDecision}</p>
-                      <p><strong>Council:</strong> {app.council}</p>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <Button size="sm" className="flex-1" onClick={() => onNavigate('grant-details')}>
-                        <Eye className="w-4 h-4 mr-1" />
-                        View Details
-                      </Button>
-                      {app.status === 'in_progress' && (
-                        <Button size="sm" variant="outline" onClick={() => onNavigate('application-form')}>
-                          <FileText className="w-4 h-4 mr-1" />
-                          Update
-                        </Button>
-                      )}
-                      {app.status === 'approved' && (
-                        <Button size="sm" variant="outline" onClick={() => onNavigate('winners-showcase')}>
-                          <Download className="w-4 h-4 mr-1" />
-                          Agreement
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-                <Button variant="outline" className="w-full" onClick={() => onNavigate('grants')}>
-                  View All Grants
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
+        {/* Summary cards */}
+        <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <Card className="rounded-2xl border-slate-200 shadow-sm">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-500">Applications</p>
+                  <p className="mt-1 text-3xl font-bold text-slate-900">
+                    {memberMetrics.totalApplications}
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-blue-50 p-3">
+                  <FolderOpen className="h-6 w-6 text-blue-700" />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Recommended Grants */}
-          <Card className="mt-8">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Recommended for You</span>
-                <Button variant="outline" size="sm" onClick={() => onNavigate('grants')}>
-                  View All Grants
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {recommendedGrants.map((grant) => (
-                  <div key={grant.id} className="border rounded-lg p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <Badge className="bg-green-100 text-green-800">
-                        {grant.matchScore}% Match
-                      </Badge>
-                      <Button variant="ghost" size="sm">
-                        <Star className="w-4 h-4" />
-                      </Button>
+          <Card className="rounded-2xl border-slate-200 shadow-sm">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-500">Active now</p>
+                  <p className="mt-1 text-3xl font-bold text-slate-900">
+                    {memberMetrics.activeApplications}
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-amber-50 p-3">
+                  <Clock className="h-6 w-6 text-amber-700" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-2xl border-slate-200 shadow-sm">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-500">Success rate</p>
+                  <p className="mt-1 text-3xl font-bold text-slate-900">
+                    {memberMetrics.successRate}%
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-emerald-50 p-3">
+                  <TrendingUp className="h-6 w-6 text-emerald-700" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-2xl border-slate-200 shadow-sm">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-500">Funding received</p>
+                  <p className="mt-1 text-2xl font-bold text-slate-900">
+                    {formatCurrency(memberMetrics.totalFundingReceived)}
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-teal-50 p-3">
+                  <DollarSign className="h-6 w-6 text-teal-700" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 gap-8 xl:grid-cols-3">
+          {/* Main content */}
+          <div className="xl:col-span-2 space-y-8">
+            {/* My applications */}
+            <Card className="rounded-3xl border-slate-200 shadow-sm">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-xl">My applications</CardTitle>
+                  <CardDescription>
+                    Track progress, decisions, and outstanding actions.
+                  </CardDescription>
+                </div>
+                <Badge variant="outline" className="rounded-full">
+                  {memberMetrics.activeApplications} active
+                </Badge>
+              </CardHeader>
+
+              <CardContent className="space-y-4">
+                {myApplications.map((app) => {
+                  const statusMeta = getStatusMeta(app.status);
+
+                  return (
+                    <div
+                      key={app.id}
+                      className="rounded-2xl border border-slate-200 bg-white p-5 transition-shadow hover:shadow-sm"
+                    >
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="text-lg font-semibold text-slate-900">{app.title}</h3>
+                            <Badge className={`border ${statusMeta.className}`}>
+                              <span className="flex items-center gap-1">
+                                {statusMeta.icon}
+                                {statusMeta.label}
+                              </span>
+                            </Badge>
+                          </div>
+
+                          <p className="mt-1 text-sm text-slate-600">{app.program}</p>
+
+                          <div className="mt-3 grid grid-cols-1 gap-2 text-sm text-slate-600 sm:grid-cols-2">
+                            <p>
+                              <span className="font-medium text-slate-900">Amount:</span>{' '}
+                              {formatCurrency(app.amount)}
+                            </p>
+                            <p>
+                              <span className="font-medium text-slate-900">Council:</span>{' '}
+                              {app.council}
+                            </p>
+                            <p>
+                              <span className="font-medium text-slate-900">Next step:</span>{' '}
+                              {app.nextStep}
+                            </p>
+                            <p>
+                              <span className="font-medium text-slate-900">Expected decision:</span>{' '}
+                              {app.estimatedDecision}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="w-full lg:max-w-[240px]">
+                          <div className="mb-2 flex items-center justify-between text-sm">
+                            <span className="text-slate-500">Progress</span>
+                            <span className="font-medium text-slate-900">{app.progress}%</span>
+                          </div>
+                          <div className="h-2 w-full rounded-full bg-slate-200">
+                            <div
+                              className="h-2 rounded-full bg-slate-900"
+                              style={{ width: `${app.progress}%` }}
+                            />
+                          </div>
+
+                          <div className="mt-4 flex gap-2">
+                            <Button
+                              size="sm"
+                              className="flex-1 rounded-xl"
+                              onClick={() => onNavigate('community/grant-details')}
+                            >
+                              <Eye className="mr-1 h-4 w-4" />
+                              View
+                            </Button>
+
+                            {app.status === 'in_progress' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="rounded-xl"
+                                onClick={() => onNavigate('community/application-form')}
+                              >
+                                Update
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <h4 className="font-semibold text-gray-900 mb-2">{grant.title}</h4>
-                    <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                      {grant.description}
-                    </p>
-                    <div className="space-y-1 mb-3 text-sm">
+                  );
+                })}
+
+                <Button
+                  variant="outline"
+                  className="w-full rounded-xl"
+                  onClick={() => onNavigate('community/grants')}
+                >
+                  Browse more grants
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Recommended grants */}
+            <Card className="rounded-3xl border-slate-200 shadow-sm">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-xl">Recommended grants</CardTitle>
+                  <CardDescription>
+                    Opportunities matched to your profile and activity.
+                  </CardDescription>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-xl"
+                  onClick={() => onNavigate('community/grants')}
+                >
+                  View all
+                </Button>
+              </CardHeader>
+
+              <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                {recommendedGrants.map((grant) => (
+                  <div
+                    key={grant.id}
+                    className="rounded-2xl border border-slate-200 p-5 transition-shadow hover:shadow-sm"
+                  >
+                    <div className="mb-3 flex items-center justify-between">
+                      <Badge className="border border-emerald-200 bg-emerald-50 text-emerald-700">
+                        {grant.matchScore}% match
+                      </Badge>
+                      <Badge variant="outline" className="rounded-full">
+                        {grant.category}
+                      </Badge>
+                    </div>
+
+                    <h3 className="text-lg font-semibold text-slate-900">{grant.title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">{grant.description}</p>
+
+                    <div className="mt-4 space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-gray-500">Amount</span>
-                        <span className="font-semibold text-green-600">
+                        <span className="text-slate-500">Amount</span>
+                        <span className="font-semibold text-slate-900">
                           {formatCurrency(grant.amount)}
                         </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-500">Deadline</span>
-                        <span className="font-semibold">{grant.deadline}</span>
+                        <span className="text-slate-500">Deadline</span>
+                        <span className="font-medium text-slate-900">{grant.deadline}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-500">Applicants</span>
-                        <span className="font-semibold">{grant.applicants}</span>
+                        <span className="text-slate-500">Applicants</span>
+                        <span className="font-medium text-slate-900">{grant.applicants}</span>
                       </div>
                     </div>
-                    <Button className="w-full bg-green-700 hover:bg-green-800" size="sm" onClick={() => onNavigate('application-form')}>
-                      Apply Now
-                    </Button>
+
+                    <div className="mt-5 flex gap-2">
+                      <Button
+                        className="flex-1 rounded-xl bg-emerald-700 hover:bg-emerald-800"
+                        onClick={() => onNavigate('community/application-form')}
+                      >
+                        Apply now
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="rounded-xl"
+                        onClick={() => onNavigate('community/grant-details')}
+                      >
+                        Details
+                      </Button>
+                    </div>
                   </div>
                 ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
+          </div>
 
-        {/* Sidebar */}
-        <div>
-          {/* Upcoming Events */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Upcoming Events</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {upcomingEvents.map((event) => (
-                  <div key={event.id} className="border rounded-lg p-3">
-                    <h5 className="font-semibold text-sm text-gray-900">{event.title}</h5>
-                    <p className="text-xs text-gray-600 mt-1">{event.date} • {event.time}</p>
-                    <p className="text-xs text-gray-600">{event.location}</p>
-                    <div className="flex items-center justify-between mt-2">
-                      <Badge variant="outline">{event.type}</Badge>
-                      <span className="text-xs text-gray-500">{event.spots} spots left</span>
+          {/* Sidebar */}
+          <div className="space-y-6">
+            <Card className="rounded-3xl border-slate-200 shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-lg">Next actions</CardTitle>
+                <CardDescription>
+                  Stay on top of the most important things to do.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {nextActions.map((action) => (
+                  <div key={action.id} className="rounded-2xl border border-slate-200 p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="rounded-xl bg-slate-100 p-2">
+                        <Target className="h-4 w-4 text-slate-700" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-slate-900">{action.title}</p>
+                        <p className="mt-1 text-sm text-slate-600">{action.detail}</p>
+                      </div>
                     </div>
-                    <Button size="sm" className="w-full mt-2" variant="outline" onClick={() => onNavigate('community-forum')}>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-3xl border-slate-200 shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-lg">Upcoming events</CardTitle>
+                <CardDescription>
+                  Workshops and sessions that can improve your application quality.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {upcomingEvents.map((event) => (
+                  <div key={event.id} className="rounded-2xl border border-slate-200 p-4">
+                    <p className="font-medium text-slate-900">{event.title}</p>
+                    <p className="mt-1 text-sm text-slate-600">
+                      {event.date} • {event.time}
+                    </p>
+                    <p className="text-sm text-slate-600">{event.location}</p>
+
+                    <div className="mt-3 flex items-center justify-between">
+                      <Badge variant="outline" className="rounded-full">
+                        {event.type}
+                      </Badge>
+                      <span className="text-xs text-slate-500">{event.spots} spots left</span>
+                    </div>
+
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="mt-3 w-full rounded-xl"
+                      onClick={() => onNavigate('community/community-forum')}
+                    >
                       Register
                     </Button>
                   </div>
                 ))}
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          {/* Community Stats */}
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle>Community Impact</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="text-center">
-                  <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-lg mx-auto mb-2">
-                    <Users className="w-6 h-6 text-blue-600" />
-                  </div>
-                  <p className="text-2xl font-bold text-blue-600">1,247</p>
-                  <p className="text-sm text-gray-600">Community Members</p>
+            <Card className="rounded-3xl border-slate-200 shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-lg">Helpful resources</CardTitle>
+                <CardDescription>
+                  Guidance to strengthen your grant applications.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm text-slate-700">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-600" />
+                  <span>Start early so you have time to refine your submission.</span>
                 </div>
-                <div className="text-center">
-                  <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-lg mx-auto mb-2">
-                    <DollarSign className="w-6 h-6 text-green-600" />
-                  </div>
-                  <p className="text-2xl font-bold text-green-600">$2.5M</p>
-                  <p className="text-sm text-gray-600">Funding Distributed</p>
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-600" />
+                  <span>Use workshops and community sessions to improve quality.</span>
                 </div>
-                <div className="text-center">
-                  <div className="flex items-center justify-center w-12 h-12 bg-purple-100 rounded-lg mx-auto mb-2">
-                    <Trophy className="w-6 h-6 text-purple-600" />
-                  </div>
-                  <p className="text-2xl font-bold text-purple-600">342</p>
-                  <p className="text-sm text-gray-600">Successful Projects</p>
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-600" />
+                  <span>Respond quickly when extra information is requested.</span>
                 </div>
-              </div>
-              <Button variant="outline" className="w-full mt-4" onClick={() => onNavigate('winners-showcase')}>
-                View Winners Showcase
-              </Button>
-            </CardContent>
-          </Card>
 
-          {/* Quick Tips */}
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle>Grant Success Tips</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3 text-sm">
-                <div className="flex items-start gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                  <span>Start applications early to allow time for revisions</span>
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <Button
+                    variant="outline"
+                    className="rounded-xl"
+                    onClick={() => onNavigate('community/resource-hub')}
+                  >
+                    <BookOpen className="mr-2 h-4 w-4" />
+                    Resources
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="rounded-xl"
+                    onClick={() => onNavigate('community/community-forum')}
+                  >
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                    Forum
+                  </Button>
                 </div>
-                <div className="flex items-start gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                  <span>Attend workshops to improve your application quality</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                  <span>Connect with other community members for advice</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-                  <span>Follow up promptly on any requests for information</span>
-                </div>
-              </div>
-              <Button variant="outline" className="w-full mt-4" onClick={() => onNavigate('resource-hub')}>
-                View All Resources
-              </Button>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-3xl border-slate-200 shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-lg">Explore community</CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 gap-2">
+                <Button
+                  variant="outline"
+                  className="justify-start rounded-xl"
+                  onClick={() => onNavigate('community/community-voting')}
+                >
+                  <Vote className="mr-2 h-4 w-4" />
+                  Community voting
+                </Button>
+                <Button
+                  variant="outline"
+                  className="justify-start rounded-xl"
+                  onClick={() => onNavigate('community/grant-map')}
+                >
+                  <Map className="mr-2 h-4 w-4" />
+                  Grant map
+                </Button>
+                <Button
+                  variant="outline"
+                  className="justify-start rounded-xl"
+                  onClick={() => onNavigate('community/winners-showcase')}
+                >
+                  <Trophy className="mr-2 h-4 w-4" />
+                  Winners showcase
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
