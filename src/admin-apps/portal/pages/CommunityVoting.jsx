@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import AuthGateModal from '../components/common/AuthGateModal.jsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card';
 import { Button } from '@shared/components/ui/button';
 import { Badge } from '@shared/components/ui/badge';
@@ -16,13 +17,18 @@ import {
   AlertCircle
 } from 'lucide-react';
 
-const CommunityVoting = () => {
+const CommunityVoting = ({ user, council }) => {
   const [campaigns, setCampaigns] = useState([]);
   const [selectedCampaign, setSelectedCampaign] = useState(null);
   const [votingResults, setVotingResults] = useState(null);
   const [userVotes, setUserVotes] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // Auth gate state — stores the optionId the user tried to vote on before being gated
+  const [showAuthGate, setShowAuthGate] = useState(false);
+  const [pendingVoteOptionId, setPendingVoteOptionId] = useState(null);
+  // currentUser tracks the logged-in user (passed as prop or set after gate login)
+  const [currentUser, setCurrentUser] = useState(user || null);
 
   // Mock data for demonstration
   useEffect(() => {
@@ -106,6 +112,12 @@ const CommunityVoting = () => {
   }, []);
 
   const handleVote = async (optionId) => {
+    // Gate: require authentication before voting
+    if (!currentUser) {
+      setPendingVoteOptionId(optionId);
+      setShowAuthGate(true);
+      return;
+    }
     try {
       // Check if user has reached vote limit
       const currentVotes = Object.keys(userVotes).length;
@@ -124,14 +136,29 @@ const CommunityVoting = () => {
       
       setUserVotes(newVotes);
       setError(null);
-      
-      // In real implementation, this would call the API
-      console.log('Vote submitted for option:', optionId);
-      
     } catch (err) {
       setError('Failed to submit vote. Please try again.');
     }
   };
+
+  // Called after successful login/register in the auth gate
+  function handleAuthSuccess(loggedInUser) {
+    setCurrentUser(loggedInUser);
+    setShowAuthGate(false);
+    // Continue with the vote the user originally tried to cast
+    if (pendingVoteOptionId !== null) {
+      const optionId = pendingVoteOptionId;
+      setPendingVoteOptionId(null);
+      // Re-invoke handleVote now that currentUser is set
+      // Use a short timeout so state has settled
+      setTimeout(() => {
+        const currentVotes = Object.keys(userVotes).length;
+        if (currentVotes < (selectedCampaign?.max_votes_per_user || 3)) {
+          setUserVotes(prev => ({ ...prev, [optionId]: true }));
+        }
+      }, 50);
+    }
+  }
 
   const submitAllVotes = async () => {
     try {
@@ -438,6 +465,14 @@ const CommunityVoting = () => {
           </div>
         </div>
       </div>
+      {/* Auth Gate Modal — shown when an unauthenticated user tries to vote */}
+      <AuthGateModal
+        isOpen={showAuthGate}
+        onClose={() => { setShowAuthGate(false); setPendingVoteOptionId(null); }}
+        onSuccess={handleAuthSuccess}
+        action="cast your vote"
+        council={council}
+      />
     </div>
   );
 };

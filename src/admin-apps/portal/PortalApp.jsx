@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { TenantProvider, useTenant } from '@shared/tenancy/TenantContext';
 import {
   Routes,
@@ -27,6 +27,11 @@ import CommunicationSettings from './pages/CommunicationSettings.jsx';
 import QRCodeManagement from './pages/QRCodeManagement.jsx';
 import CommunityVoting from './pages/CommunityVoting.jsx';
 import PublicGrantMap from './pages/PublicGrantMap.jsx';
+import StaffManagement from './pages/StaffManagement.jsx';
+import AccountBilling from './pages/AccountBilling.jsx';
+import Profile from './pages/Profile.jsx';
+import PendingApprovals from './pages/PendingApprovals.jsx';
+import PricingPage from './pages/PricingPage.jsx';
 
 // ── RBAC constants ────────────────────────────────────────────────────────────
 const ROLES = {
@@ -163,10 +168,27 @@ function PortalInner() {
     return <Navigate to={ROLE_HOME[role] || '/portal/community/dashboard'} replace />;
   }
 
+  // Build a role-aware navigation helper so dashboard components can navigate
+  // using short keys like 'staff-management' rather than full paths.
+  const handleNavigate = useCallback((key) => {
+    // If the key already contains a slash, treat it as a full portal-relative path
+    if (key.includes('/')) {
+      navigate(`/portal/${key}`);
+      return;
+    }
+    // Otherwise prefix with the role segment
+    const prefix =
+      role === ROLES.COUNCIL_ADMIN   ? 'council' :
+      role === ROLES.COUNCIL_STAFF   ? 'staff'   :
+      role === ROLES.COMMUNITY_MEMBER ? 'community' : 'community';
+    navigate(`/portal/${prefix}/${key}`);
+  }, [navigate, role]);
+
   const pageProps = {
     user: currentUser,
     council,
     onLogout: handleLogout,
+    onNavigate: handleNavigate,
   };
 
   return (
@@ -324,10 +346,58 @@ function PortalInner() {
         }
       />
 
-      {/* ── Council Staff Routes ───────────────────────────────────────── */}
       <Route
-        path="staff/dashboard"
+        path="council/staff-management"
         element={
+          <ProtectedRoute user={currentUser} allowedRoles={[ROLES.COUNCIL_ADMIN]} onLogout={handleLogout}>
+            <StaffManagement {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="council/account-billing"
+        element={
+          <ProtectedRoute user={currentUser} allowedRoles={[ROLES.COUNCIL_ADMIN]} onLogout={handleLogout}>
+            <AccountBilling {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="council/profile"
+        element={
+          <ProtectedRoute user={currentUser} allowedRoles={[ROLES.COUNCIL_ADMIN]} onLogout={handleLogout}>
+            <Profile {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="council/community-forum"
+        element={
+          <ProtectedRoute user={currentUser} allowedRoles={[ROLES.COUNCIL_ADMIN]} onLogout={handleLogout}>
+            <CommunityForum {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="council/pricing"
+        element={
+          <ProtectedRoute user={currentUser} allowedRoles={[ROLES.COUNCIL_ADMIN]} onLogout={handleLogout}>
+            <PricingPage {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="council/pending-approvals"
+        element={
+          <ProtectedRoute user={currentUser} allowedRoles={[ROLES.COUNCIL_ADMIN]} onLogout={handleLogout}>
+            <PendingApprovals {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ── Council Staff Routes ─────────────────────────────────────────────── */}
+      <Route
+        path="staff/dashboard"   element={
           <ProtectedRoute
             user={currentUser}
             allowedRoles={[ROLES.COUNCIL_STAFF]}
@@ -415,8 +485,32 @@ function PortalInner() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="staff/profile"
+        element={
+          <ProtectedRoute user={currentUser} allowedRoles={[ROLES.COUNCIL_STAFF]} onLogout={handleLogout}>
+            <Profile {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="staff/pending-approvals"
+        element={
+          <ProtectedRoute user={currentUser} allowedRoles={[ROLES.COUNCIL_STAFF]} onLogout={handleLogout}>
+            <PendingApprovals {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="staff/community-forum"
+        element={
+          <ProtectedRoute user={currentUser} allowedRoles={[ROLES.COUNCIL_STAFF]} onLogout={handleLogout}>
+            <CommunityForum {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
 
-      {/* ── Community Member Routes ────────────────────────────────────── */}
+      {/* ── Community Member Routes ─────────────────────────────────────────────── */}
       <Route
         path="community/dashboard"
         element={

@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import AuthGateModal from '../components/common/AuthGateModal.jsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card.jsx';
 import { Badge } from '@shared/components/ui/badge.jsx';
 import { Button } from '@shared/components/ui/button.jsx';
@@ -27,11 +28,29 @@ import {
   Target
 } from 'lucide-react';
 
-const GrantDetails = () => {
+const GrantDetails = ({ user, council, onNavigate }) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [isSaved, setIsSaved] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showAuthGate, setShowAuthGate] = useState(false);
+
+  function handleApplyClick() {
+    if (user) {
+      // Already logged in — go straight to the application form
+      if (onNavigate) onNavigate('application-form');
+      else navigate('/portal/community/application-form');
+    } else {
+      setShowAuthGate(true);
+    }
+  }
+
+  function handleAuthSuccess(loggedInUser) {
+    setShowAuthGate(false);
+    // After login/register, navigate to the application form
+    if (onNavigate) onNavigate('application-form');
+    else navigate('/portal/community/application-form');
+  }
 
   // Enhanced grant data with comprehensive details
   const grant = {
@@ -366,9 +385,18 @@ const GrantDetails = () => {
                   <div className="font-semibold text-orange-800">Application Deadline</div>
                   <div className="text-2xl font-bold text-orange-600">{grant.daysLeft} days left</div>
                 </div>
-                <Button className="w-full bg-green-700 hover:bg-green-800 text-white">
-                  Apply Now
+                <Button className="w-full bg-green-700 hover:bg-green-800 text-white" onClick={handleApplyClick}>
+                  {user ? 'Apply Now' : 'Sign in to Apply'}
                 </Button>
+                {showAuthGate && (
+                  <AuthGateModal
+                    isOpen={showAuthGate}
+                    onClose={() => setShowAuthGate(false)}
+                    onSuccess={handleAuthSuccess}
+                    action="start an application"
+                    council={council}
+                  />
+                )}
                 <div className="text-center mt-3">
                   <button className="text-sm text-orange-600 hover:underline">
                     Save for later

@@ -106,6 +106,13 @@ class ApiClient {
     return this.request(endpoint, { method: 'DELETE' })
   }
 
+  patch(endpoint, data) {
+    return this.request(endpoint, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    })
+  }
+
   // -----------------------
   // Authentication
   // -----------------------
@@ -168,6 +175,20 @@ class ApiClient {
   }
 
   // -----------------------
+  // Profile
+  // -----------------------
+
+  async updateProfile(data) {
+    const response = await this.patch('/auth/me', data)
+    return { success: true, data: response.user, message: response.message }
+  }
+
+  async changePassword(data) {
+    const response = await this.post('/auth/change-password', data)
+    return { success: true, message: response.message }
+  }
+
+  // -----------------------
   // Grants
   // -----------------------
 
@@ -226,6 +247,8 @@ export const {
   demoLogin,
   logout,
   verifyToken,
+  updateProfile,
+  changePassword,
   getGrants,
   getGrant,
   getApplications,

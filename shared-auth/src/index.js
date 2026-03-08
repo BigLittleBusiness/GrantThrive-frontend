@@ -182,8 +182,10 @@ export async function verifyToken() {
       body: JSON.stringify({ token }),
     });
     if (data && data.user) {
-      // Refresh stored user profile in case it changed
-      setAuth(token, data.user);
+      // If the backend issued a refreshed token (sliding window for system_admin),
+      // store the new token so the session stays alive.
+      const activeToken = data.new_token || token;
+      setAuth(activeToken, data.user);
       return data.user;
     }
     clearAuth();

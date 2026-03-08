@@ -19,7 +19,11 @@ import {
   QrCode,
   Vote,
   Map,
-  LogOut
+  LogOut,
+  ClipboardList,
+  CreditCard,
+  User,
+  UserPlus
 } from 'lucide-react';
 
 const CouncilAdminDashboard = ({ user, onNavigate, onLogout }) => {
@@ -186,6 +190,30 @@ const CouncilAdminDashboard = ({ user, onNavigate, onLogout }) => {
         <Button variant="outline" className="h-12" onClick={() => onNavigate('winners-showcase')}>
           <CheckCircle className="w-4 h-4 mr-2" />
           Winners Showcase
+        </Button>
+      </div>
+
+      {/* Management & Account Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
+        <Button variant="outline" className="h-12" onClick={() => onNavigate('staff-management')}>
+          <UserPlus className="w-4 h-4 mr-2" />
+          Manage Staff
+        </Button>
+        <Button variant="outline" className="h-12" onClick={() => onNavigate('pending-approvals')}>
+          <ClipboardList className="w-4 h-4 mr-2" />
+          Pending Approvals
+        </Button>
+        <Button variant="outline" className="h-12" onClick={() => onNavigate('community-forum')}>
+          <MessageSquare className="w-4 h-4 mr-2" />
+          Community Forum
+        </Button>
+        <Button variant="outline" className="h-12" onClick={() => onNavigate('account-billing')}>
+          <CreditCard className="w-4 h-4 mr-2" />
+          Account &amp; Billing
+        </Button>
+        <Button variant="outline" className="h-12" onClick={() => onNavigate('profile')}>
+          <User className="w-4 h-4 mr-2" />
+          My Profile
         </Button>
       </div>
 

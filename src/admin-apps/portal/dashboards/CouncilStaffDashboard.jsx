@@ -14,7 +14,8 @@ import {
   Eye,
   Edit,
   Download,
-  LogOut
+  LogOut,
+  ClipboardList
 } from 'lucide-react';
 
 const CouncilStaffDashboard = ({ user, onNavigate, onLogout }) => {
@@ -171,17 +172,33 @@ const CouncilStaffDashboard = ({ user, onNavigate, onLogout }) => {
           <FileText className="w-5 h-5 mr-2" />
           Start Review
         </Button>
-        <Button variant="outline" className="h-14" onClick={() => onNavigate('communication-settings')}>
-          <MessageSquare className="w-5 h-5 mr-2" />
-          Contact Applicant
+        <Button variant="outline" className="h-14" onClick={() => onNavigate('pending-approvals')}>
+          <ClipboardList className="w-5 h-5 mr-2" />
+          Pending Approvals
         </Button>
         <Button variant="outline" className="h-14" onClick={() => onNavigate('resource-hub')}>
           <Download className="w-5 h-5 mr-2" />
           Resources &amp; Reports
         </Button>
         <Button variant="outline" className="h-14" onClick={() => onNavigate('community-forum')}>
-          <Calendar className="w-5 h-5 mr-2" />
+          <MessageSquare className="w-5 h-5 mr-2" />
           Community Forum
+        </Button>
+      </div>
+
+      {/* Secondary Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <Button variant="outline" className="h-12" onClick={() => onNavigate('communication-settings')}>
+          <Mail className="w-4 h-4 mr-2" />
+          Contact Applicant
+        </Button>
+        <Button variant="outline" className="h-12" onClick={() => onNavigate('profile')}>
+          <User className="w-4 h-4 mr-2" />
+          My Profile
+        </Button>
+        <Button variant="outline" className="h-12" onClick={() => onNavigate('community-forum')}>
+          <Calendar className="w-4 h-4 mr-2" />
+          Community Events
         </Button>
       </div>
 

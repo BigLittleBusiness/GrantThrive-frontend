@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import AuthGateModal from '../components/common/AuthGateModal.jsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card.jsx';
 import { Badge } from '@shared/components/ui/badge.jsx';
 import { Button } from '@shared/components/ui/button.jsx';
@@ -18,7 +19,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 
-const GrantsListing = () => {
+const GrantsListing = ({ user, council, onNavigate }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [selectedStatus, setSelectedStatus] = useState([]);
@@ -26,6 +27,22 @@ const GrantsListing = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
   const [savedGrants, setSavedGrants] = useState(new Set());
+  const [showAuthGate, setShowAuthGate] = useState(false);
+  const [pendingGrantId, setPendingGrantId] = useState(null);
+
+  function handleLearnMore(grantId) {
+    if (user) {
+      if (onNavigate) onNavigate('grant-details');
+    } else {
+      setPendingGrantId(grantId);
+      setShowAuthGate(true);
+    }
+  }
+
+  function handleAuthSuccess() {
+    setShowAuthGate(false);
+    if (onNavigate) onNavigate('grant-details');
+  }
 
   // Enhanced grant data with more realistic information
   const grants = [
@@ -411,8 +428,8 @@ const GrantsListing = () => {
 
                     {/* Action Buttons */}
                     <div className="flex gap-2">
-                      <Button className="flex-1 bg-green-700 hover:bg-green-800">
-                        Learn More
+                      <Button className="flex-1 bg-green-700 hover:bg-green-800" onClick={() => handleLearnMore(grant.id)}>
+                        {user ? 'Learn More' : 'Sign in to Apply'}
                       </Button>
                       <Button variant="outline" size="sm">
                         <Share2 className="w-4 h-4" />
@@ -476,9 +493,16 @@ const GrantsListing = () => {
           </div>
         </div>
       </div>
+      {/* Auth Gate Modal */}
+      <AuthGateModal
+        isOpen={showAuthGate}
+        onClose={() => { setShowAuthGate(false); setPendingGrantId(null); }}
+        onSuccess={handleAuthSuccess}
+        action="view grant details and apply"
+        council={council}
+      />
     </div>
   );
 };
-
 export default GrantsListing;
 

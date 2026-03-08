@@ -16,14 +16,19 @@
  * Domain: admin.grantthrive.com
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   verifyToken,
   clearAuth,
   ROLES,
 } from '@grantthrive/auth';
+
 import { Loader2, AlertTriangle, LogOut } from 'lucide-react';
 import AdminLogin from './AdminLogin.jsx';
+
+// Poll the backend every 5 minutes while the admin is active.
+const ACTIVITY_POLL_MS = 5 * 60 * 1000;  // 5 minutes
+const ACTIVITY_EVENTS  = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
 
 // ── Loading screen ────────────────────────────────────────────────────────────
 
@@ -86,11 +91,13 @@ export default function AdminAuthGate({ children }) {
    */
   const [status, setStatus] = useState('loading');
   const [user, setUser]     = useState(null);
+  const lastActivityRef     = useRef(Date.now());
+  const pollTimerRef        = useRef(null);
 
   // ── Token verification ──────────────────────────────────────────────────────
 
-  const verifyAndRoute = useCallback(async () => {
-    setStatus('loading');
+  const verifyAndRoute = useCallback(async (silent = false) => {
+    if (!silent) setStatus('loading');
     try {
       const verified = await verifyToken();
       if (!verified) {
@@ -99,7 +106,9 @@ export default function AdminAuthGate({ children }) {
         return;
       }
       setUser(verified);
-      setStatus(verified.role === ROLES.SYSTEM_ADMIN ? 'authorised' : 'denied');
+      if (!silent) {
+        setStatus(verified.role === ROLES.SYSTEM_ADMIN ? 'authorised' : 'denied');
+      }
     } catch {
       setUser(null);
       setStatus('login');
@@ -108,6 +117,28 @@ export default function AdminAuthGate({ children }) {
 
   useEffect(() => {
     verifyAndRoute();
+  }, [verifyAndRoute]);
+
+  // ── Sliding-window activity tracking ───────────────────────────────────────
+  // Record last activity time on any user interaction.
+  useEffect(() => {
+    const onActivity = () => { lastActivityRef.current = Date.now(); };
+    ACTIVITY_EVENTS.forEach(evt => window.addEventListener(evt, onActivity, { passive: true }));
+    return () => ACTIVITY_EVENTS.forEach(evt => window.removeEventListener(evt, onActivity));
+  }, []);
+
+  // Poll every 5 minutes; silently refresh the token if the user was active
+  // in the last 5 minutes (i.e. within the poll window).
+  useEffect(() => {
+    pollTimerRef.current = setInterval(() => {
+      const idleMs = Date.now() - lastActivityRef.current;
+      if (idleMs < ACTIVITY_POLL_MS) {
+        // User is active — silently call verifyToken so the backend can
+        // issue a fresh token if the current one is close to expiry.
+        verifyAndRoute(true);
+      }
+    }, ACTIVITY_POLL_MS);
+    return () => clearInterval(pollTimerRef.current);
   }, [verifyAndRoute]);
 
   // ── Listen for logout events dispatched by the dashboard ───────────────────
