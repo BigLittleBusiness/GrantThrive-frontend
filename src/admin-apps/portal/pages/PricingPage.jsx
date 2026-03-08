@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@shared/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card';
 import { Badge } from '@shared/components/ui/badge';
@@ -16,15 +16,46 @@ import {
   BarChart3
 } from 'lucide-react';
 
+// Fallback pricing used if the API is unreachable
+const FALLBACK_PRICING = {
+  small:  { monthly: 200, annual: 2000 },
+  medium: { monthly: 500, annual: 5000 },
+  large:  { monthly: 1100, annual: 11000 },
+};
+
+const PRICING_API_URL = (() => {
+  const base = (import.meta.env.VITE_API_URL || 'https://api.grantthrive.com').replace(/\/api$/, '')
+  return `${base}/api/pricing/plans`
+})()
+
 const PricingPage = () => {
   const [billingCycle, setBillingCycle] = useState('monthly');
+  const [livePricing, setLivePricing] = useState(FALLBACK_PRICING);
+
+  const loadPricing = useCallback(async () => {
+    try {
+      const res = await fetch(PRICING_API_URL, { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.plans) {
+          setLivePricing({
+            small:  { monthly: Math.round((data.plans.small?.monthly_price_aud_cents  ?? 20000) / 100), annual: Math.round((data.plans.small?.annual_price_aud_cents  ?? 200000) / 100) },
+            medium: { monthly: Math.round((data.plans.medium?.monthly_price_aud_cents ?? 50000) / 100), annual: Math.round((data.plans.medium?.annual_price_aud_cents ?? 500000) / 100) },
+            large:  { monthly: Math.round((data.plans.large?.monthly_price_aud_cents  ?? 110000) / 100), annual: Math.round((data.plans.large?.annual_price_aud_cents  ?? 1100000) / 100) },
+          });
+        }
+      }
+    } catch { /* keep fallback */ }
+  }, []);
+
+  useEffect(() => { loadPricing(); }, [loadPricing]);
 
   const plans = [
     {
       name: 'Starter',
       description: 'For small councils',
-      monthlyPrice: 99,
-      annualPrice: 990,
+      monthlyPrice: livePricing.small.monthly,
+      annualPrice: livePricing.small.annual,
       popular: false,
       features: [
         'Key features',
@@ -46,8 +77,8 @@ const PricingPage = () => {
     {
       name: 'Professional',
       description: 'For medium councils',
-      monthlyPrice: 299,
-      annualPrice: 2990,
+      monthlyPrice: livePricing.medium.monthly,
+      annualPrice: livePricing.medium.annual,
       popular: true,
       features: [
         'All Starter features',
@@ -71,8 +102,8 @@ const PricingPage = () => {
     {
       name: 'Enterprise',
       description: 'For large organizations',
-      monthlyPrice: 'Custom',
-      annualPrice: 'Custom',
+      monthlyPrice: livePricing.large.monthly,
+      annualPrice: livePricing.large.annual,
       popular: false,
       features: [
         'All Professional features',

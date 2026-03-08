@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import CouncilManagement from './pages/CouncilManagement.jsx';
 import SystemAdminManagement from './pages/SystemAdminManagement.jsx';
+import PricingManagement from './pages/PricingManagement.jsx';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card';
 import { Badge } from '@shared/components/ui/badge';
 import { Button } from '@shared/components/ui/button';
@@ -97,6 +98,7 @@ const AdminDashboard = () => {
     { id: 'analytics', label: 'Analytics',           icon: BarChart3 },
     { id: 'support',   label: 'Support',             icon: MessageSquare },
     { id: 'security',  label: 'Security',            icon: Shield },
+    { id: 'pricing',  label: 'Pricing Management',  icon: CreditCard },
     { id: 'billing',   label: 'Billing',             icon: DollarSign },
     { id: 'settings',  label: 'Settings',            icon: Settings },
   ];
@@ -466,8 +468,11 @@ const AdminDashboard = () => {
           {/* System Admin Management */}
           {activeTab === 'staff' && <SystemAdminManagement />}
 
+          {/* Pricing Management */}
+          {activeTab === 'pricing' && <PricingManagement />}
+
           {/* Placeholder for tabs still under development */}
-          {activeTab !== 'overview' && activeTab !== 'councils' && activeTab !== 'staff' && (
+          {activeTab !== 'overview' && activeTab !== 'councils' && activeTab !== 'staff' && activeTab !== 'pricing' && (
             <div className="text-center py-12">
               <div className="text-gray-400 mb-4">
                 <Settings className="w-16 h-16 mx-auto" />

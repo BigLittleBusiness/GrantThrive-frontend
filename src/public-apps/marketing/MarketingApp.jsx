@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '@shared/components/ui/button.jsx'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card.jsx'
@@ -688,71 +688,121 @@ function FeaturesPage() {
   )
 }
 
+// ── Compiled fallback pricing (used if API is unreachable) ──────────────────
+const FALLBACK_PLANS = [
+  {
+    key: 'small',
+    name: 'Small Council',
+    population: '5K – 20K population',
+    monthlyPrice: 200,
+    annualMonthlyPrice: 167,
+    annualTotal: 2000,
+    highlight: false,
+    features: [
+      'Up to 200 grant applications/year',
+      '3 staff user accounts',
+      'Grant creation wizard',
+      'Application management',
+      'Basic analytics dashboard',
+      'Email support',
+      'Setup & onboarding included',
+    ],
+    addonVotingCents: 5000,
+    addonMappingCents: 5000,
+  },
+  {
+    key: 'medium',
+    name: 'Medium Council',
+    population: '20K – 100K population',
+    monthlyPrice: 500,
+    annualMonthlyPrice: 417,
+    annualTotal: 5000,
+    highlight: true,
+    features: [
+      'Up to 1,000 grant applications/year',
+      '10 staff user accounts',
+      'All Small Council features',
+      'Community Voting included',
+      'Grant Mapping included',
+      'Advanced analytics & reporting',
+      'Priority email & phone support',
+      'Dedicated onboarding manager',
+    ],
+    addonVotingCents: null,
+    addonMappingCents: null,
+  },
+  {
+    key: 'large',
+    name: 'Large Council',
+    population: '100K+ population',
+    monthlyPrice: 1100,
+    annualMonthlyPrice: 917,
+    annualTotal: 11000,
+    highlight: false,
+    features: [
+      'Unlimited grant applications',
+      'Unlimited staff user accounts',
+      'All Medium Council features',
+      'Custom integrations',
+      'SLA-backed uptime guarantee',
+      'Dedicated account manager',
+      'Custom reporting & exports',
+      'On-site training available',
+    ],
+    addonVotingCents: null,
+    addonMappingCents: null,
+  },
+]
+
+/**
+ * Merge live API pricing data into the static plan definitions.
+ * Only price/add-on fields are overwritten; features and copy stay static.
+ */
+function mergeLivePricing(apiPlans) {
+  return FALLBACK_PLANS.map(plan => {
+    const live = apiPlans[plan.key]
+    if (!live) return plan
+    const monthly = Math.round(live.monthly_price_aud_cents / 100)
+    const annualMonthly = Math.round(live.annual_monthly_price_aud_cents / 100)
+    const annualTotal = Math.round(live.annual_price_aud_cents / 100)
+    return {
+      ...plan,
+      name: live.display_name || plan.name,
+      monthlyPrice: monthly,
+      annualMonthlyPrice: annualMonthly,
+      annualTotal,
+      addonVotingCents: live.addon_community_voting_cents ?? plan.addonVotingCents,
+      addonMappingCents: live.addon_grant_mapping_cents ?? plan.addonMappingCents,
+    }
+  })
+}
+
+const PRICING_API_URL = (() => {
+  const base = (import.meta.env.VITE_API_URL || 'https://api.grantthrive.com').replace(/\/api$/, '')
+  return `${base}/api/pricing/plans`
+})()
+
 // Full Pricing Page
 function PricingPage() {
   const navigate = useNavigate()
   const [billingCycle, setBillingCycle] = useState('annual')
+  const [plans, setPlans] = useState(FALLBACK_PLANS)
   const isAnnual = billingCycle === 'annual'
 
-  // Annual = 10 months price (2 months free). Monthly = full rate.
-  const plans = [
-    {
-      name: "Small Council",
-      population: "5K – 20K population",
-      monthlyPrice: 200,
-      annualMonthlyPrice: 167,
-      annualTotal: 2000,
-      highlight: false,
-      features: [
-        "Up to 200 grant applications/year",
-        "3 staff user accounts",
-        "Grant creation wizard",
-        "Application management",
-        "Basic analytics dashboard",
-        "Email support",
-        "Setup & onboarding included",
-      ],
-      addons: ["Community Voting +$50/mo", "Grant Mapping +$50/mo"]
-    },
-    {
-      name: "Medium Council",
-      population: "20K – 100K population",
-      monthlyPrice: 500,
-      annualMonthlyPrice: 417,
-      annualTotal: 5000,
-      highlight: true,
-      features: [
-        "Up to 1,000 grant applications/year",
-        "10 staff user accounts",
-        "All Small Council features",
-        "Community Voting included",
-        "Grant Mapping included",
-        "Advanced analytics & reporting",
-        "Priority email & phone support",
-        "Dedicated onboarding manager",
-      ],
-      addons: []
-    },
-    {
-      name: "Large Council",
-      population: "100K+ population",
-      monthlyPrice: 1100,
-      annualMonthlyPrice: 917,
-      annualTotal: 11000,
-      highlight: false,
-      features: [
-        "Unlimited grant applications",
-        "Unlimited staff user accounts",
-        "All Medium Council features",
-        "Custom integrations",
-        "SLA-backed uptime guarantee",
-        "Dedicated account manager",
-        "Custom reporting & exports",
-        "On-site training available",
-      ],
-      addons: []
+  // Fetch live pricing from the backend on mount
+  const loadPricing = useCallback(async () => {
+    try {
+      const res = await fetch(PRICING_API_URL, { cache: 'no-store' })
+      if (res.ok) {
+        const data = await res.json()
+        if (data.plans) setPlans(mergeLivePricing(data.plans))
+      }
+    } catch {
+      // Network error — keep fallback pricing silently
     }
-  ]
+  }, [])
+
+  useEffect(() => { loadPricing() }, [loadPricing])
 
   const displayPrice = (plan) => isAnnual
     ? `$${plan.annualMonthlyPrice.toLocaleString()}`
@@ -849,12 +899,15 @@ function PricingPage() {
                     </li>
                   ))}
                 </ul>
-                {plan.addons.length > 0 && (
+                {(plan.addonVotingCents || plan.addonMappingCents) && (
                   <div className="border-t pt-4">
                     <p className="text-xs font-semibold text-gray-500 mb-2">OPTIONAL ADD-ONS</p>
-                    {plan.addons.map((addon, i) => (
-                      <p key={i} className="text-sm text-gray-600">+ {addon}</p>
-                    ))}
+                    {plan.addonVotingCents && (
+                      <p className="text-sm text-gray-600">+ Community Voting +${Math.round(plan.addonVotingCents / 100)}/mo</p>
+                    )}
+                    {plan.addonMappingCents && (
+                      <p className="text-sm text-gray-600">+ Grant Mapping +${Math.round(plan.addonMappingCents / 100)}/mo</p>
+                    )}
                   </div>
                 )}
                 <Button
@@ -877,7 +930,11 @@ function PricingPage() {
               Switch to annual billing and get 2 months completely free
             </p>
             <p className="text-gray-600 text-sm mb-4">
-              Small councils save $400 &bull; Medium councils save $1,000 &bull; Large councils save $2,200
+              {plans.map((p, i) => (
+                <span key={p.key}>
+                  {p.name} save ${(p.monthlyPrice * 2).toLocaleString()}/year{i < plans.length - 1 ? ' • ' : ''}
+                </span>
+              ))}
             </p>
             <button
               onClick={() => setBillingCycle('annual')}
