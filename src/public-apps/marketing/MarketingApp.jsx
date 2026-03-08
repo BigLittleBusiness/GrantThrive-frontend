@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '@shared/components/ui/button.jsx'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card.jsx'
@@ -691,13 +691,17 @@ function FeaturesPage() {
 // Full Pricing Page
 function PricingPage() {
   const navigate = useNavigate()
+  const [billingCycle, setBillingCycle] = useState('annual')
+  const isAnnual = billingCycle === 'annual'
+
+  // Annual = 10 months price (2 months free). Monthly = full rate.
   const plans = [
     {
       name: "Small Council",
       population: "5K – 20K population",
-      price: "$200",
-      period: "/month",
-      annual: "$2,400/year",
+      monthlyPrice: 200,
+      annualMonthlyPrice: 167,
+      annualTotal: 2000,
       highlight: false,
       features: [
         "Up to 200 grant applications/year",
@@ -713,9 +717,9 @@ function PricingPage() {
     {
       name: "Medium Council",
       population: "20K – 100K population",
-      price: "$500",
-      period: "/month",
-      annual: "$6,000/year",
+      monthlyPrice: 500,
+      annualMonthlyPrice: 417,
+      annualTotal: 5000,
       highlight: true,
       features: [
         "Up to 1,000 grant applications/year",
@@ -732,9 +736,9 @@ function PricingPage() {
     {
       name: "Large Council",
       population: "100K+ population",
-      price: "$1,100",
-      period: "/month",
-      annual: "$13,200/year",
+      monthlyPrice: 1100,
+      annualMonthlyPrice: 917,
+      annualTotal: 11000,
       highlight: false,
       features: [
         "Unlimited grant applications",
@@ -750,10 +754,16 @@ function PricingPage() {
     }
   ]
 
+  const displayPrice = (plan) => isAnnual
+    ? `$${plan.annualMonthlyPrice.toLocaleString()}`
+    : `$${plan.monthlyPrice.toLocaleString()}`
+
+  const savingsAmount = (plan) => (plan.monthlyPrice * 2).toLocaleString()
+
   return (
     <div className="section-padding bg-gray-50">
       <div className="container-custom">
-        <div className="text-center space-y-4 mb-16">
+        <div className="text-center space-y-4 mb-10">
           <Badge className="bg-primary/10 text-primary">Simple, Transparent Pricing</Badge>
           <h1 className="text-3xl lg:text-5xl font-bold text-gray-900">No Hidden Fees. No Surprises.</h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
@@ -761,7 +771,48 @@ function PricingPage() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8 mb-16">
+        {/* Billing Toggle */}
+        <div className="flex flex-col items-center gap-3 mb-12">
+          <div className="flex items-center bg-white border border-gray-200 rounded-full p-1 shadow-sm">
+            <button
+              onClick={() => setBillingCycle('monthly')}
+              className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                !isAnnual
+                  ? 'bg-gray-900 text-white shadow'
+                  : 'text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setBillingCycle('annual')}
+              className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
+                isAnnual
+                  ? 'bg-primary text-white shadow'
+                  : 'text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              Annual
+              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                isAnnual ? 'bg-white text-primary' : 'bg-green-100 text-green-700'
+              }`}>
+                2 MONTHS FREE
+              </span>
+            </button>
+          </div>
+          {isAnnual ? (
+            <p className="text-sm text-green-700 font-medium flex items-center gap-1">
+              <CheckCircle className="h-4 w-4" />
+              You&apos;re saving 2 months on every plan &mdash; billed as one annual payment
+            </p>
+          ) : (
+            <p className="text-sm text-gray-500">
+              Switch to annual billing and get <span className="font-semibold text-green-700">2 months free</span> on any plan
+            </p>
+          )}
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-8 mb-10">
           {plans.map((plan, index) => (
             <Card key={index} className={`relative border-0 shadow-lg ${plan.highlight ? 'ring-2 ring-primary' : ''}`}>
               {plan.highlight && (
@@ -773,9 +824,20 @@ function PricingPage() {
                 <CardTitle className="text-2xl">{plan.name}</CardTitle>
                 <CardDescription>{plan.population}</CardDescription>
                 <div className="mt-4">
-                  <span className="text-5xl font-bold text-gray-900">{plan.price}</span>
-                  <span className="text-gray-500">{plan.period}</span>
-                  <p className="text-sm text-gray-500 mt-1">Billed annually: {plan.annual}</p>
+                  <span className="text-5xl font-bold text-gray-900">{displayPrice(plan)}</span>
+                  <span className="text-gray-500">/month</span>
+                  {isAnnual ? (
+                    <div className="mt-2 space-y-1">
+                      <p className="text-sm font-semibold text-green-700 bg-green-50 rounded-full px-3 py-1 inline-block">
+                        Save ${savingsAmount(plan)}/year &mdash; 2 months free
+                      </p>
+                      <p className="text-sm text-gray-500">Billed as ${plan.annualTotal.toLocaleString()}/year</p>
+                    </div>
+                  ) : (
+                    <div className="mt-2">
+                      <p className="text-sm text-gray-400">Or <span className="text-green-700 font-medium">${plan.annualMonthlyPrice}/mo</span> billed annually &mdash; 2 months free</p>
+                    </div>
+                  )}
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -807,6 +869,24 @@ function PricingPage() {
             </Card>
           ))}
         </div>
+
+        {/* Annual savings callout banner — only shown on monthly view */}
+        {!isAnnual && (
+          <div className="bg-gradient-to-r from-primary/10 to-green-50 border border-primary/20 rounded-2xl p-6 mb-12 text-center">
+            <p className="text-lg font-semibold text-gray-900 mb-1">
+              Switch to annual billing and get 2 months completely free
+            </p>
+            <p className="text-gray-600 text-sm mb-4">
+              Small councils save $400 &bull; Medium councils save $1,000 &bull; Large councils save $2,200
+            </p>
+            <button
+              onClick={() => setBillingCycle('annual')}
+              className="bg-primary text-white px-6 py-2 rounded-full text-sm font-semibold hover:bg-primary/90 transition-colors"
+            >
+              Switch to Annual &rarr;
+            </button>
+          </div>
+        )}
 
         <div className="text-center">
           <p className="text-gray-600 mb-4">Not sure which plan is right for you?</p>
