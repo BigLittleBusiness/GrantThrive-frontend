@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import NotificationBell from '../components/common/NotificationBell';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@shared/components/ui/card.jsx';
 import { Badge } from '@shared/components/ui/badge.jsx';
 import { Button } from '@shared/components/ui/button.jsx';
@@ -203,6 +204,7 @@ const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
             >
               Continue application
             </Button>
+            <NotificationBell onNavigate={onNavigate} />
             <Button variant="outline" onClick={onLogout} className="rounded-xl">
               <LogOut className="mr-2 h-4 w-4" />
               Logout

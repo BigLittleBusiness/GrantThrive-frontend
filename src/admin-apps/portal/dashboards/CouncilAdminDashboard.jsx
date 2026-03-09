@@ -1,4 +1,5 @@
 import React from 'react';
+import NotificationBell from '../components/common/NotificationBell';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card.jsx';
 import { Badge } from '@shared/components/ui/badge.jsx';
 import { Button } from '@shared/components/ui/button.jsx';
@@ -144,10 +145,13 @@ const CouncilAdminDashboard = ({ user, onNavigate, onLogout }) => {
             Welcome back, {user?.name || 'Administrator'}. Manage grant programs, review applications, and oversee community funding.
           </p>
         </div>
-        <Button variant="outline" onClick={onLogout} className="flex items-center gap-2">
-          <LogOut className="w-4 h-4" />
-          Logout
-        </Button>
+        <div className="flex items-center gap-3">
+          <NotificationBell onNavigate={onNavigate} />
+          <Button variant="outline" onClick={onLogout} className="flex items-center gap-2">
+            <LogOut className="w-4 h-4" />
+            Logout
+          </Button>
+        </div>
       </div>
 
       {/* Quick Actions */}

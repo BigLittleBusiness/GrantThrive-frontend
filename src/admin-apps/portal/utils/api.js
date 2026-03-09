@@ -235,6 +235,27 @@ class ApiClient {
   async healthCheck() {
     return this.get('/api/health')
   }
+
+  // -----------------------
+  // Notifications
+  // -----------------------
+
+  async getNotifications(params = {}) {
+    const qs = new URLSearchParams(params).toString()
+    return this.get(`/api/notifications${qs ? '?' + qs : ''}`)
+  }
+
+  async getUnreadCount() {
+    return this.get('/api/notifications/unread-count')
+  }
+
+  async markNotificationRead(id) {
+    return this.patch(`/api/notifications/${id}/read`, {})
+  }
+
+  async markAllNotificationsRead() {
+    return this.post('/api/notifications/mark-all-read', {})
+  }
 }
 
 const apiClient = new ApiClient()
@@ -255,5 +276,9 @@ export const {
   getApplication,
   createApplication,
   getDashboardMetrics,
-  healthCheck
+  healthCheck,
+  getNotifications,
+  getUnreadCount,
+  markNotificationRead,
+  markAllNotificationsRead
 } = apiClient
