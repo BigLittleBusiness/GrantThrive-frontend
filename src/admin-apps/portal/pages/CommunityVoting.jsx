@@ -1,481 +1,446 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import AuthGateModal from '../components/common/AuthGateModal.jsx';
-import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card';
-import { Button } from '@shared/components/ui/button';
-import { Badge } from '@shared/components/ui/badge';
-import { Progress } from '@shared/components/ui/progress';
-import { 
-  Vote, 
-  Users, 
-  Calendar, 
-  TrendingUp, 
-  MessageSquare,
-  MapPin,
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@shared/components/ui/card.jsx';
+import { Button } from '@shared/components/ui/button.jsx';
+import { Badge } from '@shared/components/ui/badge.jsx';
+import {
+  Vote,
+  Users,
+  Calendar,
+  TrendingUp,
   DollarSign,
   Clock,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Loader2,
+  ChevronLeft,
+  ThumbsUp,
 } from 'lucide-react';
+import apiClient from '../utils/api.js';
 
-const CommunityVoting = ({ user, council }) => {
-  const [campaigns, setCampaigns] = useState([]);
-  const [selectedCampaign, setSelectedCampaign] = useState(null);
-  const [votingResults, setVotingResults] = useState(null);
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
+const CommunityVoting = ({ user }) => {
+  const [sessions, setSessions] = useState([]);
+  const [selectedSession, setSelectedSession] = useState(null);
   const [userVotes, setUserVotes] = useState({});
+  const [submitting, setSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  // Auth gate state — stores the optionId the user tried to vote on before being gated
+
+  // Auth gate
   const [showAuthGate, setShowAuthGate] = useState(false);
   const [pendingVoteOptionId, setPendingVoteOptionId] = useState(null);
-  // currentUser tracks the logged-in user (passed as prop or set after gate login)
   const [currentUser, setCurrentUser] = useState(user || null);
 
-  // Mock data for demonstration
-  useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      const mockCampaigns = [
-        {
-          id: 1,
-          title: "2024 Community Grant Priorities",
-          description: "Help us decide which community projects should receive funding priority in 2024. Your voice matters in shaping our community's future.",
-          start_date: "2024-08-01T00:00:00Z",
-          end_date: "2024-09-15T23:59:59Z",
-          max_votes_per_user: 3,
-          total_votes: 1247,
-          unique_voters: 892,
-          status: "active",
-          options: [
-            {
-              id: 1,
-              title: "Community Sports Complex Upgrade",
-              description: "Modernize our local sports facilities with new equipment, improved lighting, and accessible amenities for all community members.",
-              category: "Recreation & Sports",
-              estimated_budget: 150000,
-              priority_level: "High",
-              image_url: "/images/sports-complex.jpg",
-              vote_count: 324,
-              percentage: 26.0
-            },
-            {
-              id: 2,
-              title: "Youth Arts & Culture Center",
-              description: "Create a dedicated space for young artists to learn, create, and showcase their talents through workshops and exhibitions.",
-              category: "Arts & Culture",
-              estimated_budget: 120000,
-              priority_level: "High",
-              image_url: "/images/arts-center.jpg",
-              vote_count: 298,
-              percentage: 23.9
-            },
-            {
-              id: 3,
-              title: "Community Garden Network",
-              description: "Establish multiple community gardens across different neighborhoods to promote sustainable living and community connection.",
-              category: "Environment",
-              estimated_budget: 75000,
-              priority_level: "Medium",
-              image_url: "/images/community-garden.jpg",
-              vote_count: 267,
-              percentage: 21.4
-            },
-            {
-              id: 4,
-              title: "Senior Citizens Support Hub",
-              description: "Develop a comprehensive support center offering health services, social activities, and technology training for seniors.",
-              category: "Community Services",
-              estimated_budget: 200000,
-              priority_level: "High",
-              image_url: "/images/senior-hub.jpg",
-              vote_count: 245,
-              percentage: 19.6
-            },
-            {
-              id: 5,
-              title: "Public Wi-Fi Infrastructure",
-              description: "Install free public Wi-Fi hotspots in parks, community centers, and public spaces to improve digital accessibility.",
-              category: "Technology",
-              estimated_budget: 90000,
-              priority_level: "Medium",
-              image_url: "/images/wifi-infrastructure.jpg",
-              vote_count: 113,
-              percentage: 9.1
-            }
-          ]
-        }
-      ];
-      
-      setCampaigns(mockCampaigns);
-      setSelectedCampaign(mockCampaigns[0]);
-      setLoading(false);
-    }, 1000);
-  }, []);
-
-  const handleVote = async (optionId) => {
-    // Gate: require authentication before voting
-    if (!currentUser) {
-      setPendingVoteOptionId(optionId);
-      setShowAuthGate(true);
-      return;
-    }
-    try {
-      // Check if user has reached vote limit
-      const currentVotes = Object.keys(userVotes).length;
-      if (currentVotes >= selectedCampaign.max_votes_per_user) {
-        setError(`You can only vote for ${selectedCampaign.max_votes_per_user} options.`);
-        return;
-      }
-
-      // Toggle vote
-      const newVotes = { ...userVotes };
-      if (newVotes[optionId]) {
-        delete newVotes[optionId];
-      } else {
-        newVotes[optionId] = true;
-      }
-      
-      setUserVotes(newVotes);
-      setError(null);
-    } catch (err) {
-      setError('Failed to submit vote. Please try again.');
-    }
-  };
-
-  // Called after successful login/register in the auth gate
-  function handleAuthSuccess(loggedInUser) {
-    setCurrentUser(loggedInUser);
-    setShowAuthGate(false);
-    // Continue with the vote the user originally tried to cast
-    if (pendingVoteOptionId !== null) {
-      const optionId = pendingVoteOptionId;
-      setPendingVoteOptionId(null);
-      // Re-invoke handleVote now that currentUser is set
-      // Use a short timeout so state has settled
-      setTimeout(() => {
-        const currentVotes = Object.keys(userVotes).length;
-        if (currentVotes < (selectedCampaign?.max_votes_per_user || 3)) {
-          setUserVotes(prev => ({ ...prev, [optionId]: true }));
-        }
-      }, 50);
-    }
-  }
-
-  const submitAllVotes = async () => {
+  const loadSessions = useCallback(async () => {
     try {
       setLoading(true);
-      
-      // In real implementation, submit all votes to API
-      const votePromises = Object.keys(userVotes).map(optionId => {
-        return fetch(`/api/community/voting/campaigns/${selectedCampaign.id}/vote`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            option_id: parseInt(optionId),
-            postcode: '2000', // Would get from user input
-            age_group: '25-34' // Would get from user input
-          })
-        });
-      });
-      
-      await Promise.all(votePromises);
-      
-      // Show success message
-      alert('Your votes have been submitted successfully!');
-      setUserVotes({});
-      
+      setError(null);
+      const res = await fetch(`${API_BASE}/voting/api/sessions?status=open`);
+      if (!res.ok) throw new Error(`Server error ${res.status}`);
+      const data = await res.json();
+      const list = data.sessions || [];
+      setSessions(list);
+      if (list.length > 0 && !selectedSession) {
+        setSelectedSession(list[0]);
+        // Seed user votes from server if authenticated
+        if (list[0].user_votes) {
+          const mapped = {};
+          Object.entries(list[0].user_votes).forEach(([k, v]) => {
+            mapped[parseInt(k)] = v;
+          });
+          setUserVotes(mapped);
+        }
+      }
     } catch (err) {
-      setError('Failed to submit votes. Please try again.');
+      setError(err.message || 'Failed to load voting sessions.');
+    } finally {
+      setLoading(false);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    loadSessions();
+  }, [loadSessions]);
+
+  const handleSelectSession = async (session) => {
+    try {
+      setLoading(true);
+      const res = await fetch(`${API_BASE}/voting/api/sessions/${session.id}`);
+      if (!res.ok) throw new Error(`Server error ${res.status}`);
+      const data = await res.json();
+      setSelectedSession(data);
+      const mapped = {};
+      Object.entries(data.user_votes || {}).forEach(([k, v]) => {
+        mapped[parseInt(k)] = v;
+      });
+      setUserVotes(mapped);
+      setSubmitSuccess(false);
+    } catch (err) {
+      setError(err.message || 'Failed to load session.');
     } finally {
       setLoading(false);
     }
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-AU', {
-      style: 'currency',
-      currency: 'AUD',
-      minimumFractionDigits: 0
-    }).format(amount);
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-AU', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+  const handleVote = (optionId) => {
+    if (!currentUser) {
+      setPendingVoteOptionId(optionId);
+      setShowAuthGate(true);
+      return;
+    }
+    setUserVotes((prev) => {
+      const next = { ...prev };
+      if (next[optionId] !== undefined) {
+        delete next[optionId];
+      } else {
+        const maxVotes = selectedSession?.max_votes_per_user || 99;
+        if (Object.keys(next).length >= maxVotes) {
+          setError(`You can only vote for ${maxVotes} option${maxVotes !== 1 ? 's' : ''}.`);
+          return prev;
+        }
+        next[optionId] = 1;
+      }
+      setError(null);
+      return next;
     });
   };
 
-  const getCategoryColor = (category) => {
-    const colors = {
-      'Recreation & Sports': 'bg-blue-100 text-blue-800',
-      'Arts & Culture': 'bg-purple-100 text-purple-800',
-      'Environment': 'bg-green-100 text-green-800',
-      'Community Services': 'bg-orange-100 text-orange-800',
-      'Technology': 'bg-gray-100 text-gray-800'
-    };
-    return colors[category] || 'bg-gray-100 text-gray-800';
+  const handleAuthSuccess = (loggedInUser) => {
+    setCurrentUser(loggedInUser);
+    setShowAuthGate(false);
+    if (pendingVoteOptionId !== null) {
+      const optId = pendingVoteOptionId;
+      setPendingVoteOptionId(null);
+      setTimeout(() => handleVote(optId), 50);
+    }
   };
 
-  const getPriorityColor = (priority) => {
-    const colors = {
-      'High': 'bg-red-100 text-red-800',
-      'Medium': 'bg-yellow-100 text-yellow-800',
-      'Low': 'bg-green-100 text-green-800'
-    };
-    return colors[priority] || 'bg-gray-100 text-gray-800';
+  const submitAllVotes = async () => {
+    if (!currentUser) {
+      setShowAuthGate(true);
+      return;
+    }
+    if (Object.keys(userVotes).length === 0) {
+      setError('Please select at least one option before submitting.');
+      return;
+    }
+    try {
+      setSubmitting(true);
+      setError(null);
+      const token = localStorage.getItem('grantthrive_token') || localStorage.getItem('token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const promises = Object.entries(userVotes).map(([optionId, value]) =>
+        fetch(`${API_BASE}/voting/api/vote`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            application_id: parseInt(optionId),
+            voting_session_id: selectedSession.id,
+            vote_value: value || 1,
+          }),
+        })
+      );
+      const results = await Promise.all(promises);
+      const failed = results.filter((r) => !r.ok);
+      if (failed.length > 0) throw new Error('Some votes could not be submitted.');
+      setSubmitSuccess(true);
+      // Refresh session to get updated counts
+      await handleSelectSession(selectedSession);
+    } catch (err) {
+      setError(err.message || 'Failed to submit votes. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  if (loading) {
+  const formatCurrency = (amount) =>
+    new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', minimumFractionDigits: 0 }).format(amount || 0);
+
+  const formatDate = (dateString) =>
+    new Date(dateString).toLocaleDateString('en-AU', { year: 'numeric', month: 'long', day: 'numeric' });
+
+  const timeRemaining = (endDate) => {
+    const diff = new Date(endDate) - new Date();
+    if (diff <= 0) return 'Closed';
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    if (days > 0) return `${days} day${days !== 1 ? 's' : ''} remaining`;
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    return `${hours} hour${hours !== 1 ? 's' : ''} remaining`;
+  };
+
+  if (loading && sessions.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading voting campaigns...</p>
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="flex flex-col items-center gap-3 text-slate-500">
+          <Loader2 className="h-8 w-8 animate-spin" />
+          <p className="text-sm">Loading voting sessions…</p>
         </div>
       </div>
     );
   }
 
-  if (!selectedCampaign) {
+  if (!loading && sessions.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
         <div className="text-center">
-          <Vote className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">No Active Voting Campaigns</h2>
-          <p className="text-gray-600">Check back later for new community voting opportunities.</p>
+          <Vote className="mx-auto mb-4 h-16 w-16 text-slate-300" />
+          <h2 className="text-2xl font-bold text-slate-900">No Active Voting Sessions</h2>
+          <p className="mt-2 text-slate-500">Check back later for new community voting opportunities.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-4">
-          <Vote className="h-8 w-8 text-blue-600" />
-          <h1 className="text-3xl font-bold text-gray-900">Community Voting</h1>
-        </div>
-        <p className="text-gray-600 text-lg">
-          Have your say in shaping our community's future. Vote for the projects that matter most to you.
-        </p>
-      </div>
-
-      {/* Campaign Overview */}
-      <Card className="mb-8">
-        <CardHeader>
-          <div className="flex items-start justify-between">
-            <div>
-              <CardTitle className="text-2xl mb-2">{selectedCampaign.title}</CardTitle>
-              <p className="text-gray-600 mb-4">{selectedCampaign.description}</p>
-            </div>
-            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-              <CheckCircle className="h-4 w-4 mr-1" />
-              Active
-            </Badge>
+    <div className="min-h-screen bg-slate-50">
+      <div className="mx-auto max-w-7xl p-6 lg:p-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <Vote className="h-8 w-8 text-emerald-700" />
+            <h1 className="text-3xl font-bold text-slate-900">Community Voting</h1>
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="flex items-center gap-3">
-              <Calendar className="h-5 w-5 text-blue-600" />
-              <div>
-                <p className="text-sm text-gray-500">Voting Period</p>
-                <p className="font-semibold">
-                  {formatDate(selectedCampaign.start_date)} - {formatDate(selectedCampaign.end_date)}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Users className="h-5 w-5 text-green-600" />
-              <div>
-                <p className="text-sm text-gray-500">Participants</p>
-                <p className="font-semibold">{selectedCampaign.unique_voters.toLocaleString()} voters</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <TrendingUp className="h-5 w-5 text-purple-600" />
-              <div>
-                <p className="text-sm text-gray-500">Total Votes</p>
-                <p className="font-semibold">{selectedCampaign.total_votes.toLocaleString()} votes</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Vote className="h-5 w-5 text-orange-600" />
-              <div>
-                <p className="text-sm text-gray-500">Your Votes</p>
-                <p className="font-semibold">
-                  {Object.keys(userVotes).length} / {selectedCampaign.max_votes_per_user}
-                </p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Error Message */}
-      {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
-          <AlertCircle className="h-5 w-5 text-red-600" />
-          <p className="text-red-700">{error}</p>
+          <p className="text-slate-600">
+            Have your say in shaping your community's future. Vote for the projects that matter most to you.
+          </p>
         </div>
-      )}
 
-      {/* Voting Options */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        {selectedCampaign.options.map((option) => (
-          <Card 
-            key={option.id} 
-            className={`cursor-pointer transition-all duration-200 hover:shadow-lg ${
-              userVotes[option.id] ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:shadow-md'
-            }`}
-            onClick={() => handleVote(option.id)}
-          >
-            <CardHeader>
-              <div className="flex items-start justify-between mb-3">
-                <CardTitle className="text-xl">{option.title}</CardTitle>
-                <div className="flex items-center gap-2">
-                  {userVotes[option.id] && (
-                    <CheckCircle className="h-5 w-5 text-blue-600" />
-                  )}
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-2 mb-3">
-                <Badge className={getCategoryColor(option.category)}>
-                  {option.category}
-                </Badge>
-                <Badge className={getPriorityColor(option.priority_level)}>
-                  {option.priority_level} Priority
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-600 mb-4">{option.description}</p>
-              
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <DollarSign className="h-4 w-4 text-green-600" />
-                  <span className="font-semibold text-green-700">
-                    {formatCurrency(option.estimated_budget)}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-blue-600" />
-                  <span className="font-semibold">
-                    {option.vote_count} votes ({option.percentage}%)
-                  </span>
-                </div>
-              </div>
-              
-              <div className="mb-4">
-                <div className="flex justify-between text-sm text-gray-600 mb-1">
-                  <span>Community Support</span>
-                  <span>{option.percentage}%</span>
-                </div>
-                <Progress value={option.percentage} className="h-2" />
-              </div>
-              
-              <Button 
-                variant={userVotes[option.id] ? "default" : "outline"}
-                className="w-full"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleVote(option.id);
-                }}
+        {/* Session selector (if multiple) */}
+        {sessions.length > 1 && (
+          <div className="mb-6 flex flex-wrap gap-3">
+            {sessions.map((s) => (
+              <Button
+                key={s.id}
+                variant={selectedSession?.id === s.id ? 'default' : 'outline'}
+                className="rounded-xl"
+                onClick={() => handleSelectSession(s)}
               >
-                {userVotes[option.id] ? (
-                  <>
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Voted
-                  </>
-                ) : (
-                  <>
-                    <Vote className="h-4 w-4 mr-2" />
-                    Vote for this project
-                  </>
-                )}
+                {s.title}
               </Button>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+            ))}
+          </div>
+        )}
 
-      {/* Submit Votes */}
-      {Object.keys(userVotes).length > 0 && (
-        <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-blue-900 mb-1">
-                  Ready to submit your votes?
-                </h3>
-                <p className="text-blue-700">
-                  You have selected {Object.keys(userVotes).length} project{Object.keys(userVotes).length !== 1 ? 's' : ''} to support.
-                </p>
+        {selectedSession && (
+          <>
+            {/* Campaign overview card */}
+            <Card className="mb-8 rounded-3xl border-slate-200 shadow-sm">
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <CardTitle className="text-2xl">{selectedSession.title}</CardTitle>
+                    {selectedSession.description && (
+                      <p className="mt-2 text-slate-600">{selectedSession.description}</p>
+                    )}
+                  </div>
+                  <Badge className="border border-emerald-200 bg-emerald-50 text-emerald-700">
+                    <CheckCircle className="mr-1 h-4 w-4" />
+                    Active
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
+                  <div className="flex items-center gap-3">
+                    <Calendar className="h-5 w-5 text-emerald-700" />
+                    <div>
+                      <p className="text-xs text-slate-500">Voting period</p>
+                      <p className="text-sm font-semibold text-slate-900">
+                        {formatDate(selectedSession.starts_at)} — {formatDate(selectedSession.ends_at)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Clock className="h-5 w-5 text-amber-600" />
+                    <div>
+                      <p className="text-xs text-slate-500">Time remaining</p>
+                      <p className="text-sm font-semibold text-slate-900">
+                        {timeRemaining(selectedSession.ends_at)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Users className="h-5 w-5 text-blue-600" />
+                    <div>
+                      <p className="text-xs text-slate-500">Participants</p>
+                      <p className="text-sm font-semibold text-slate-900">
+                        {(selectedSession.unique_voters || 0).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <TrendingUp className="h-5 w-5 text-purple-600" />
+                    <div>
+                      <p className="text-xs text-slate-500">Total votes cast</p>
+                      <p className="text-sm font-semibold text-slate-900">
+                        {(selectedSession.total_votes || 0).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {error && (
+              <div className="mb-6 flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                {error}
               </div>
-              <Button 
-                onClick={submitAllVotes}
-                disabled={loading}
-                className="bg-green-700 hover:bg-green-800"
-              >
-                {loading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Submitting...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Submit My Votes
-                  </>
-                )}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            )}
 
-      {/* Information Footer */}
-      <div className="mt-12 p-6 bg-gray-50 rounded-lg">
-        <h3 className="text-lg font-semibold text-gray-900 mb-3">How Community Voting Works</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm text-gray-600">
-          <div className="flex items-start gap-3">
-            <Vote className="h-5 w-5 text-blue-600 mt-0.5" />
-            <div>
-              <p className="font-semibold text-gray-900 mb-1">Cast Your Votes</p>
-              <p>Select up to {selectedCampaign.max_votes_per_user} projects that you believe should receive priority funding.</p>
+            {submitSuccess && (
+              <div className="mb-6 flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
+                <CheckCircle className="h-4 w-4 flex-shrink-0" />
+                Your votes have been submitted successfully. Thank you for participating!
+              </div>
+            )}
+
+            {/* Voting options */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              {(selectedSession.options || []).map((option) => {
+                const isVoted = userVotes[option.id] !== undefined;
+                return (
+                  <Card
+                    key={option.id}
+                    className={`rounded-3xl border-2 shadow-sm transition-all ${
+                      isVoted ? 'border-emerald-400 bg-emerald-50/30' : 'border-slate-200 bg-white'
+                    }`}
+                  >
+                    <CardHeader>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          {option.category && (
+                            <Badge variant="outline" className="mb-2 rounded-full text-xs">
+                              {option.category}
+                            </Badge>
+                          )}
+                          <CardTitle className="text-lg leading-snug">{option.title}</CardTitle>
+                        </div>
+                        {isVoted && (
+                          <div className="flex-shrink-0 rounded-full bg-emerald-100 p-2">
+                            <CheckCircle className="h-5 w-5 text-emerald-700" />
+                          </div>
+                        )}
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      {option.description && (
+                        <p className="mb-4 text-sm leading-6 text-slate-600">{option.description}</p>
+                      )}
+
+                      <div className="mb-4 space-y-2 text-sm">
+                        {option.estimated_budget > 0 && (
+                          <div className="flex items-center justify-between">
+                            <span className="flex items-center gap-1 text-slate-500">
+                              <DollarSign className="h-4 w-4" />
+                              Estimated budget
+                            </span>
+                            <span className="font-semibold text-slate-900">
+                              {formatCurrency(option.estimated_budget)}
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between">
+                          <span className="flex items-center gap-1 text-slate-500">
+                            <ThumbsUp className="h-4 w-4" />
+                            Votes received
+                          </span>
+                          <span className="font-semibold text-slate-900">
+                            {(option.vote_count || 0).toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Vote percentage bar */}
+                      <div className="mb-5">
+                        <div className="mb-1 flex items-center justify-between text-xs text-slate-500">
+                          <span>Community support</span>
+                          <span className="font-medium text-slate-700">{option.percentage || 0}%</span>
+                        </div>
+                        <div className="h-2 w-full rounded-full bg-slate-200">
+                          <div
+                            className="h-2 rounded-full bg-emerald-500 transition-all"
+                            style={{ width: `${option.percentage || 0}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <Button
+                        className={`w-full rounded-xl ${
+                          isVoted
+                            ? 'bg-emerald-700 hover:bg-emerald-800'
+                            : 'bg-slate-900 hover:bg-slate-800'
+                        }`}
+                        onClick={() => handleVote(option.id)}
+                        disabled={submitting}
+                      >
+                        {isVoted ? (
+                          <>
+                            <CheckCircle className="mr-2 h-4 w-4" />
+                            Voted — click to remove
+                          </>
+                        ) : (
+                          <>
+                            <ThumbsUp className="mr-2 h-4 w-4" />
+                            {currentUser ? 'Vote for this' : 'Sign in to vote'}
+                          </>
+                        )}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
-          </div>
-          <div className="flex items-start gap-3">
-            <Users className="h-5 w-5 text-green-600 mt-0.5" />
-            <div>
-              <p className="font-semibold text-gray-900 mb-1">Community Decision</p>
-              <p>Your votes are combined with other community members to determine funding priorities.</p>
-            </div>
-          </div>
-          <div className="flex items-start gap-3">
-            <TrendingUp className="h-5 w-5 text-purple-600 mt-0.5" />
-            <div>
-              <p className="font-semibold text-gray-900 mb-1">See Results</p>
-              <p>Track voting progress in real-time and see how your community's priorities are shaping up.</p>
-            </div>
-          </div>
-        </div>
+
+            {/* Submit votes CTA */}
+            {Object.keys(userVotes).length > 0 && !submitSuccess && (
+              <div className="mt-8 rounded-3xl border border-emerald-200 bg-emerald-50 p-6">
+                <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
+                  <div className="flex-1">
+                    <p className="font-semibold text-emerald-900">
+                      You have selected {Object.keys(userVotes).length} option
+                      {Object.keys(userVotes).length !== 1 ? 's' : ''}
+                    </p>
+                    <p className="mt-1 text-sm text-emerald-700">
+                      Review your selections above, then submit to record your votes.
+                    </p>
+                  </div>
+                  <Button
+                    className="rounded-xl bg-emerald-700 px-8 hover:bg-emerald-800"
+                    onClick={submitAllVotes}
+                    disabled={submitting}
+                  >
+                    {submitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Submitting…
+                      </>
+                    ) : (
+                      'Submit my votes'
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
-      {/* Auth Gate Modal — shown when an unauthenticated user tries to vote */}
-      <AuthGateModal
-        isOpen={showAuthGate}
-        onClose={() => { setShowAuthGate(false); setPendingVoteOptionId(null); }}
-        onSuccess={handleAuthSuccess}
-        action="cast your vote"
-        council={council}
-      />
+
+      {/* Auth gate modal */}
+      {showAuthGate && (
+        <AuthGateModal
+          onClose={() => setShowAuthGate(false)}
+          onSuccess={handleAuthSuccess}
+          message="Please sign in or register to cast your vote."
+        />
+      )}
     </div>
   );
 };
 
 export default CommunityVoting;
-

@@ -32,6 +32,8 @@ import AccountBilling from './pages/AccountBilling.jsx';
 import Profile from './pages/Profile.jsx';
 import PendingApprovals from './pages/PendingApprovals.jsx';
 import PricingPage from './pages/PricingPage.jsx';
+import TransparencyDashboard from './pages/TransparencyDashboard.jsx';
+import PublicResults from './pages/PublicResults.jsx';
 
 // ── RBAC constants ────────────────────────────────────────────────────────────
 const ROLES = {
@@ -624,6 +626,34 @@ function PortalInner() {
             onLogout={handleLogout}
           >
             <PublicGrantMap {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Community — Transparency Dashboard */}
+      <Route
+        path="community/transparency"
+        element={
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COMMUNITY_MEMBER]}
+            onLogout={handleLogout}
+          >
+            <TransparencyDashboard {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Community — Public Results */}
+      <Route
+        path="community/public-results"
+        element={
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COMMUNITY_MEMBER]}
+            onLogout={handleLogout}
+          >
+            <PublicResults {...pageProps} />
           </ProtectedRoute>
         }
       />
