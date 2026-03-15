@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import apiClient from '../../utils/api.js';
 import NotificationBell from '../components/common/NotificationBell';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card.jsx';
 import { Badge } from '@shared/components/ui/badge.jsx';
@@ -20,14 +21,35 @@ import {
 } from 'lucide-react';
 
 const CouncilStaffDashboard = ({ user, onNavigate, onLogout }) => {
-  const staffMetrics = {
-    assignedApplications: 15,
-    completedToday: 3,
-    pendingReview: 8,
-    awaitingDocuments: 4,
-    averageReviewTime: 5.2,
-    communityContacts: 12
-  };
+  // Live metrics — initialised with zeros while loading
+  const [staffMetrics, setStaffMetrics] = useState({
+    assignedApplications: 0,
+    completedToday: 0,
+    pendingReview: 0,
+    awaitingDocuments: 0,
+    averageReviewTime: 0,
+    communityContacts: 0
+  });
+  const [metricsLoading, setMetricsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      try {
+        const appStats = await apiClient.getApplicationStats();
+        setStaffMetrics(prev => ({
+          ...prev,
+          assignedApplications: appStats?.total_applications ?? prev.assignedApplications,
+          pendingReview: appStats?.pending_review ?? prev.pendingReview,
+          completedToday: appStats?.approved ?? prev.completedToday,
+        }));
+      } catch (err) {
+        console.warn('Staff dashboard metrics fetch failed, using defaults:', err);
+      } finally {
+        setMetricsLoading(false);
+      }
+    };
+    fetchMetrics();
+  }, []);
 
   const myApplications = [
     {

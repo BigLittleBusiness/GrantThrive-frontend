@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import apiClient from '../utils/api.js';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card.jsx';
 import { Button } from '@shared/components/ui/button.jsx';
 import { Input } from '@shared/components/ui/input.jsx';
@@ -39,48 +40,35 @@ const handleLogin = async (e) => {
   setLoginAttempt(null);
 
   try {
-    const response = await fetch("http://127.0.0.1:5000/auth/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email: formData.email.trim(),
-        password: formData.password,
-      }),
-    });
+    // Use the shared apiClient — routes through Vite proxy to /api/auth/login
+    const data = await apiClient.login(formData.email.trim(), formData.password);
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      setLoginAttempt({
-        success: false,
-        message: data.message || data.error || "Login failed. Please try again.",
-        isPending: data.status === "pending_approval",
-      });
-      return;
-    }
-
+    // Persist to the keys PortalApp.jsx reads on session restore
     if (data.token) {
-      localStorage.setItem("authToken", data.token);
+      localStorage.setItem('gt_auth_token', data.token);
     }
-
     if (data.user) {
-      localStorage.setItem("authUser", JSON.stringify(data.user));
+      localStorage.setItem('gt_auth_user', JSON.stringify(data.user));
     }
 
     setLoginAttempt({
       success: true,
-      message: `Welcome back, ${data.user.full_name || data.user.first_name || "User"}!`,
+      message: `Welcome back, ${data.user.full_name || data.user.first_name || 'User'}!`,
       account: data.user,
     });
 
     onLogin?.(data.user);
   } catch (error) {
-    console.error("Login error:", error);
+    console.error('Login error:', error);
+    const isPending =
+      error.message?.toLowerCase().includes('pending') ||
+      error.message?.toLowerCase().includes('approval');
     setLoginAttempt({
       success: false,
-      message: "Unable to connect to the server. Please try again.",
+      isPending,
+      message: isPending
+        ? 'Your account is awaiting admin approval. You will be notified by email.'
+        : error.message || 'Unable to connect to the server. Please try again.',
     });
   } finally {
     setIsLoading(false);

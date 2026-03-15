@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import apiClient from '../utils/api.js';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@shared/components/ui/card.jsx';
 import { Button } from '@shared/components/ui/button.jsx';
 import { Input } from '@shared/components/ui/input.jsx';
@@ -100,6 +101,8 @@ export default function Registration({ onLogin }) {
     lastName: '',
     email: '',
     phone: '',
+    password: '',
+    confirmPassword: '',
     organizationName: '',
     organizationType: '',
     abn: '',
@@ -109,6 +112,8 @@ export default function Registration({ onLogin }) {
     department: '',
     documents: [],
   });
+  const [submitError, setSubmitError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const selectedRole = ROLE_OPTIONS.find((item) => item.id === userType);
   const selectedTone = toneClasses[selectedRole?.tone || 'green'];
@@ -118,12 +123,22 @@ export default function Registration({ onLogin }) {
       ? 'Please use your official council email (.gov.au or .govt.nz).'
       : '';
 
+  const passwordError =
+    formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword
+      ? 'Passwords do not match.'
+      : formData.password && formData.password.length < 8
+      ? 'Password must be at least 8 characters.'
+      : '';
+
   const canContinueStep2 =
     formData.firstName.trim() &&
     formData.lastName.trim() &&
     formData.email.trim() &&
     formData.phone.trim() &&
-    !emailError;
+    formData.password.trim() &&
+    formData.confirmPassword.trim() &&
+    !emailError &&
+    !passwordError;
 
   const canContinueStep3 = useMemo(() => {
     if (userType === 'council_staff') {
@@ -147,10 +162,46 @@ export default function Registration({ onLogin }) {
       [field]: value,
     }));
   };
-// this is a placeholder for the actual API call to submit the registration data to the backend. In a real implementation, you would replace this with an API client method that sends the data to your server for processing.
-  const handleSubmit = () => {
-    setSubmitted(true);
-    setStep(5);
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    setSubmitError(null);
+    try {
+      const payload = {
+        first_name: formData.firstName.trim(),
+        last_name: formData.lastName.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        password: formData.password,
+        user_type: userType,
+        organization_name:
+          userType === 'council_staff'
+            ? formData.councilName.trim()
+            : formData.organizationName.trim() || undefined,
+        position: formData.position.trim() || undefined,
+        department: formData.department.trim() || undefined,
+      };
+
+      const data = await apiClient.register(payload);
+
+      // Persist token for instantly-approved accounts (community_member)
+      if (data.token && data.user) {
+        localStorage.setItem('gt_auth_token', data.token);
+        localStorage.setItem('gt_auth_user', JSON.stringify(data.user));
+      }
+
+      setSubmitted(true);
+      setStep(5);
+
+      // Auto-login only for instantly-approved accounts
+      if (data.token && data.user && !data.requires_approval) {
+        onLogin?.(data.user);
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+      setSubmitError(error.message || 'Registration failed. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const renderStepHeader = (title, description) => (
@@ -328,6 +379,40 @@ export default function Registration({ onLogin }) {
           </div>
         </div>
       </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-medium text-slate-700">Password *</label>
+          <div className="relative">
+            <LockKeyhole className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Input
+              type="password"
+              value={formData.password}
+              onChange={(e) => handleInputChange('password', e.target.value)}
+              placeholder="At least 8 characters"
+              className={`h-11 rounded-xl pl-10 ${passwordError ? 'border-rose-300 focus-visible:ring-rose-200' : ''}`}
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-medium text-slate-700">Confirm password *</label>
+          <div className="relative">
+            <LockKeyhole className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Input
+              type="password"
+              value={formData.confirmPassword}
+              onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+              placeholder="Re-enter your password"
+              className={`h-11 rounded-xl pl-10 ${passwordError ? 'border-rose-300 focus-visible:ring-rose-200' : ''}`}
+            />
+          </div>
+          {passwordError && (
+            <div className="mt-2 flex items-center gap-2 text-sm text-rose-600">
+              <AlertCircle className="h-4 w-4" />
+              <span>{passwordError}</span>
+            </div>
+          )}
+        </div>
 
       <div className="mt-8 flex gap-3">
         <Button type="button" variant="outline" onClick={() => setStep(1)} className="h-11 flex-1 rounded-xl">
@@ -544,6 +629,13 @@ export default function Registration({ onLogin }) {
         </div>
       </div>
 
+      {submitError && (
+        <div className="mt-4 flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span>{submitError}</span>
+        </div>
+      )}
+
       <div className="mt-8 flex gap-3">
         <Button type="button" variant="outline" onClick={() => setStep(3)} className="h-11 flex-1 rounded-xl">
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -552,10 +644,11 @@ export default function Registration({ onLogin }) {
         <Button
           type="button"
           onClick={handleSubmit}
+          disabled={isSubmitting}
           className="h-11 flex-1 rounded-xl bg-emerald-700 hover:bg-emerald-800"
         >
-          Submit registration
-          <ArrowRight className="ml-2 h-4 w-4" />
+          {isSubmitting ? 'Submitting...' : 'Submit registration'}
+          {!isSubmitting && <ArrowRight className="ml-2 h-4 w-4" />}
         </Button>
       </div>
     </div>

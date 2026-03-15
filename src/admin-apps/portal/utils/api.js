@@ -100,7 +100,7 @@ class ApiClient {
   }
 
   async login(email, password) {
-    const response = await this.post('/auth/login', { email, password })
+    const response = await this.post('/api/auth/login', { email, password })
 
     if (response.token) {
       this.setToken(response.token)
@@ -110,7 +110,7 @@ class ApiClient {
   }
 
   async register(userData) {
-    const response = await this.post('/auth/register', userData)
+    const response = await this.post('/api/auth/register', userData)
 
     if (response.token) {
       this.setToken(response.token)
@@ -120,7 +120,7 @@ class ApiClient {
   }
 
   async demoLogin(demoType) {
-    const response = await this.post('/auth/demo-login', {
+    const response = await this.post('/api/auth/demo-login', {
       demo_type: demoType
     })
 
@@ -133,7 +133,7 @@ class ApiClient {
 
   async logout() {
     try {
-      await this.post('/auth/logout')
+      await this.post('/api/auth/logout')
     } catch (error) {
       console.error('Logout error:', error)
     } finally {
@@ -145,7 +145,7 @@ class ApiClient {
     if (!this.token) return null
 
     try {
-      const response = await this.post('/auth/verify-token', {
+      const response = await this.post('/api/auth/verify-token', {
         token: this.token
       })
 
@@ -168,7 +168,7 @@ class ApiClient {
 
   async getGrants(filters = {}) {
     const query = new URLSearchParams(filters).toString()
-    return this.get(`/public/api/grants${query ? `?${query}` : ''}`)
+    return this.get(`/api/grants${query ? `?${query}` : ''}`)
   }
 
   async getGrant(id) {
@@ -189,7 +189,24 @@ class ApiClient {
   }
 
   async getDashboardMetrics() {
-    return this.get('/reports/api/dashboard-data')
+    // Aggregate stats from the available stat endpoints
+    const [appStats, grantStats] = await Promise.all([
+      this.get('/api/applications/stats'),
+      this.get('/api/grants/stats'),
+    ]);
+    return { appStats, grantStats };
+  }
+
+  async getAdminStats() {
+    return this.get('/api/admin/stats');
+  }
+
+  async getGrantStats() {
+    return this.get('/api/grants/stats');
+  }
+
+  async getApplicationStats() {
+    return this.get('/api/applications/stats');
   }
 
   async healthCheck() {

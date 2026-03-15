@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import apiClient from '../../utils/api.js';
 import NotificationBell from '../components/common/NotificationBell';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card.jsx';
 import { Badge } from '@shared/components/ui/badge.jsx';
@@ -28,16 +29,45 @@ import {
 } from 'lucide-react';
 
 const CouncilAdminDashboard = ({ user, onNavigate, onLogout }) => {
-  const adminMetrics = {
-    totalPrograms: 8,
-    activeApplications: 47,
-    pendingReviews: 12,
-    totalBudget: 2500000,
-    approvedThisMonth: 15,
-    rejectedThisMonth: 3,
-    communityMembers: 1247,
-    averageProcessingTime: 14
-  };
+  // Live metrics — initialised with zeros while loading
+  const [adminMetrics, setAdminMetrics] = useState({
+    totalPrograms: 0,
+    activeApplications: 0,
+    pendingReviews: 0,
+    totalBudget: 0,
+    approvedThisMonth: 0,
+    rejectedThisMonth: 0,
+    communityMembers: 0,
+    averageProcessingTime: 0
+  });
+  const [metricsLoading, setMetricsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      try {
+        const [appStats, grantStats, adminStats] = await Promise.all([
+          apiClient.getApplicationStats(),
+          apiClient.getGrantStats(),
+          apiClient.getAdminStats().catch(() => null), // may 403 for non-super-admin
+        ]);
+        setAdminMetrics(prev => ({
+          ...prev,
+          totalPrograms: grantStats?.total_grants ?? prev.totalPrograms,
+          activeApplications: appStats?.total_applications ?? prev.activeApplications,
+          pendingReviews: appStats?.pending_review ?? prev.pendingReviews,
+          totalBudget: grantStats?.total_funding ?? prev.totalBudget,
+          approvedThisMonth: appStats?.approved ?? prev.approvedThisMonth,
+          rejectedThisMonth: appStats?.rejected ?? prev.rejectedThisMonth,
+          communityMembers: adminStats?.active_users ?? prev.communityMembers,
+        }));
+      } catch (err) {
+        console.warn('Dashboard metrics fetch failed, using defaults:', err);
+      } finally {
+        setMetricsLoading(false);
+      }
+    };
+    fetchMetrics();
+  }, []);
 
   const pendingApplications = [
     {
