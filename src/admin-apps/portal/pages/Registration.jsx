@@ -36,17 +36,17 @@ const ROLE_OPTIONS = [
     ],
   },
   {
-    id: 'council_staff',
-    name: 'Council Staff',
-    description: 'For council team members who review applications or manage grant workflows.',
+    id: 'council',
+    name: 'Council',
+    description: 'For the first representative of a council registering on GrantThrive. You will be set up as the Council Administrator.',
     icon: Building2,
-    badge: 'Verification required',
+    badge: 'Admin approval required',
     tone: 'green',
     requirements: [
-      'Official council email required',
-      'Council name, department, and role',
-      'Review by council admin or GrantThrive admin',
-      'Usually approved within 1–2 business days',
+      'Official council email required (.gov.au or .govt.nz)',
+      'Council name and your position',
+      'Choose your council\u2019s GrantThrive subdomain',
+      'Account activated after GrantThrive admin approval',
     ],
   },
 ];
@@ -108,6 +108,7 @@ export default function Registration({ onLogin }) {
     abn: '',
     address: '',
     councilName: '',
+    subdomain: '',
     position: '',
     department: '',
     documents: [],
@@ -119,7 +120,7 @@ export default function Registration({ onLogin }) {
   const selectedTone = toneClasses[selectedRole?.tone || 'green'];
 
   const emailError =
-    userType === 'council_staff' && formData.email && !validateGovernmentEmail(formData.email)
+    userType === 'council' && formData.email && !validateGovernmentEmail(formData.email)
       ? 'Please use your official council email (.gov.au or .govt.nz).'
       : '';
 
@@ -140,12 +141,22 @@ export default function Registration({ onLogin }) {
     !emailError &&
     !passwordError;
 
+  // Auto-derive a default subdomain from the council name
+  const derivedSubdomain = useMemo(() => {
+    return formData.councilName
+      .toLowerCase()
+      .replace(/\s+council.*$/i, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 40);
+  }, [formData.councilName]);
+
   const canContinueStep3 = useMemo(() => {
-    if (userType === 'council_staff') {
+    if (userType === 'council') {
       return (
         formData.councilName.trim() &&
         formData.position.trim() &&
-        formData.department.trim()
+        (formData.subdomain.trim() || derivedSubdomain)
       );
     }
 
@@ -174,9 +185,13 @@ export default function Registration({ onLogin }) {
         password: formData.password,
         user_type: userType,
         organization_name:
-          userType === 'council_staff'
+          userType === 'council'
             ? formData.councilName.trim()
             : formData.organizationName.trim() || undefined,
+        subdomain:
+          userType === 'council'
+            ? (formData.subdomain.trim() || derivedSubdomain)
+            : undefined,
         position: formData.position.trim() || undefined,
         department: formData.department.trim() || undefined,
       };
@@ -311,7 +326,7 @@ export default function Registration({ onLogin }) {
       <div className="mb-6 flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
         <UserCircle2 className="h-5 w-5 text-slate-600" />
         <div className="text-sm text-slate-700">
-          Registering as <span className="font-semibold">{getRoleLabel(userType)}</span>
+          Registering as <span className="font-semibold">{userType === 'council' ? 'Council Administrator' : getRoleLabel(userType)}</span>
         </div>
       </div>
 
@@ -339,7 +354,7 @@ export default function Registration({ onLogin }) {
         <div>
           <label className="mb-2 block text-sm font-medium text-slate-700">
             Email address *
-            {userType === 'council_staff' && (
+            {userType === 'council' && (
               <span className="ml-1 text-xs text-rose-600">Official council email only</span>
             )}
           </label>
@@ -350,7 +365,7 @@ export default function Registration({ onLogin }) {
               value={formData.email}
               onChange={(e) => handleInputChange('email', e.target.value)}
               placeholder={
-                userType === 'council_staff'
+                userType === 'council'
                   ? 'name@council.gov.au or name@council.govt.nz'
                   : 'your.email@example.com'
               }
@@ -435,13 +450,13 @@ export default function Registration({ onLogin }) {
   const renderOrganisationInfo = () => (
     <div>
       {renderStepHeader(
-        userType === 'council_staff' ? 'Council details' : 'Organisation details',
-        userType === 'council_staff'
-          ? 'Help us verify your council role and where you work.'
+        userType === 'council' ? 'Council details' : 'Organisation details',
+        userType === 'council'
+          ? 'Tell us about your council and choose your GrantThrive subdomain.'
           : 'Tell us about the organisation or individual account using GrantThrive.'
       )}
 
-      {userType === 'council_staff' ? (
+      {userType === 'council' ? (
         <div className="space-y-5">
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">Council name *</label>
@@ -458,29 +473,54 @@ export default function Registration({ onLogin }) {
             <Input
               value={formData.position}
               onChange={(e) => handleInputChange('position', e.target.value)}
-              placeholder="e.g. Grants Officer"
+              placeholder="e.g. Grants Manager"
               className="h-11 rounded-xl"
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Department *</label>
-            <Input
-              value={formData.department}
-              onChange={(e) => handleInputChange('department', e.target.value)}
-              placeholder="e.g. Community Services"
-              className="h-11 rounded-xl"
-            />
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              GrantThrive subdomain *
+              <span className="ml-1 text-xs font-normal text-slate-500">Your council's unique portal address</span>
+            </label>
+            <div className="flex items-center gap-0 overflow-hidden rounded-xl border border-slate-300 focus-within:border-slate-400">
+              <Input
+                value={formData.subdomain || derivedSubdomain}
+                onChange={(e) =>
+                  handleInputChange(
+                    'subdomain',
+                    e.target.value
+                      .toLowerCase()
+                      .replace(/[^a-z0-9-]/g, '')
+                      .slice(0, 40)
+                  )
+                }
+                placeholder={derivedSubdomain || 'your-council'}
+                className="h-11 flex-1 rounded-none border-0 focus-visible:ring-0"
+              />
+              <span className="select-none whitespace-nowrap bg-slate-100 px-3 py-2.5 text-sm text-slate-500">
+                .grantthrive.com.au
+              </span>
+            </div>
+            {(formData.subdomain || derivedSubdomain) && (
+              <p className="mt-1.5 text-xs text-slate-500">
+                Your portal will be at{' '}
+                <span className="font-medium text-slate-700">
+                  {formData.subdomain || derivedSubdomain}.grantthrive.com.au
+                </span>
+              </p>
+            )}
           </div>
 
-          <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
             <div className="flex items-start gap-3">
-              <LockKeyhole className="mt-0.5 h-5 w-5 text-blue-700" />
+              <ShieldCheck className="mt-0.5 h-5 w-5 text-amber-700" />
               <div>
-                <p className="font-medium text-blue-900">Verification flow</p>
-                <p className="mt-1 text-sm text-blue-800">
-                  Your request may be reviewed by a council admin or the GrantThrive platform team
-                  before access is approved.
+                <p className="font-medium text-amber-900">GrantThrive admin approval required</p>
+                <p className="mt-1 text-sm text-amber-800">
+                  Your registration will be reviewed by the GrantThrive team. Once approved you
+                  will receive an email and can log in as your council's Administrator.
+                  Additional staff can then be invited through your admin portal.
                 </p>
               </div>
             </div>
@@ -574,7 +614,7 @@ export default function Registration({ onLogin }) {
       )}
 
       <div className="space-y-5">
-        {userType === 'council_staff' ? (
+        {userType === 'council' ? (
           <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-8 text-center">
             <Upload className="mx-auto h-10 w-10 text-slate-400" />
             <h3 className="mt-4 text-lg font-semibold text-slate-900">
@@ -728,7 +768,7 @@ export default function Registration({ onLogin }) {
             <div className="flex justify-between gap-4">
               <span className="text-slate-500">Organisation</span>
               <span className="font-medium text-slate-900">
-                {userType === 'council_staff'
+                {userType === 'council'
                   ? formData.councilName
                   : formData.organizationType === 'individual'
                     ? 'Individual'
