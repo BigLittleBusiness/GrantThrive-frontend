@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import AuthGateModal from '../components/common/AuthGateModal.jsx';
+import AuthGateModal from '../../components/common/AuthGateModal.jsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card.jsx';
 import { Badge } from '@shared/components/ui/badge.jsx';
 import { Button } from '@shared/components/ui/button.jsx';

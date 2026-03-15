@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import NotificationBell from '../components/common/NotificationBell';
+import NotificationBell from '../../components/common/NotificationBell';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@shared/components/ui/card.jsx';
 import { Badge } from '@shared/components/ui/badge.jsx';
 import { Button } from '@shared/components/ui/button.jsx';
@@ -24,7 +24,7 @@ import {
   FolderOpen,
   Loader2,
 } from 'lucide-react';
-import apiClient from '../utils/api.js';
+import apiClient from '../../utils/api.js';
 
 const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
   const [applications, setApplications] = useState([]);

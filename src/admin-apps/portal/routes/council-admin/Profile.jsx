@@ -1,6 +1,6 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { AuthContext } from '../contexts/AuthContext';
-import apiClient from '../utils/api';
+import { AuthContext } from '../../contexts/AuthContext';
+import apiClient from '../../utils/api';
 
 const Profile = () => {
   const { user, updateUser } = useContext(AuthContext);

@@ -5,7 +5,7 @@ import {
   CardHeader, 
   CardTitle 
 } from '@shared/components/ui/card';
-import QRCodeGenerator from '../components/QRCodeGenerator';
+import QRCodeGenerator from '../../components/QRCodeGenerator';
 
 const QRCodeManagement = ({ user, onNavigate, onLogout }) => {
   const [activeTab, setActiveTab] = useState('generate');
