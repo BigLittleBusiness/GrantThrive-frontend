@@ -147,7 +147,7 @@ export default function Registration({ onLogin }) {
       [field]: value,
     }));
   };
-
+// this is a placeholder for the actual API call to submit the registration data to the backend. In a real implementation, you would replace this with an API client method that sends the data to your server for processing.
   const handleSubmit = () => {
     setSubmitted(true);
     setStep(5);

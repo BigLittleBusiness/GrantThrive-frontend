@@ -1,13 +1,7 @@
-// API utility for GrantThrive frontend-backend integration
-// Uses Vite proxy during development
-
 import { TOKEN_KEY } from '@grantthrive/auth'
 
-// Base URL empty because Vite proxy handles routing
-const API_BASE_URL =
-  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) ||
-  process.env?.REACT_APP_API_URL ||
-  ''
+// Base URL empty because Vite proxy handles routing in development
+const API_BASE_URL = import.meta.env.VITE_API_URL || ''
 
 class ApiClient {
   constructor() {
@@ -15,7 +9,6 @@ class ApiClient {
     this.token = localStorage.getItem(TOKEN_KEY)
   }
 
-  // Set authentication token
   setToken(token) {
     this.token = token
 
@@ -26,20 +19,18 @@ class ApiClient {
     }
   }
 
-  // Authentication headers
   getHeaders() {
     const headers = {
       'Content-Type': 'application/json'
     }
 
     if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`
+      headers.Authorization = `Bearer ${this.token}`
     }
 
     return headers
   }
 
-  // Generic request
   async request(endpoint, options = {}) {
     const url = `${this.baseURL}${endpoint}`
 
@@ -54,11 +45,7 @@ class ApiClient {
       if (response.status === 401) {
         this.setToken(null)
 
-        const loginUrl =
-          (typeof import.meta !== 'undefined' && import.meta.env?.VITE_LOGIN_URL)
-            ? import.meta.env.VITE_LOGIN_URL
-            : '/login'
-
+        const loginUrl = import.meta.env.VITE_LOGIN_URL || '/login'
         const redirect = encodeURIComponent(window.location.href)
 
         window.location.href = `${loginUrl}?redirect=${redirect}`
@@ -83,7 +70,6 @@ class ApiClient {
     }
   }
 
-  // Basic methods
   get(endpoint) {
     return this.request(endpoint, { method: 'GET' })
   }
@@ -112,10 +98,6 @@ class ApiClient {
       body: JSON.stringify(data)
     })
   }
-
-  // -----------------------
-  // Authentication
-  // -----------------------
 
   async login(email, password) {
     const response = await this.post('/auth/login', { email, password })
@@ -174,10 +156,6 @@ class ApiClient {
     }
   }
 
-  // -----------------------
-  // Profile
-  // -----------------------
-
   async updateProfile(data) {
     const response = await this.patch('/auth/me', data)
     return { success: true, data: response.user, message: response.message }
@@ -188,13 +166,8 @@ class ApiClient {
     return { success: true, message: response.message }
   }
 
-  // -----------------------
-  // Grants
-  // -----------------------
-
   async getGrants(filters = {}) {
     const query = new URLSearchParams(filters).toString()
-
     return this.get(`/public/api/grants${query ? `?${query}` : ''}`)
   }
 
@@ -202,13 +175,8 @@ class ApiClient {
     return this.get(`/grant/${id}`)
   }
 
-  // -----------------------
-  // Applications
-  // -----------------------
-
   async getApplications(filters = {}) {
     const query = new URLSearchParams(filters).toString()
-
     return this.get(`/api/applications${query ? `?${query}` : ''}`)
   }
 
@@ -220,29 +188,17 @@ class ApiClient {
     return this.post('/api/applications', data)
   }
 
-  // -----------------------
-  // Analytics
-  // -----------------------
-
   async getDashboardMetrics() {
     return this.get('/reports/api/dashboard-data')
   }
-
-  // -----------------------
-  // Health check
-  // -----------------------
 
   async healthCheck() {
     return this.get('/api/health')
   }
 
-  // -----------------------
-  // Notifications
-  // -----------------------
-
   async getNotifications(params = {}) {
     const qs = new URLSearchParams(params).toString()
-    return this.get(`/api/notifications${qs ? '?' + qs : ''}`)
+    return this.get(`/api/notifications${qs ? `?${qs}` : ''}`)
   }
 
   async getUnreadCount() {

@@ -127,22 +127,57 @@ function PortalInner() {
     return () => window.removeEventListener('gt:logout', handleGlobalLogout);
   }, [navigate]);
 
-  const handleLogin = (userData) => {
+  const handleLogin = useCallback((userData) => {
     localStorage.setItem('gt_auth_user', JSON.stringify(userData));
     setCurrentUser(userData);
 
     const role = getUserRole(userData);
     navigate(ROLE_HOME[role] || '/portal/community/dashboard', { replace: true });
-  };
+  }, [navigate]);
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     localStorage.removeItem('gt_auth_token');
     localStorage.removeItem('gt_auth_user');
     setCurrentUser(null);
     navigate('/portal/login', { replace: true });
-  };
+  }, [navigate]);
 
   const role = useMemo(() => getUserRole(currentUser), [currentUser]);
+
+  const isAuthRoute = useMemo(
+    () =>
+      location.pathname === '/portal/login' ||
+      location.pathname === '/portal/register',
+    [location.pathname]
+  );
+
+  // Build a role-aware navigation helper so dashboard components can navigate
+  // using short keys like 'staff-management' rather than full paths.
+  const handleNavigate = useCallback((key) => {
+    if (key.includes('/')) {
+      navigate(`/portal/${key}`);
+      return;
+    }
+
+    const prefix =
+      role === ROLES.COUNCIL_ADMIN
+        ? 'council'
+        : role === ROLES.COUNCIL_STAFF
+          ? 'staff'
+          : 'community';
+
+    navigate(`/portal/${prefix}/${key}`);
+  }, [navigate, role]);
+
+  const pageProps = useMemo(
+    () => ({
+      user: currentUser,
+      council,
+      onLogout: handleLogout,
+      onNavigate: handleNavigate,
+    }),
+    [currentUser, council, handleLogout, handleNavigate]
+  );
 
   // Show a minimal loading screen while the tenant is being resolved
   if (tenantLoading) {
@@ -156,10 +191,6 @@ function PortalInner() {
     );
   }
 
-  const isAuthRoute =
-    location.pathname === '/portal/login' ||
-    location.pathname === '/portal/register';
-
   // If not logged in, only allow auth routes
   if (!currentUser && !isAuthRoute) {
     return <Navigate to="/portal/login" replace />;
@@ -169,29 +200,6 @@ function PortalInner() {
   if (currentUser && isAuthRoute) {
     return <Navigate to={ROLE_HOME[role] || '/portal/community/dashboard'} replace />;
   }
-
-  // Build a role-aware navigation helper so dashboard components can navigate
-  // using short keys like 'staff-management' rather than full paths.
-  const handleNavigate = useCallback((key) => {
-    // If the key already contains a slash, treat it as a full portal-relative path
-    if (key.includes('/')) {
-      navigate(`/portal/${key}`);
-      return;
-    }
-    // Otherwise prefix with the role segment
-    const prefix =
-      role === ROLES.COUNCIL_ADMIN   ? 'council' :
-      role === ROLES.COUNCIL_STAFF   ? 'staff'   :
-      role === ROLES.COMMUNITY_MEMBER ? 'community' : 'community';
-    navigate(`/portal/${prefix}/${key}`);
-  }, [navigate, role]);
-
-  const pageProps = {
-    user: currentUser,
-    council,
-    onLogout: handleLogout,
-    onNavigate: handleNavigate,
-  };
 
   return (
     <Routes>
@@ -351,47 +359,76 @@ function PortalInner() {
       <Route
         path="council/staff-management"
         element={
-          <ProtectedRoute user={currentUser} allowedRoles={[ROLES.COUNCIL_ADMIN]} onLogout={handleLogout}>
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COUNCIL_ADMIN]}
+            onLogout={handleLogout}
+          >
             <StaffManagement {...pageProps} />
           </ProtectedRoute>
         }
       />
+
       <Route
         path="council/account-billing"
         element={
-          <ProtectedRoute user={currentUser} allowedRoles={[ROLES.COUNCIL_ADMIN]} onLogout={handleLogout}>
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COUNCIL_ADMIN]}
+            onLogout={handleLogout}
+          >
             <AccountBilling {...pageProps} />
           </ProtectedRoute>
         }
       />
+
       <Route
         path="council/profile"
         element={
-          <ProtectedRoute user={currentUser} allowedRoles={[ROLES.COUNCIL_ADMIN]} onLogout={handleLogout}>
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COUNCIL_ADMIN]}
+            onLogout={handleLogout}
+          >
             <Profile {...pageProps} />
           </ProtectedRoute>
         }
       />
+
       <Route
         path="council/community-forum"
         element={
-          <ProtectedRoute user={currentUser} allowedRoles={[ROLES.COUNCIL_ADMIN]} onLogout={handleLogout}>
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COUNCIL_ADMIN]}
+            onLogout={handleLogout}
+          >
             <CommunityForum {...pageProps} />
           </ProtectedRoute>
         }
       />
+
       <Route
         path="council/pricing"
         element={
-          <ProtectedRoute user={currentUser} allowedRoles={[ROLES.COUNCIL_ADMIN]} onLogout={handleLogout}>
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COUNCIL_ADMIN]}
+            onLogout={handleLogout}
+          >
             <PricingPage {...pageProps} />
           </ProtectedRoute>
         }
       />
+
       <Route
         path="council/pending-approvals"
         element={
-          <ProtectedRoute user={currentUser} allowedRoles={[ROLES.COUNCIL_ADMIN]} onLogout={handleLogout}>
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COUNCIL_ADMIN]}
+            onLogout={handleLogout}
+          >
             <PendingApprovals {...pageProps} />
           </ProtectedRoute>
         }
@@ -399,7 +436,8 @@ function PortalInner() {
 
       {/* ── Council Staff Routes ─────────────────────────────────────────────── */}
       <Route
-        path="staff/dashboard"   element={
+        path="staff/dashboard"
+        element={
           <ProtectedRoute
             user={currentUser}
             allowedRoles={[ROLES.COUNCIL_STAFF]}
@@ -487,32 +525,47 @@ function PortalInner() {
           </ProtectedRoute>
         }
       />
+
       <Route
         path="staff/profile"
         element={
-          <ProtectedRoute user={currentUser} allowedRoles={[ROLES.COUNCIL_STAFF]} onLogout={handleLogout}>
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COUNCIL_STAFF]}
+            onLogout={handleLogout}
+          >
             <Profile {...pageProps} />
           </ProtectedRoute>
         }
       />
+
       <Route
         path="staff/pending-approvals"
         element={
-          <ProtectedRoute user={currentUser} allowedRoles={[ROLES.COUNCIL_STAFF]} onLogout={handleLogout}>
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COUNCIL_STAFF]}
+            onLogout={handleLogout}
+          >
             <PendingApprovals {...pageProps} />
           </ProtectedRoute>
         }
       />
+
       <Route
         path="staff/community-forum"
         element={
-          <ProtectedRoute user={currentUser} allowedRoles={[ROLES.COUNCIL_STAFF]} onLogout={handleLogout}>
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COUNCIL_STAFF]}
+            onLogout={handleLogout}
+          >
             <CommunityForum {...pageProps} />
           </ProtectedRoute>
         }
       />
 
-      {/* ── Community Member Routes ─────────────────────────────────────────────── */}
+      {/* ── Community Member Routes ───────────────────────────────────── */}
       <Route
         path="community/dashboard"
         element={
@@ -630,7 +683,6 @@ function PortalInner() {
         }
       />
 
-      {/* Community — Transparency Dashboard */}
       <Route
         path="community/transparency"
         element={
@@ -644,7 +696,6 @@ function PortalInner() {
         }
       />
 
-      {/* Community — Public Results */}
       <Route
         path="community/public-results"
         element={
