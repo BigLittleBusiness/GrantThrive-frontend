@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import CouncilManagement from './pages/CouncilManagement.jsx';
+import AdminApprovalDashboard from '../portal/routes/council-admin/AdminApprovalDashboard.jsx';
 import SystemAdminManagement from './pages/SystemAdminManagement.jsx';
 import PricingManagement from './pages/PricingManagement.jsx';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card';
@@ -91,6 +92,7 @@ const AdminDashboard = () => {
   const sidebarItems = [
     { id: 'overview',  label: 'Overview',           icon: LayoutDashboard },
     { id: 'councils',  label: 'Council Management',  icon: Building2 },
+    { id: 'approvals', label: 'Council Registrations', icon: UserCheck },
     { id: 'users',     label: 'User Management',     icon: Users },
     { id: 'staff',     label: 'System Admins',         icon: UserCog },
 
@@ -465,6 +467,9 @@ const AdminDashboard = () => {
           {/* Council Management */}
           {activeTab === 'councils' && <CouncilManagement />}
 
+          {/* Council Registrations - pending approval */}
+          {activeTab === 'approvals' && <AdminApprovalDashboard />}
+
           {/* System Admin Management */}
           {activeTab === 'staff' && <SystemAdminManagement />}
 
@@ -472,7 +477,7 @@ const AdminDashboard = () => {
           {activeTab === 'pricing' && <PricingManagement />}
 
           {/* Placeholder for tabs still under development */}
-          {activeTab !== 'overview' && activeTab !== 'councils' && activeTab !== 'staff' && activeTab !== 'pricing' && (
+          {activeTab !== 'overview' && activeTab !== 'councils' && activeTab !== 'approvals' && activeTab !== 'staff' && activeTab !== 'pricing' && (
             <div className="text-center py-12">
               <div className="text-gray-400 mb-4">
                 <Settings className="w-16 h-16 mx-auto" />
