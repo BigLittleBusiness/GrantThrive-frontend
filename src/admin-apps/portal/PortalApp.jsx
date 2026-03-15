@@ -10,30 +10,31 @@ import {
 
 import Login from './pages/Login.jsx';
 import Registration from './pages/Registration.jsx';
-import AdminApprovalDashboard from './pages/AdminApprovalDashboard.jsx';
+import AdminApprovalDashboard from './routes/council-admin/AdminApprovalDashboard.jsx';
 
-import CouncilAdminDashboard from './dashboards/CouncilAdminDashboard.jsx';
-import CouncilStaffDashboard from './dashboards/CouncilStaffDashboard.jsx';
-import CommunityMemberDashboard from './dashboards/CommunityMemberDashboard.jsx';
+import CouncilAdminDashboard from './routes/council-admin/CouncilAdminDashboard.jsx';
+import CouncilStaffDashboard from './routes/council-staff/CouncilStaffDashboard.jsx';
+import CommunityMemberDashboard from './routes/community/CommunityMemberDashboard.jsx';
 
-import GrantsListing from './pages/GrantsListing.jsx';
-import GrantDetails from './pages/GrantDetails.jsx';
-import ApplicationForm from './pages/ApplicationForm.jsx';
-import CommunityForum from './pages/CommunityForum.jsx';
-import ResourceHub from './pages/ResourceHub.jsx';
-import WinnersShowcase from './pages/WinnersShowcase.jsx';
-import GrantCreationWizard from './pages/GrantCreationWizard.jsx';
-import CommunicationSettings from './pages/CommunicationSettings.jsx';
-import QRCodeManagement from './pages/QRCodeManagement.jsx';
-import CommunityVoting from './pages/CommunityVoting.jsx';
-import PublicGrantMap from './pages/PublicGrantMap.jsx';
-import StaffManagement from './pages/StaffManagement.jsx';
-import AccountBilling from './pages/AccountBilling.jsx';
-import Profile from './pages/Profile.jsx';
-import PendingApprovals from './pages/PendingApprovals.jsx';
-import PricingPage from './pages/PricingPage.jsx';
-import TransparencyDashboard from './pages/TransparencyDashboard.jsx';
-import PublicResults from './pages/PublicResults.jsx';
+import GrantsListing from './routes/community/GrantsListing.jsx';
+import GrantDetails from './routes/community/GrantDetails.jsx';
+import ApplicationForm from './routes/community/ApplicationForm.jsx';
+import CommunityForum from './routes/community/CommunityForum.jsx';
+import ResourceHub from './routes/community/ResourceHub.jsx';
+import WinnersShowcase from './routes/community/WinnersShowcase.jsx';
+import GrantCreationWizard from './routes/council-admin/GrantCreationWizard.jsx';
+import CommunicationSettings from './routes/council-admin/CommunicationSettings.jsx';
+import QRCodeManagement from './routes/council-admin/QRCodeManagement.jsx';
+import CommunityVoting from './routes/community/CommunityVoting.jsx';
+import PublicGrantMap from './routes/community/PublicGrantMap.jsx';
+import StaffManagement from './routes/council-admin/StaffManagement.jsx';
+import AccountBilling from './routes/council-admin/AccountBilling.jsx';
+import CouncilAdminProfile from './routes/council-admin/Profile.jsx';
+import CouncilStaffProfile from './routes/council-staff/Profile.jsx';
+import PendingApprovals from './routes/council-staff/PendingApprovals.jsx';
+import PricingPage from './routes/council-admin/PricingPage.jsx';
+import TransparencyDashboard from './routes/community/TransparencyDashboard.jsx';
+import PublicResults from './routes/community/PublicResults.jsx';
 
 // ── RBAC constants ────────────────────────────────────────────────────────────
 const ROLES = {
@@ -385,12 +386,8 @@ function PortalInner() {
       <Route
         path="council/profile"
         element={
-          <ProtectedRoute
-            user={currentUser}
-            allowedRoles={[ROLES.COUNCIL_ADMIN]}
-            onLogout={handleLogout}
-          >
-            <Profile {...pageProps} />
+          <ProtectedRoute user={currentUser} allowedRoles={[ROLES.COUNCIL_ADMIN]} onLogout={handleLogout}>
+            <CouncilAdminProfile {...pageProps} />
           </ProtectedRoute>
         }
       />
@@ -529,12 +526,8 @@ function PortalInner() {
       <Route
         path="staff/profile"
         element={
-          <ProtectedRoute
-            user={currentUser}
-            allowedRoles={[ROLES.COUNCIL_STAFF]}
-            onLogout={handleLogout}
-          >
-            <Profile {...pageProps} />
+          <ProtectedRoute user={currentUser} allowedRoles={[ROLES.COUNCIL_STAFF]} onLogout={handleLogout}>
+            <CouncilStaffProfile {...pageProps} />
           </ProtectedRoute>
         }
       />
