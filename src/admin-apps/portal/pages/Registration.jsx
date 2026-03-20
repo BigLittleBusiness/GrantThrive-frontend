@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { parsePhoneNumberFromString } from 'libphonenumber-js';
 import apiClient from '../utils/api.js';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@shared/components/ui/card.jsx';
 import { Button } from '@shared/components/ui/button.jsx';
@@ -124,6 +125,21 @@ export default function Registration({ onLogin }) {
       ? 'Please use your official council email (.gov.au or .govt.nz).'
       : '';
 
+  // Phone number validation — AU and NZ formats accepted
+  const phoneError = useMemo(() => {
+    const raw = formData.phone.trim();
+    if (!raw) return '';
+    // Try parsing as AU first, then NZ, then international
+    const parsed =
+      parsePhoneNumberFromString(raw, 'AU') ||
+      parsePhoneNumberFromString(raw, 'NZ') ||
+      parsePhoneNumberFromString(raw);
+    if (!parsed || !parsed.isValid()) {
+      return 'Please enter a valid Australian or New Zealand phone number.';
+    }
+    return '';
+  }, [formData.phone]);
+
   // Password complexity rules — all five must pass
   const passwordRules = [
     { label: 'At least 10 characters',           met: formData.password.length >= 10 },
@@ -145,6 +161,7 @@ export default function Registration({ onLogin }) {
     formData.lastName.trim() &&
     formData.email.trim() &&
     formData.phone.trim() &&
+    !phoneError &&
     passwordStrong &&
     formData.confirmPassword.trim() &&
     formData.password === formData.confirmPassword &&
@@ -398,9 +415,21 @@ export default function Registration({ onLogin }) {
               value={formData.phone}
               onChange={(e) => handleInputChange('phone', e.target.value)}
               placeholder="+61 or +64 number"
-              className="h-11 rounded-xl pl-10"
+              className={`h-11 rounded-xl pl-10 ${
+                formData.phone && phoneError
+                  ? 'border-rose-300 focus-visible:ring-rose-200'
+                  : formData.phone && !phoneError
+                  ? 'border-emerald-400 focus-visible:ring-emerald-200'
+                  : ''
+              }`}
             />
           </div>
+          {formData.phone && phoneError && (
+            <div className="mt-2 flex items-center gap-2 text-sm text-rose-600">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>{phoneError}</span>
+            </div>
+          )}
         </div>
       </div>
 
