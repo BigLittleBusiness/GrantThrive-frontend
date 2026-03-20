@@ -124,11 +124,20 @@ export default function Registration({ onLogin }) {
       ? 'Please use your official council email (.gov.au or .govt.nz).'
       : '';
 
+  // Password complexity rules — all five must pass
+  const passwordRules = [
+    { label: 'At least 10 characters',           met: formData.password.length >= 10 },
+    { label: 'One uppercase letter (A–Z)',        met: /[A-Z]/.test(formData.password) },
+    { label: 'One lowercase letter (a–z)',        met: /[a-z]/.test(formData.password) },
+    { label: 'One number (0–9)',                  met: /[0-9]/.test(formData.password) },
+    { label: 'One special character (!@#$%…)',    met: /[^A-Za-z0-9]/.test(formData.password) },
+  ];
+  const passwordStrong = formData.password.length > 0 && passwordRules.every((r) => r.met);
   const passwordError =
     formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword
       ? 'Passwords do not match.'
-      : formData.password && formData.password.length < 8
-      ? 'Password must be at least 8 characters.'
+      : formData.password && !passwordStrong
+      ? 'Password does not meet all requirements below.'
       : '';
 
   const canContinueStep2 =
@@ -136,10 +145,10 @@ export default function Registration({ onLogin }) {
     formData.lastName.trim() &&
     formData.email.trim() &&
     formData.phone.trim() &&
-    formData.password.trim() &&
+    passwordStrong &&
     formData.confirmPassword.trim() &&
-    !emailError &&
-    !passwordError;
+    formData.password === formData.confirmPassword &&
+    !emailError;
 
   // Auto-derive a default subdomain from the council name
   const derivedSubdomain = useMemo(() => {
@@ -403,10 +412,30 @@ export default function Registration({ onLogin }) {
               type="password"
               value={formData.password}
               onChange={(e) => handleInputChange('password', e.target.value)}
-              placeholder="At least 8 characters"
-              className={`h-11 rounded-xl pl-10 ${passwordError ? 'border-rose-300 focus-visible:ring-rose-200' : ''}`}
+              placeholder="Create a strong password"
+              className={`h-11 rounded-xl pl-10 ${
+                formData.password && passwordStrong
+                  ? 'border-emerald-400 focus-visible:ring-emerald-200'
+                  : formData.password && !passwordStrong
+                  ? 'border-rose-300 focus-visible:ring-rose-200'
+                  : ''
+              }`}
             />
           </div>
+          {formData.password && (
+            <ul className="mt-2 space-y-1">
+              {passwordRules.map((rule) => (
+                <li key={rule.label} className={`flex items-center gap-2 text-xs ${
+                  rule.met ? 'text-emerald-600' : 'text-slate-400'
+                }`}>
+                  <span className={`inline-block h-2 w-2 rounded-full flex-shrink-0 ${
+                    rule.met ? 'bg-emerald-500' : 'bg-slate-300'
+                  }`} />
+                  {rule.label}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         <div>
