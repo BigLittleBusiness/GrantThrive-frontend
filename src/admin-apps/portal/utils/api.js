@@ -5,7 +5,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || ''
 
 class ApiClient {
   constructor() {
-    this.baseURL = API_BASE_URL
+    this.baseURL = 'http://127.0.0.1:5000'
     this.token = localStorage.getItem(TOKEN_KEY)
   }
 
@@ -100,7 +100,7 @@ class ApiClient {
   }
 
   async login(email, password) {
-    const response = await this.post('/api/auth/login', { email, password })
+    const response = await this.post('/auth/login', { email, password })
 
     if (response.token) {
       this.setToken(response.token)
@@ -110,7 +110,7 @@ class ApiClient {
   }
 
   async register(userData) {
-    const response = await this.post('/api/auth/register', userData)
+    const response = await this.post('/auth/register', userData)
 
     if (response.token) {
       this.setToken(response.token)
@@ -120,7 +120,7 @@ class ApiClient {
   }
 
   async demoLogin(demoType) {
-    const response = await this.post('/api/auth/demo-login', {
+    const response = await this.post('/auth/demo-login', {
       demo_type: demoType
     })
 
@@ -133,7 +133,7 @@ class ApiClient {
 
   async logout() {
     try {
-      await this.post('/api/auth/logout')
+      await this.post('/auth/logout')
     } catch (error) {
       console.error('Logout error:', error)
     } finally {
