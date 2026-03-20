@@ -220,6 +220,17 @@ class ApiClient {
   }
 
 
+  // ─── Public council utilities ─────────────────────────────────────────────
+
+  /**
+   * Check whether a subdomain is available (public endpoint, no auth required).
+   * Returns { available: boolean, subdomain: string, reason?: string }
+   */
+  async checkSubdomain(subdomain) {
+    return this.get(`/api/councils/check-subdomain?subdomain=${encodeURIComponent(subdomain)}`)
+  }
+
+
   // ─── Admin API (/api/admin/*) ─────────────────────────────────────────────
   // These methods are exclusively for SYSTEM_ADMIN users.
 
@@ -237,6 +248,10 @@ class ApiClient {
 
   async rejectUser(id, reason = '') {
     return this.post(`/api/admin/users/${id}/reject`, { reason })
+  }
+
+  async updatePendingUserSubdomain(id, subdomain) {
+    return this.patch(`/api/admin/users/${id}/subdomain`, { subdomain })
   }
 
 
@@ -336,8 +351,11 @@ export const {
   councilGetStaff, councilGetStats, councilGetNotifications
 } = apiClient
 
+// Named exports — public council utilities
+export const { checkSubdomain } = apiClient
+
 // Named exports — admin
-export const { getAdminStats, getPendingUsers, approveUser, rejectUser } = apiClient
+export const { getAdminStats, getPendingUsers, approveUser, rejectUser, updatePendingUserSubdomain } = apiClient
 
 // Legacy named exports (kept for backward compatibility)
 export const {

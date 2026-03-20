@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
 import apiClient from '../utils/api.js';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@shared/components/ui/card.jsx';
@@ -19,6 +19,8 @@ import {
   ArrowLeft,
   UserCircle2,
   LockKeyhole,
+  Loader2,
+  XCircle,
 } from 'lucide-react';
 
 const ROLE_OPTIONS = [
@@ -117,6 +119,75 @@ export default function Registration({ onLogin }) {
   const [submitError, setSubmitError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // ── Subdomain availability check state ──────────────────────────────────
+  // 'idle' | 'checking' | 'available' | 'taken' | 'invalid'
+  const [subdomainStatus, setSubdomainStatus] = useState('idle');
+  const [subdomainMessage, setSubdomainMessage] = useState('');
+  const [subdomainSuggestion, setSubdomainSuggestion] = useState('');
+  const subdomainDebounceRef = useRef(null);
+
+  /**
+   * Derive a state abbreviation from the email domain to use in subdomain
+   * suggestions when the default is already taken.
+   * e.g. 'campbelltown.nsw.gov.au' → 'nsw'
+   */
+  const stateFromEmail = useMemo(() => {
+    const domain = formData.email.split('@')[1] || '';
+    const match = domain.match(/\b(nsw|vic|qld|sa|wa|tas|act|nt|nz)\b/i);
+    return match ? match[1].toLowerCase() : '';
+  }, [formData.email]);
+
+  /**
+   * Run the availability check against the backend.
+   * Called with a debounce whenever the effective subdomain value changes.
+   */
+  const checkSubdomainAvailability = useCallback(async (value) => {
+    if (!value || value.length < 3) {
+      setSubdomainStatus('idle');
+      setSubdomainMessage('');
+      setSubdomainSuggestion('');
+      return;
+    }
+    setSubdomainStatus('checking');
+    setSubdomainMessage('');
+    setSubdomainSuggestion('');
+    try {
+      const result = await apiClient.checkSubdomain(value);
+      if (result.available) {
+        setSubdomainStatus('available');
+        setSubdomainMessage('This subdomain is available.');
+        setSubdomainSuggestion('');
+      } else {
+        setSubdomainStatus('taken');
+        setSubdomainMessage(result.reason || 'That subdomain is already in use.');
+        // Build a state-based suggestion when the default is taken
+        const suggestion = stateFromEmail
+          ? `${value.replace(/-+$/, '')}-${stateFromEmail}`
+          : `${value.replace(/-+$/, '')}-council`;
+        setSubdomainSuggestion(suggestion.slice(0, 40));
+      }
+    } catch {
+      // Treat network errors as non-blocking — don't prevent the user from continuing
+      setSubdomainStatus('idle');
+      setSubdomainMessage('');
+    }
+  }, [stateFromEmail]);
+
+  // Debounce the availability check whenever the effective subdomain changes
+  const effectiveSubdomain = formData.subdomain || derivedSubdomain;
+  useEffect(() => {
+    if (userType !== 'council') return;
+    if (subdomainDebounceRef.current) clearTimeout(subdomainDebounceRef.current);
+    if (!effectiveSubdomain) {
+      setSubdomainStatus('idle');
+      return;
+    }
+    subdomainDebounceRef.current = setTimeout(() => {
+      checkSubdomainAvailability(effectiveSubdomain);
+    }, 400);
+    return () => clearTimeout(subdomainDebounceRef.current);
+  }, [effectiveSubdomain, userType, checkSubdomainAvailability]);
+
   const selectedRole = ROLE_OPTIONS.find((item) => item.id === userType);
   const selectedTone = toneClasses[selectedRole?.tone || 'green'];
 
@@ -179,10 +250,13 @@ export default function Registration({ onLogin }) {
 
   const canContinueStep3 = useMemo(() => {
     if (userType === 'council') {
+      // Block if the subdomain is confirmed taken; allow if idle/checking/available
+      const subdomainBlocked = subdomainStatus === 'taken';
       return (
         formData.councilName.trim() &&
         formData.position.trim() &&
-        (formData.subdomain.trim() || derivedSubdomain)
+        (formData.subdomain.trim() || derivedSubdomain) &&
+        !subdomainBlocked
       );
     }
 
@@ -541,7 +615,15 @@ export default function Registration({ onLogin }) {
               GrantThrive subdomain *
               <span className="ml-1 text-xs font-normal text-slate-500">Your council's unique portal address</span>
             </label>
-            <div className="flex items-center gap-0 overflow-hidden rounded-xl border border-slate-300 focus-within:border-slate-400">
+            <div
+              className={`flex items-center gap-0 overflow-hidden rounded-xl border focus-within:border-slate-400 ${
+                subdomainStatus === 'taken'
+                  ? 'border-rose-400'
+                  : subdomainStatus === 'available'
+                  ? 'border-emerald-400'
+                  : 'border-slate-300'
+              }`}
+            >
               <Input
                 value={formData.subdomain || derivedSubdomain}
                 onChange={(e) =>
@@ -556,11 +638,52 @@ export default function Registration({ onLogin }) {
                 placeholder={derivedSubdomain || 'your-council'}
                 className="h-11 flex-1 rounded-none border-0 focus-visible:ring-0"
               />
+              {/* Availability status icon */}
+              {subdomainStatus === 'checking' && (
+                <Loader2 className="mx-2 h-4 w-4 animate-spin text-slate-400" />
+              )}
+              {subdomainStatus === 'available' && (
+                <CheckCircle2 className="mx-2 h-4 w-4 text-emerald-600" />
+              )}
+              {subdomainStatus === 'taken' && (
+                <XCircle className="mx-2 h-4 w-4 text-rose-500" />
+              )}
               <span className="select-none whitespace-nowrap bg-slate-100 px-3 py-2.5 text-sm text-slate-500">
                 .grantthrive.com.au
               </span>
             </div>
-            {(formData.subdomain || derivedSubdomain) && (
+
+            {/* Availability feedback */}
+            {subdomainStatus === 'available' && (
+              <p className="mt-1.5 flex items-center gap-1.5 text-xs text-emerald-700">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                {subdomainMessage}
+              </p>
+            )}
+            {subdomainStatus === 'taken' && (
+              <div className="mt-1.5 space-y-1.5">
+                <p className="flex items-center gap-1.5 text-xs text-rose-600">
+                  <XCircle className="h-3.5 w-3.5" />
+                  {subdomainMessage}
+                </p>
+                {subdomainSuggestion && (
+                  <p className="text-xs text-slate-600">
+                    Suggested alternative:{' '}
+                    <button
+                      type="button"
+                      className="font-medium text-emerald-700 underline underline-offset-2 hover:text-emerald-800"
+                      onClick={() => handleInputChange('subdomain', subdomainSuggestion)}
+                    >
+                      {subdomainSuggestion}
+                    </button>
+                    {' '}— click to use this instead.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Portal URL preview */}
+            {subdomainStatus !== 'taken' && (formData.subdomain || derivedSubdomain) && (
               <p className="mt-1.5 text-xs text-slate-500">
                 Your portal will be at{' '}
                 <span className="font-medium text-slate-700">
