@@ -110,8 +110,8 @@ function PortalInner() {
       localStorage.setItem('gt_auth_user', JSON.stringify(userData));
       setCurrentUser(userData);
 
-      const role = getUserRole(userData);
-      navigate(ROLE_HOME[role] || '/portal/community/dashboard', {
+      const nextRole = getUserRole(userData);
+      navigate(ROLE_HOME[nextRole] || '/portal/community/dashboard', {
         replace: true,
       });
     },
@@ -137,12 +137,14 @@ function PortalInner() {
   // Build a role-aware navigation helper so dashboard components can navigate
   // using short keys like 'staff-management' rather than full paths.
   // An optional second argument `state` is forwarded as React Router location state.
-  const handleNavigate = useCallback((key, state) => {
-    const opts = state ? { state } : undefined;
-    if (key.includes('/')) {
-      navigate(`/portal/${key}`, opts);
-      return;
-    }
+  const handleNavigate = useCallback(
+    (key, state) => {
+      const opts = state ? { state } : undefined;
+
+      if (key.includes('/')) {
+        navigate(`/portal/${key}`, opts);
+        return;
+      }
 
       const prefix =
         role === ROLES.COUNCIL_ADMIN
@@ -151,8 +153,10 @@ function PortalInner() {
             ? 'staff'
             : 'community';
 
-    navigate(`/portal/${prefix}/${key}`, opts);
-  }, [navigate, role]);
+      navigate(`/portal/${prefix}/${key}`, opts);
+    },
+    [navigate, role]
+  );
 
   const pageProps = useMemo(
     () => ({
@@ -216,29 +220,29 @@ function PortalInner() {
       />
 
       {/* Role-based route groups */}
-      <CouncilAdminRoutes
-        ProtectedRoute={ProtectedRoute}
-        currentUser={currentUser}
-        handleLogout={handleLogout}
-        pageProps={pageProps}
-        ROLES={ROLES}
-      />
+      {CouncilAdminRoutes({
+        ProtectedRoute,
+        currentUser,
+        handleLogout,
+        pageProps,
+        ROLES,
+      })}
 
-      <CouncilStaffRoutes
-        ProtectedRoute={ProtectedRoute}
-        currentUser={currentUser}
-        handleLogout={handleLogout}
-        pageProps={pageProps}
-        ROLES={ROLES}
-      />
+      {CouncilStaffRoutes({
+        ProtectedRoute,
+        currentUser,
+        handleLogout,
+        pageProps,
+        ROLES,
+      })}
 
-      <CommunityRoutes
-        ProtectedRoute={ProtectedRoute}
-        currentUser={currentUser}
-        handleLogout={handleLogout}
-        pageProps={pageProps}
-        ROLES={ROLES}
-      />
+      {CommunityRoutes({
+        ProtectedRoute,
+        currentUser,
+        handleLogout,
+        pageProps,
+        ROLES,
+      })}
 
       {/* Fallback */}
       <Route
