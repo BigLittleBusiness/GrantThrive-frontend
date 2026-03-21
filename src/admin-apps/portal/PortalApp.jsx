@@ -134,7 +134,6 @@ function PortalInner() {
     [location.pathname]
   );
 
-<<<<<<< Updated upstream
   // Build a role-aware navigation helper so dashboard components can navigate
   // using short keys like 'staff-management' rather than full paths.
   // An optional second argument `state` is forwarded as React Router location state.
@@ -144,14 +143,6 @@ function PortalInner() {
       navigate(`/portal/${key}`, opts);
       return;
     }
-=======
-  const handleNavigate = useCallback(
-    (key) => {
-      if (key.includes('/')) {
-        navigate(`/portal/${key}`);
-        return;
-      }
->>>>>>> Stashed changes
 
       const prefix =
         role === ROLES.COUNCIL_ADMIN
@@ -160,15 +151,8 @@ function PortalInner() {
             ? 'staff'
             : 'community';
 
-<<<<<<< Updated upstream
     navigate(`/portal/${prefix}/${key}`, opts);
   }, [navigate, role]);
-=======
-      navigate(`/portal/${prefix}/${key}`);
-    },
-    [navigate, role]
-  );
->>>>>>> Stashed changes
 
   const pageProps = useMemo(
     () => ({
