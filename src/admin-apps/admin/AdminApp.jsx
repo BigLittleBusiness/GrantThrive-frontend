@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import CouncilManagement from './pages/CouncilManagement.jsx';
-import AdminApprovalDashboard from '../portal/routes/council-admin/AdminApprovalDashboard.jsx';
+import AdminApprovalDashboard from '../portal/pages/council-admin/AdminApprovalDashboard.jsx';
 import SystemAdminManagement from './pages/SystemAdminManagement.jsx';
 import PricingManagement from './pages/PricingManagement.jsx';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card';

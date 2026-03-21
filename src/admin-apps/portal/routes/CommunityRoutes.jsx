@@ -1,17 +1,17 @@
 import React from 'react';
 import { Route } from 'react-router-dom';
 
-import CommunityMemberDashboard from '../community/CommunityMemberDashboard.jsx';
-import GrantsListing from '../community/GrantsListing.jsx';
-import GrantDetails from '../community/GrantDetails.jsx';
-import ApplicationForm from '../community/ApplicationForm.jsx';
-import CommunityForum from '../community/CommunityForum.jsx';
-import ResourceHub from '../community/ResourceHub.jsx';
-import WinnersShowcase from '../community/WinnersShowcase.jsx';
-import CommunityVoting from '../community/CommunityVoting.jsx';
-import PublicGrantMap from '../community/PublicGrantMap.jsx';
-import TransparencyDashboard from '../community/TransparencyDashboard.jsx';
-import PublicResults from '../community/PublicResults.jsx';
+import CommunityMemberDashboard from '../pages/community/CommunityMemberDashboard.jsx';
+import GrantsListing from '../pages/community/GrantsListing.jsx';
+import GrantDetails from '../pages/community/GrantDetails.jsx';
+import ApplicationForm from '../pages/community/ApplicationForm.jsx';
+import CommunityForum from '../pages/community/CommunityForum.jsx';
+import ResourceHub from '../pages/community/ResourceHub.jsx';
+import WinnersShowcase from '../pages/community/WinnersShowcase.jsx';
+import CommunityVoting from '../pages/community/CommunityVoting.jsx';
+import PublicGrantMap from '../pages/community/PublicGrantMap.jsx';
+import TransparencyDashboard from '../pages/community/TransparencyDashboard.jsx';
+import PublicResults from '../pages/community/PublicResults.jsx';
 
 export default function CommunityRoutes({
   ProtectedRoute,

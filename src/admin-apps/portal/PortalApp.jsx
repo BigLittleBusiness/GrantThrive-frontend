@@ -11,9 +11,9 @@ import {
 import Login from './pages/Login.jsx';
 import Registration from './pages/Registration.jsx';
 
-import CouncilAdminRoutes from './routes/role-based/CouncilAdminRoutes.jsx';
-import CouncilStaffRoutes from './routes/role-based/CouncilStaffRoutes.jsx';
-import CommunityRoutes from './routes/role-based/CommunityRoutes.jsx';
+import CouncilAdminRoutes from './routes/CouncilAdminRoutes.jsx';
+import CouncilStaffRoutes from './routes/CouncilStaffRoutes.jsx';
+import CommunityRoutes from './routes/CommunityRoutes.jsx';
 
 // ── RBAC constants ────────────────────────────────────────────────────────────
 const ROLES = {

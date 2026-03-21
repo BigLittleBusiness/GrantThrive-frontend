@@ -1,22 +1,22 @@
 import React from 'react';
 import { Route } from 'react-router-dom';
 
-import AdminApprovalDashboard from '../council-admin/AdminApprovalDashboard.jsx';
-import CouncilAdminDashboard from '../council-admin/CouncilAdminDashboard.jsx';
-import GrantCreationWizard from '../council-admin/GrantCreationWizard.jsx';
-import CommunicationSettings from '../council-admin/CommunicationSettings.jsx';
-import QRCodeManagement from '../council-admin/QRCodeManagement.jsx';
-import StaffManagement from '../council-admin/StaffManagement.jsx';
-import AccountBilling from '../council-admin/AccountBilling.jsx';
-import CouncilAdminProfile from '../council-admin/Profile.jsx';
-import PricingPage from '../council-admin/PricingPage.jsx';
-import PendingApprovals from '../council-staff/PendingApprovals.jsx';
-import GrantsListing from '../community/GrantsListing.jsx';
-import GrantDetails from '../community/GrantDetails.jsx';
-import CommunityForum from '../community/CommunityForum.jsx';
-import ResourceHub from '../community/ResourceHub.jsx';
-import CommunityVoting from '../community/CommunityVoting.jsx';
-import PublicGrantMap from '../community/PublicGrantMap.jsx';
+import AdminApprovalDashboard from '../pages/council-admin/AdminApprovalDashboard.jsx';
+import CouncilAdminDashboard from '../pages/council-admin/CouncilAdminDashboard.jsx';
+import GrantCreationWizard from '../pages/council-admin/GrantCreationWizard.jsx';
+import CommunicationSettings from '../pages/council-admin/CommunicationSettings.jsx';
+import QRCodeManagement from '../pages/council-admin/QRCodeManagement.jsx';
+import StaffManagement from '../pages/council-admin/StaffManagement.jsx';
+import AccountBilling from '../pages/council-admin/AccountBilling.jsx';
+import CouncilAdminProfile from '../pages/council-admin/Profile.jsx';
+import PricingPage from '../pages/council-admin/PricingPage.jsx';
+import PendingApprovals from '../pages/council-staff/PendingApprovals.jsx';
+import GrantsListing from '../pages/community/GrantsListing.jsx';
+import GrantDetails from '../pages/community/GrantDetails.jsx';
+import CommunityForum from '../pages/community/CommunityForum.jsx';
+import ResourceHub from '../pages/community/ResourceHub.jsx';
+import CommunityVoting from '../pages/community/CommunityVoting.jsx';
+import PublicGrantMap from '../pages/community/PublicGrantMap.jsx';
 
 export default function CouncilAdminRoutes({
   ProtectedRoute,
