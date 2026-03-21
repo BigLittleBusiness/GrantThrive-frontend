@@ -62,32 +62,32 @@ class ApiClient {
   // ─── Auth (shared) ──────────────────────────────────────────────────────────
 
   async login(email, password) {
-    const response = await this.post('/api/auth/login', { email, password })
+    const response = await this.post('/auth/login', { email, password })
     if (response.token) this.setToken(response.token)
     return response
   }
 
   async register(userData) {
-    const response = await this.post('/api/auth/register', userData)
+    const response = await this.post('/auth/register', userData)
     if (response.token) this.setToken(response.token)
     return response
   }
 
   async demoLogin(demoType) {
-    const response = await this.post('/api/auth/demo-login', { demo_type: demoType })
+    const response = await this.post('/auth/demo-login', { demo_type: demoType })
     if (response.token) this.setToken(response.token)
     return response
   }
 
   async logout() {
-    try { await this.post('/api/auth/logout') } catch (e) { console.error('Logout error:', e) }
+    try { await this.post('/auth/logout') } catch (e) { console.error('Logout error:', e) }
     finally { this.setToken(null) }
   }
 
   async verifyToken() {
     if (!this.token) return null
     try {
-      const response = await this.post('/api/auth/verify-token', { token: this.token })
+      const response = await this.post('/auth/verify-token', { token: this.token })
       return response.user
     } catch {
       this.setToken(null)
@@ -96,12 +96,12 @@ class ApiClient {
   }
 
   async updateProfile(data) {
-    const response = await this.patch('/api/auth/me', data)
+    const response = await this.patch('/auth/me', data)
     return { success: true, data: response.user, message: response.message }
   }
 
   async changePassword(data) {
-    const response = await this.post('/api/auth/change-password', data)
+    const response = await this.post('/auth/change-password', data)
     return { success: true, message: response.message }
   }
 

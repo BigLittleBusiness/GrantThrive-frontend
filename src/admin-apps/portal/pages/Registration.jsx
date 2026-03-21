@@ -173,6 +173,16 @@ export default function Registration({ onLogin }) {
     }
   }, [stateFromEmail]);
 
+  // Auto-derive a default subdomain from the council name
+  const derivedSubdomain = useMemo(() => {
+    return formData.councilName
+      .toLowerCase()
+      .replace(/\s+council.*$/i, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 40);
+  }, [formData.councilName]);
+
   // Debounce the availability check whenever the effective subdomain changes
   const effectiveSubdomain = formData.subdomain || derivedSubdomain;
   useEffect(() => {
@@ -237,16 +247,6 @@ export default function Registration({ onLogin }) {
     formData.confirmPassword.trim() &&
     formData.password === formData.confirmPassword &&
     !emailError;
-
-  // Auto-derive a default subdomain from the council name
-  const derivedSubdomain = useMemo(() => {
-    return formData.councilName
-      .toLowerCase()
-      .replace(/\s+council.*$/i, '')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .slice(0, 40);
-  }, [formData.councilName]);
 
   const canContinueStep3 = useMemo(() => {
     if (userType === 'council') {
