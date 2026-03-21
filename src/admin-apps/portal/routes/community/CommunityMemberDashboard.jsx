@@ -200,9 +200,9 @@ const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
             <Button
               variant="outline"
               className="rounded-xl"
-              onClick={() => onNavigate('community/application-form')}
+              onClick={() => onNavigate('grants', { tab: 'my-applications' })}
             >
-              Continue application
+              My applications
             </Button>
             <NotificationBell onNavigate={onNavigate} />
             <Button variant="outline" onClick={onLogout} className="rounded-xl">
