@@ -58,7 +58,7 @@ export function mixInto(proto) {
    */
   proto.communityGetApplications = function (filters = {}) {
     const qs = new URLSearchParams(filters).toString()
-    return this.get(`/api/community/applications${qs ? `?${qs}` : ''}`)
+    return this.get(`/api/applications${qs ? `?${qs}` : ''}`)
   }
 
   /** Fetch a single application by ID. */

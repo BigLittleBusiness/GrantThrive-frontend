@@ -80,7 +80,7 @@ const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
         setError(null);
 
         // Load own applications
-        const appsData = await apiClient.getApplications();
+        const appsData = await apiClient.communityGetApplications();
         const appsList = Array.isArray(appsData)
           ? appsData
           : appsData?.applications || appsData?.data || [];
