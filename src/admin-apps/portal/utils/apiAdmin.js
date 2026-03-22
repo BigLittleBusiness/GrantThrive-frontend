@@ -71,7 +71,14 @@ export function mixInto(proto) {
    * @param {string} subdomain - The subdomain to check.
    * @returns {{ available: boolean, subdomain: string, reason?: string }}
    */
-  proto.checkSubdomain = function (subdomain) {
-    return this.get(`/api/councils/check-subdomain?subdomain=${encodeURIComponent(subdomain)}`)
+  proto.checkSubdomain = async function (subdomain) {
+    // Use raw fetch instead of this.get() because the backend returns structured
+    // JSON on BOTH 200 (taken/available) and 400 (invalid/reserved) responses.
+    // The base request() method throws on non-ok status, discarding the useful
+    // reason field — so we read the body directly here.
+    const url = `${this.baseURL}/api/councils/check-subdomain?subdomain=${encodeURIComponent(subdomain)}`
+    const response = await fetch(url, { method: 'GET', headers: { 'Content-Type': 'application/json' } })
+    const data = await response.json()
+    return data
   }
 }

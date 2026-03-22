@@ -158,13 +158,21 @@ export default function Registration({ onLogin }) {
         setSubdomainMessage('This subdomain is available.');
         setSubdomainSuggestion('');
       } else {
+        // Distinguish between a reserved/invalid subdomain (no suggestion helpful)
+        // and one that is simply already taken (offer a state-based alternative).
+        const isReservedOrInvalid = result.reason &&
+          (result.reason.includes('reserved') || result.reason.includes('must be'));
         setSubdomainStatus('taken');
         setSubdomainMessage(result.reason || 'That subdomain is already in use.');
-        // Build a state-based suggestion when the default is taken
-        const suggestion = stateFromEmail
-          ? `${value.replace(/-+$/, '')}-${stateFromEmail}`
-          : `${value.replace(/-+$/, '')}-council`;
-        setSubdomainSuggestion(suggestion.slice(0, 40));
+        if (!isReservedOrInvalid) {
+          // Build a state-based suggestion when the default is taken by another council
+          const suggestion = stateFromEmail
+            ? `${value.replace(/-+$/, '')}-${stateFromEmail}`
+            : `${value.replace(/-+$/, '')}-council`;
+          setSubdomainSuggestion(suggestion.slice(0, 40));
+        } else {
+          setSubdomainSuggestion('');
+        }
       }
     } catch {
       // Treat network errors as non-blocking — don't prevent the user from continuing
