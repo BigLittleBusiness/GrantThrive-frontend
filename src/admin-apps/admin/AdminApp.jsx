@@ -3,6 +3,7 @@ import CouncilManagement from './pages/CouncilManagement.jsx';
 import AdminApprovalDashboard from '../portal/pages/council-admin/AdminApprovalDashboard.jsx';
 import SystemAdminManagement from './pages/SystemAdminManagement.jsx';
 import PricingManagement from './pages/PricingManagement.jsx';
+import TwilioConfig from './pages/TwilioConfig.jsx';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card';
 import { Badge } from '@shared/components/ui/badge';
 import { Button } from '@shared/components/ui/button';
@@ -102,6 +103,7 @@ const AdminDashboard = () => {
     { id: 'security',  label: 'Security',            icon: Shield },
     { id: 'pricing',  label: 'Pricing Management',  icon: CreditCard },
     { id: 'billing',   label: 'Billing',             icon: DollarSign },
+    { id: 'sms',      label: 'SMS / Twilio',         icon: MessageSquare },
     { id: 'settings',  label: 'Settings',            icon: Settings },
   ];
 
@@ -476,8 +478,11 @@ const AdminDashboard = () => {
           {/* Pricing Management */}
           {activeTab === 'pricing' && <PricingManagement />}
 
+          {/* Twilio / SMS Configuration */}
+          {activeTab === 'sms' && <TwilioConfig />}
+
           {/* Placeholder for tabs still under development */}
-          {activeTab !== 'overview' && activeTab !== 'councils' && activeTab !== 'approvals' && activeTab !== 'staff' && activeTab !== 'pricing' && (
+          {activeTab !== 'overview' && activeTab !== 'councils' && activeTab !== 'approvals' && activeTab !== 'staff' && activeTab !== 'pricing' && activeTab !== 'sms' && (
             <div className="text-center py-12">
               <div className="text-gray-400 mb-4">
                 <Settings className="w-16 h-16 mx-auto" />
