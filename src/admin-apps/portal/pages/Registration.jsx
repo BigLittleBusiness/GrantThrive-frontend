@@ -14,7 +14,6 @@ import {
   Mail,
   Phone,
   MapPin,
-  Upload,
   ArrowRight,
   ArrowLeft,
   UserCircle2,
@@ -114,7 +113,6 @@ export default function Registration({ onLogin }) {
     subdomain: '',
     position: '',
     department: '',
-    documents: [],
   });
   const [submitError, setSubmitError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -798,60 +796,20 @@ export default function Registration({ onLogin }) {
   const renderVerification = () => (
     <div>
       {renderStepHeader(
-        'Verification and review',
-        'Upload supporting information if applicable, then submit your registration request.'
+        'Review and submit',
+        'Please review your details below before submitting your registration request.'
       )}
 
       <div className="space-y-5">
-        {userType === 'council' ? (
-          <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-8 text-center">
-            <Upload className="mx-auto h-10 w-10 text-slate-400" />
-            <h3 className="mt-4 text-lg font-semibold text-slate-900">
-              Upload proof of council identity
-            </h3>
-            <p className="mt-2 text-sm text-slate-600">
-              Employee ID, staff card, or council-issued business identification.
-            </p>
-            <Button type="button" variant="outline" className="mt-5 rounded-xl">
-              <Upload className="mr-2 h-4 w-4" />
-              Upload document
-            </Button>
-          </div>
-        ) : formData.organizationType !== 'individual' ? (
-          <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 p-8 text-center">
-            <Upload className="mx-auto h-10 w-10 text-slate-400" />
-            <h3 className="mt-4 text-lg font-semibold text-slate-900">
-              Upload supporting organisation documents
-            </h3>
-            <p className="mt-2 text-sm text-slate-600">
-              Optional: constitution, registration certificate, or proof of organisation.
-            </p>
-            <Button type="button" variant="outline" className="mt-5 rounded-xl">
-              <Upload className="mr-2 h-4 w-4" />
-              Upload document
-            </Button>
-          </div>
-        ) : (
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
-            <div className="flex items-start gap-3">
-              <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-700" />
-              <div>
-                <p className="font-medium text-emerald-900">No additional documents required</p>
-                <p className="mt-1 text-sm text-emerald-800">
-                  You can continue and complete your registration now.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
           <div className="flex items-start gap-3">
-            <ShieldCheck className="mt-0.5 h-5 w-5 text-blue-700" />
+            <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-700" />
             <div>
-              <p className="font-medium text-blue-900">Document security</p>
-              <p className="mt-1 text-sm text-blue-800">
-                Any uploaded materials are used only for account verification and stored securely.
+              <p className="font-medium text-emerald-900">No additional documents required</p>
+              <p className="mt-1 text-sm text-emerald-800">
+                {userType === 'council'
+                  ? 'Your government email address is used to verify your council affiliation. No further documentation is needed at this stage.'
+                  : 'You can continue and complete your registration now.'}
               </p>
             </div>
           </div>
