@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Bell, Mail, MessageSquare, CheckCircle, AlertCircle,
-  Info, Loader2, Save, Send, BarChart2, Settings,
-  Lock, ArrowUpRight, RefreshCw
+  Info, Loader2, Save, Send, BarChart2,
+  Lock, ArrowUpRight, RefreshCw, Zap
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
@@ -39,48 +39,184 @@ function authHeaders() {
   return { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
 }
 
-// ── Plan-gated upgrade prompt ─────────────────────────────────────────────────
+// ── SMS Tier Selector (inline upgrade flow) ──────────────────────────────────
 
-function SmsUpgradePrompt({ plan, smsAddonAvailable, onNavigate }) {
+const PLAN_RANK = { trial: 0, small: 1, medium: 2, large: 3 };
+const PLAN_LABELS = { trial: 'Free Trial', small: 'Small Council', medium: 'Medium Council', large: 'Large Council' };
+
+function fmt(cents) {
+  if (cents == null) return '—';
+  return `$${(cents / 100).toLocaleString('en-AU', { minimumFractionDigits: 0 })} AUD`;
+}
+
+function SmsTierSelector({ councilId, plan, onActivated, onNavigate }) {
+  const [tiers, setTiers]           = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [activating, setActivating] = useState(null);
+  const [msg, setMsg]               = useState('');
+  const [msgType, setMsgType]       = useState('success');
+  const [confirm, setConfirm]       = useState(null);
+
+  useEffect(() => {
+    if (!councilId) return;
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token') || '';
+    fetch(`${API_BASE}/api/councils/${councilId}/sms-tiers`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.json())
+      .then(d => setTiers(d.tiers || []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [councilId]);
+
+  async function activate(tierKey) {
+    setActivating(tierKey);
+    setMsg('');
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token') || '';
+    try {
+      const res = await fetch(`${API_BASE}/api/councils/${councilId}/sms-tiers`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ tier: tierKey }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Activation failed');
+      setMsg(data.message || 'SMS add-on activated.');
+      setMsgType('success');
+      onActivated && onActivated();
+    } catch (e) {
+      setMsg(e.message);
+      setMsgType('error');
+    } finally {
+      setActivating(null);
+      setConfirm(null);
+    }
+  }
+
+  if (loading) {
+    return <div className="flex justify-center py-8"><Loader2 className="animate-spin text-gray-400" size={24} /></div>;
+  }
+
+  const isTrial = plan === 'trial';
+
   return (
-    <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 flex flex-col gap-4">
-      <div className="flex items-start gap-3">
-        <Lock className="text-amber-500 mt-0.5 shrink-0" size={22} />
-        <div>
-          <h3 className="font-semibold text-amber-900 text-base">SMS Notifications Not Available</h3>
-          <p className="text-amber-700 text-sm mt-1">
-            {plan === 'trial'
-              ? 'SMS notifications are not available during the free trial. Upgrade to a paid plan to unlock this feature.'
-              : smsAddonAvailable
-              ? 'SMS notifications are available as an add-on for your Small Council plan. Contact GrantThrive to enable it.'
-              : 'SMS notifications are included in the Medium and Large Council plans.'}
-          </p>
+    <div className="space-y-5">
+      {/* Confirmation modal */}
+      {confirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <h3 className="mb-2 text-lg font-bold text-gray-900">
+              Activate {tiers.find(t => t.key === confirm)?.name}?
+            </h3>
+            <p className="mb-2 text-sm text-gray-600">
+              You are about to add the <strong>{tiers.find(t => t.key === confirm)?.name}</strong> to your account:
+            </p>
+            <ul className="mb-5 space-y-1 text-sm text-gray-700">
+              <li>• {(tiers.find(t => t.key === confirm)?.included_messages || 0).toLocaleString('en-AU')} messages/month included</li>
+              <li>• {fmt(tiers.find(t => t.key === confirm)?.price_aud_cents)} per month (ex-GST)</li>
+              <li>• ${((tiers.find(t => t.key === confirm)?.overage_cents || 0) / 100).toFixed(2)} AUD per extra message</li>
+            </ul>
+            <p className="mb-5 text-xs text-gray-400">Added to your next billing cycle. Cancel any time from Account &amp; Billing.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirm(null)} className="flex-1 rounded-lg border border-gray-300 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                Go Back
+              </button>
+              <button
+                onClick={() => activate(confirm)}
+                disabled={!!activating}
+                className="flex-1 rounded-lg bg-green-700 py-2 text-sm font-medium text-white hover:bg-green-800 disabled:opacity-50"
+              >
+                {activating ? 'Activating…' : 'Confirm & Activate'}
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
-      <div className="bg-white border border-amber-200 rounded-lg p-4">
-        <p className="text-sm font-medium text-gray-700 mb-2">What you get with SMS notifications:</p>
-        <ul className="text-sm text-gray-600 space-y-1">
-          <li className="flex items-center gap-2"><CheckCircle size={14} className="text-green-500" /> Instant alerts for application status changes</li>
-          <li className="flex items-center gap-2"><CheckCircle size={14} className="text-green-500" /> Deadline reminders sent directly to applicants</li>
-          <li className="flex items-center gap-2"><CheckCircle size={14} className="text-green-500" /> Payment confirmation messages</li>
-          <li className="flex items-center gap-2"><CheckCircle size={14} className="text-green-500" /> Community voting reminders</li>
-          <li className="flex items-center gap-2"><CheckCircle size={14} className="text-green-500" /> Managed by GrantThrive — no Twilio account needed</li>
-        </ul>
-      </div>
-      <div className="flex gap-3">
-        <button
-          onClick={() => onNavigate && onNavigate('account-billing')}
-          className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
-        >
-          View Plans <ArrowUpRight size={14} />
-        </button>
-        <a
-          href="mailto:support@grantthrive.com?subject=SMS Add-on Enquiry"
-          className="flex items-center gap-2 border border-amber-300 text-amber-700 hover:bg-amber-100 text-sm font-medium px-4 py-2 rounded-lg transition-colors"
-        >
-          Contact GrantThrive
-        </a>
-      </div>
+      )}
+
+      {msg && (
+        <div className={`rounded-lg border p-3 text-sm ${
+          msgType === 'success' ? 'border-green-200 bg-green-50 text-green-700' : 'border-red-200 bg-red-50 text-red-700'
+        }`}>
+          {msg}
+        </div>
+      )}
+
+      {isTrial ? (
+        <div className="rounded-xl bg-amber-50 border border-amber-200 p-5">
+          <div className="flex items-start gap-3">
+            <Lock className="text-amber-500 mt-0.5 shrink-0" size={20} />
+            <div>
+              <p className="font-semibold text-amber-900">SMS is not available on the Free Trial</p>
+              <p className="text-sm text-amber-700 mt-1">Upgrade to a Small, Medium, or Large Council plan to access SMS notifications.</p>
+              <button
+                onClick={() => onNavigate && onNavigate('account-billing')}
+                className="mt-3 flex items-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium px-4 py-2 rounded-lg"
+              >
+                Upgrade Plan <ArrowUpRight size={14} />
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="rounded-xl bg-blue-50 border border-blue-200 p-4 flex items-start gap-2">
+            <Zap size={16} className="text-blue-600 mt-0.5 shrink-0" />
+            <p className="text-sm text-blue-700">
+              Select an SMS tier below to activate SMS notifications for your council. All messages are delivered via
+              GrantThrive's centralised Twilio account — no credentials required.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {tiers.map(tier => {
+              const eligible = PLAN_RANK[plan] >= PLAN_RANK[tier.min_plan];
+              return (
+                <div
+                  key={tier.key}
+                  className={`rounded-xl border-2 p-4 ${
+                    eligible ? 'border-gray-200 bg-white' : 'border-gray-100 bg-gray-50 opacity-60'
+                  }`}
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <h4 className="font-semibold text-gray-900">{tier.name}</h4>
+                    {!eligible && (
+                      <span className="text-xs rounded-full bg-gray-200 text-gray-500 px-2 py-0.5">
+                        Requires {PLAN_LABELS[tier.min_plan] || tier.min_plan}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xl font-bold text-gray-900 mb-1">
+                    {fmt(tier.price_aud_cents)}
+                    <span className="text-xs font-normal text-gray-500"> /month</span>
+                  </p>
+                  <ul className="text-xs text-gray-500 space-y-0.5 mb-3">
+                    <li>✓ {tier.included_messages.toLocaleString('en-AU')} messages included</li>
+                    <li>✓ ${(tier.overage_cents / 100).toFixed(2)} AUD per extra message</li>
+                  </ul>
+                  <button
+                    disabled={!eligible || !!activating}
+                    onClick={() => eligible && setConfirm(tier.key)}
+                    className={`w-full rounded-lg py-2 text-sm font-medium transition-colors ${
+                      eligible
+                        ? 'bg-green-700 text-white hover:bg-green-800 disabled:opacity-50'
+                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                    }`}
+                  >
+                    {activating === tier.key ? 'Activating…' : eligible ? 'Activate' : 'Not Available'}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+
+          <p className="text-xs text-gray-400">
+            All prices in AUD, ex-GST. You can also manage your SMS add-on from{' '}
+            <button onClick={() => onNavigate && onNavigate('account-billing')} className="underline hover:no-underline">
+              Account &amp; Billing
+            </button>.
+          </p>
+        </>
+      )}
     </div>
   );
 }
@@ -297,13 +433,22 @@ const CommunicationSettings = ({ user, onNavigate, onLogout }) => {
               )}
             </div>
 
-            {/* Upgrade prompt if not available */}
+            {/* Inline tier selector shown when SMS is not yet active */}
             {!canUseSms && (
-              <SmsUpgradePrompt
-                plan={plan}
-                smsAddonAvailable={smsAddonAvailable}
-                onNavigate={onNavigate}
-              />
+              <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <div className="px-5 py-4 border-b border-gray-100">
+                  <h2 className="font-semibold text-gray-900">Activate SMS Notifications</h2>
+                  <p className="text-sm text-gray-500 mt-0.5">Choose a plan to enable SMS alerts for your applicants</p>
+                </div>
+                <div className="px-5 py-5">
+                  <SmsTierSelector
+                    councilId={councilId}
+                    plan={plan}
+                    onActivated={fetchSmsSettings}
+                    onNavigate={onNavigate}
+                  />
+                </div>
+              </div>
             )}
 
             {/* Settings — only shown when SMS is available */}
