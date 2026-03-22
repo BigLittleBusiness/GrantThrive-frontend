@@ -34,7 +34,7 @@ const ROLE_LABELS = {
   council_staff: 'Staff',
 };
 
-export default function StaffManagement({ user }) {
+export default function StaffManagement({ user, onNavigate, onLogout }) {
   const councilId = user?.council_id;
 
   const [staff, setStaff]             = useState([]);
@@ -147,19 +147,40 @@ export default function StaffManagement({ user }) {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Staff Management</h1>
-          <p className="text-gray-500 text-sm mt-1">Add and manage your council's staff accounts.</p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-6">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Staff Management</h1>
+              <p className="text-gray-600">Add and manage your council's staff accounts.</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => { setShowAdd(true); setTempPassword(''); setAddError(''); }}
+                className="bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded-lg text-sm font-medium"
+              >
+                + Add Staff Member
+              </button>
+              <button
+                onClick={() => onNavigate('council/dashboard')}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              >
+                ← Back to Dashboard
+              </button>
+              <button
+                onClick={onLogout}
+                className="px-4 py-2 bg-red-600 text-white rounded-md text-sm font-medium hover:bg-red-700"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
         </div>
-        <button
-          onClick={() => { setShowAdd(true); setTempPassword(''); setAddError(''); }}
-          className="bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded-lg text-sm font-medium"
-        >
-          + Add Staff Member
-        </button>
       </div>
+
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
       {error   && <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{error}</div>}
       {success && <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm">{success}</div>}
@@ -358,6 +379,7 @@ export default function StaffManagement({ user }) {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

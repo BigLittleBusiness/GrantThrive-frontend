@@ -134,25 +134,27 @@ const CouncilAdminDashboard = ({ user, onNavigate, onLogout }) => {
   };
 
   return (
-    <div className="p-6">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Council Administration Dashboard
-          </h1>
-          <p className="text-gray-600">
-            Welcome back, {user?.name || 'Administrator'}. Manage grant programs, review applications, and oversee community funding.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <NotificationBell onNavigate={onNavigate} />
-          <Button variant="outline" onClick={onLogout} className="flex items-center gap-2">
-            <LogOut className="w-4 h-4" />
-            Logout
-          </Button>
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-6">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Council Administration Dashboard</h1>
+              <p className="text-gray-600">Welcome back, {user?.name || 'Administrator'}. Manage grant programs and oversee community funding.</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <NotificationBell onNavigate={onNavigate} />
+              <Button variant="outline" onClick={onLogout} className="flex items-center gap-2">
+                <LogOut className="w-4 h-4" />
+                Logout
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
@@ -424,8 +426,8 @@ const CouncilAdminDashboard = ({ user, onNavigate, onLogout }) => {
           </CardContent>
         </Card>
       </div>
+      </div>
     </div>
   );
 };
-
 export default CouncilAdminDashboard;

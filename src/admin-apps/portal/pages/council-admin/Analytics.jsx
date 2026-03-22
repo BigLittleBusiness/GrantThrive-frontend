@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { AuthContext } from '../contexts/AuthContext';
-import { GrantContext } from '../contexts/GrantContext';
+import React, { useState, useEffect } from 'react';
+import apiClient from '../../utils/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card';
 import { Button } from '@shared/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/components/ui/select';
@@ -15,13 +14,29 @@ import {
   Calendar, Download, Filter, RefreshCw, Target, Clock, CheckCircle
 } from 'lucide-react';
 
-const Analytics = () => {
-  const { user } = useContext(AuthContext);
-  const { grants, applications, loading } = useContext(GrantContext);
+const Analytics = ({ user, onNavigate, onLogout }) => {
   
   const [timeRange, setTimeRange] = useState('12months');
   const [selectedMetric, setSelectedMetric] = useState('applications');
   const [refreshing, setRefreshing] = useState(false);
+  const [grants, setGrants] = useState([]);
+  const [applications, setApplications] = useState([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [grantsData, appsData] = await Promise.all([
+          apiClient.councilGetGrants(),
+          apiClient.councilGetApplications(),
+        ]);
+        setGrants(grantsData?.grants || grantsData || []);
+        setApplications(appsData?.applications || appsData || []);
+      } catch (err) {
+        console.error('Analytics fetch error:', err);
+      }
+    };
+    fetchData();
+  }, []);
 
   // Calculate key metrics
   const calculateMetrics = () => {
@@ -191,7 +206,34 @@ const Analytics = () => {
   const isCouncilUser = user?.role === 'council_admin' || user?.role === 'council_staff';
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-6">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
+              <p className="text-gray-600">Grant program performance and insights.</p>
+            </div>
+            <div className="flex space-x-3">
+              <button
+                onClick={() => onNavigate('council/dashboard')}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              >
+                ← Back to Dashboard
+              </button>
+              <button
+                onClick={onLogout}
+                className="px-4 py-2 bg-red-600 text-white rounded-md text-sm font-medium hover:bg-red-700"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
@@ -526,6 +568,7 @@ const Analytics = () => {
           </div>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   );
 };

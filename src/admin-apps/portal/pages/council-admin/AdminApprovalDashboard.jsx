@@ -119,7 +119,34 @@ const AdminApprovalDashboard = ({ user, onNavigate, onLogout }) => {
     !createdAt ? 0 : Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000);
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-6">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Council Registrations</h1>
+              <p className="text-gray-600">Review and approve new council administrator registrations.</p>
+            </div>
+            <div className="flex space-x-3">
+              <button
+                onClick={() => onNavigate('council/dashboard')}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              >
+                ← Back to Dashboard
+              </button>
+              <button
+                onClick={onLogout}
+                className="px-4 py-2 bg-red-600 text-white rounded-md text-sm font-medium hover:bg-red-700"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       {/* Toast notification */}
       {toast && (
         <div
@@ -401,9 +428,9 @@ const AdminApprovalDashboard = ({ user, onNavigate, onLogout }) => {
             </div>
           </div>
         </div>
-      )}
+       )}
+      </div>
     </div>
   );
 };
-
 export default AdminApprovalDashboard;

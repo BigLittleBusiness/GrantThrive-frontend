@@ -46,7 +46,7 @@ function fmt(cents) {
   return `$${(cents / 100).toFixed(0)} AUD`;
 }
 
-export default function AccountBilling({ user }) {
+export default function AccountBilling({ user, onNavigate, onLogout }) {
   const councilId = user?.council_id;
 
   const [billing, setBilling]   = useState(null);
@@ -113,11 +113,34 @@ export default function AccountBilling({ user }) {
     : null;
 
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Account &amp; Billing</h1>
-        <p className="text-gray-500 text-sm mt-1">Your subscription plan and billing information.</p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-6">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Account &amp; Billing</h1>
+              <p className="text-gray-600">Your subscription plan and billing information.</p>
+            </div>
+            <div className="flex space-x-3">
+              <button
+                onClick={() => onNavigate('council/dashboard')}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              >
+                ← Back to Dashboard
+              </button>
+              <button
+                onClick={onLogout}
+                className="px-4 py-2 bg-red-600 text-white rounded-md text-sm font-medium hover:bg-red-700"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
+
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
 
       {saveMsg && (
         <div className={`p-3 rounded-lg text-sm ${saveMsg.includes('updated') ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
@@ -240,6 +263,7 @@ export default function AccountBilling({ user }) {
             ))}
           </dl>
         )}
+      </div>
       </div>
     </div>
   );
