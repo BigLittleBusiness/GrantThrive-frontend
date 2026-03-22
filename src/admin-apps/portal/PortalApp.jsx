@@ -164,6 +164,10 @@ function PortalInner() {
       council,
       onLogout: handleLogout,
       onNavigate: handleNavigate,
+      onUpdateUser: (updatedUser) => {
+        setCurrentUser(updatedUser);
+        localStorage.setItem('gt_auth_user', JSON.stringify(updatedUser));
+      },
     }),
     [currentUser, council, handleLogout, handleNavigate]
   );
