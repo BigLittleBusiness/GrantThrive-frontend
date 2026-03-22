@@ -111,4 +111,16 @@ export function mixInto(proto) {
   proto.councilGetNotifications = function () {
     return this.get('/api/council/notifications')
   }
+
+  // ── QR Codes ──────────────────────────────────────────────────────────────────
+
+  /** Fetch (or auto-generate) the QR code for a grant. Returns { qr_code_data_url, target_url, filename }. */
+  proto.getGrantQR = function (grantId) {
+    return this.get(`/api/grants/${grantId}/qr`)
+  }
+
+  /** Force-regenerate the QR code for a grant. */
+  proto.regenerateGrantQR = function (grantId) {
+    return this.post(`/api/grants/${grantId}/qr`, {})
+  }
 }

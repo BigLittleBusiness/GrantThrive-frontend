@@ -1,380 +1,348 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle 
-} from '@shared/components/ui/card';
+/**
+ * QRCodeGenerator
+ * ================
+ * Renders a real QR code for a grant using the `qrcode` npm package.
+ * The QR code encodes the grant's public URL and is rendered into a
+ * canvas element, then offered as a downloadable PNG.
+ *
+ * Props:
+ *   grant           — grant object with at minimum { id, title }
+ *   onQRCodeGenerated(data) — optional callback fired after generation
+ */
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import QRCode from 'qrcode';
+import {
+  Card, CardContent, CardHeader, CardTitle,
+} from '@shared/components/ui/card.jsx';
+import { Button } from '@shared/components/ui/button.jsx';
+import {
+  Download, RefreshCw, Copy, Share2, CheckCircle, AlertCircle,
+} from 'lucide-react';
+import apiClient from '../utils/api.js';
 
+// ─── Style definitions ────────────────────────────────────────────────────────
+const STYLES = {
+  professional: {
+    name:        'Professional',
+    description: 'Square modules in corporate blue — ideal for formal documents',
+    dark:        '#1e40af',
+    light:       '#ffffff',
+  },
+  modern: {
+    name:        'Modern',
+    description: 'Square modules in vibrant green — great for community outreach',
+    dark:        '#15803d',
+    light:       '#ffffff',
+  },
+  elegant: {
+    name:        'Elegant',
+    description: 'Square modules in deep purple — suited to cultural programs',
+    dark:        '#6d28d9',
+    light:       '#ffffff',
+  },
+};
+
+// ─── Component ────────────────────────────────────────────────────────────────
 const QRCodeGenerator = ({ grant, onQRCodeGenerated }) => {
-  const [qrCodeData, setQRCodeData] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const canvasRef                       = useRef(null);
   const [selectedStyle, setSelectedStyle] = useState('professional');
-  const [includeLogo, setIncludeLogo] = useState(true);
-  const [previewMode, setPreviewMode] = useState(false);
-  const [availableStyles, setAvailableStyles] = useState({});
+  const [loading, setLoading]           = useState(false);
+  const [error, setError]               = useState(null);
+  const [qrData, setQrData]             = useState(null);   // { target_url, filename }
+  const [copied, setCopied]             = useState(false);
+  const [toast, setToast]               = useState(null);
 
-  const styles = {
-    professional: {
-      name: 'Professional',
-      description: 'Clean square modules in corporate blue',
-      color: '#1e40af',
-      preview: '⬛',
-      bestFor: 'Official council communications, formal documents'
-    },
-    modern: {
-      name: 'Modern', 
-      description: 'Rounded modules in vibrant green',
-      color: '#059669',
-      preview: '🟢',
-      bestFor: 'Community outreach, social media, youth programs'
-    },
-    elegant: {
-      name: 'Elegant',
-      description: 'Circular modules in sophisticated purple', 
-      color: '#7c3aed',
-      preview: '🟣',
-      bestFor: 'Premium grants, cultural programs, special events'
-    }
+  const showToast = (msg, type = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3500);
   };
 
-  useEffect(() => {
-    loadAvailableStyles();
+  // Build the public grant URL — use the backend-generated URL when available,
+  // fall back to a sensible default so the canvas can still render offline.
+  const buildTargetUrl = useCallback((backendUrl) => {
+    if (backendUrl) return backendUrl;
+    if (!grant?.id) return 'https://app.grantthrive.com';
+    return `https://app.grantthrive.com/grants/${grant.id}`;
+  }, [grant]);
+
+  // Render the QR code into the canvas element.
+  const renderCanvas = useCallback(async (targetUrl, styleKey) => {
+    if (!canvasRef.current || !targetUrl) return;
+    const style = STYLES[styleKey] || STYLES.professional;
+    await QRCode.toCanvas(canvasRef.current, targetUrl, {
+      width:            256,
+      margin:           2,
+      errorCorrectionLevel: 'M',
+      color: {
+        dark:  style.dark,
+        light: style.light,
+      },
+    });
   }, []);
 
-  const loadAvailableStyles = async () => {
-    try {
-      // In production, this would fetch from API
-      setAvailableStyles(styles);
-    } catch (error) {
-      console.error('Error loading QR code styles:', error);
-    }
-  };
-
-  const generateQRCode = async (isPreview = false) => {
-    if (!grant || !grant.grant_id) {
-      alert('Grant information is required to generate QR code');
+  // Fetch the QR data URL from the backend and render it.
+  const generateQR = useCallback(async (forceRegenerate = false) => {
+    if (!grant?.id) {
+      setError('No grant selected.');
       return;
     }
-
+    setLoading(true);
+    setError(null);
     try {
-      setLoading(true);
-      
-      const requestData = {
-        grant_id: grant.grant_id,
-        title: grant.title || grant.name,
-        council_name: grant.council_name || 'Council',
-        funding_amount: grant.funding_amount || grant.max_amount || 0,
-        deadline: grant.deadline || grant.closing_date,
-        style: selectedStyle,
-        include_logo: includeLogo
-      };
-
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      // Mock QR code data
-      const mockQRData = {
-        grant_id: grant.grant_id,
-        qr_code_url: `https://grantthrive.com/static/qr_codes/grant_${grant.grant_id}_${Date.now()}.png`,
-        target_url: `https://grantthrive.com/grants/${grant.grant_id}`,
-        filename: `grant_${grant.grant_id}_qr_code.png`,
-        style: selectedStyle,
-        created_at: new Date().toISOString(),
-        grant_title: requestData.title,
-        council_name: requestData.council_name,
-        file_size_kb: 45.2,
-        preview_base64: isPreview ? 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' : null
-      };
-
-      setQRCodeData(mockQRData);
-      
-      if (onQRCodeGenerated) {
-        onQRCodeGenerated(mockQRData);
+      let data;
+      if (forceRegenerate) {
+        data = await apiClient.regenerateGrantQR(grant.id);
+      } else {
+        data = await apiClient.getGrantQR(grant.id);
       }
 
-      if (!isPreview) {
-        alert('QR code generated successfully!');
-      }
+      const targetUrl = buildTargetUrl(data.target_url);
+      await renderCanvas(targetUrl, selectedStyle);
 
-    } catch (error) {
-      console.error('Error generating QR code:', error);
-      alert('Error generating QR code. Please try again.');
+      const newQrData = {
+        grant_id:   grant.id,
+        grant_title: grant.title,
+        target_url:  targetUrl,
+        filename:    data.filename || `grant_${grant.id}_qr_code.png`,
+        style:       selectedStyle,
+        created_at:  new Date().toISOString(),
+      };
+      setQrData(newQrData);
+
+      if (onQRCodeGenerated) onQRCodeGenerated(newQrData);
+      if (forceRegenerate) showToast('QR code regenerated successfully.');
+
+    } catch (err) {
+      setError(err.message || 'Failed to generate QR code. Please try again.');
     } finally {
       setLoading(false);
     }
+  }, [grant, selectedStyle, buildTargetUrl, renderCanvas, onQRCodeGenerated]);
+
+  // Re-render canvas when style changes (if QR already generated).
+  useEffect(() => {
+    if (qrData?.target_url) {
+      renderCanvas(qrData.target_url, selectedStyle).catch(() => {});
+      setQrData(prev => prev ? { ...prev, style: selectedStyle } : prev);
+    }
+  }, [selectedStyle]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-generate when a new grant is selected.
+  useEffect(() => {
+    if (grant?.id) {
+      setQrData(null);
+      setError(null);
+      generateQR(false);
+    }
+  }, [grant?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Download the canvas as a PNG file.
+  const downloadQR = () => {
+    if (!canvasRef.current) return;
+    const link      = document.createElement('a');
+    link.download   = qrData?.filename || `grant_${grant?.id || 'qr'}_qr_code.png`;
+    link.href       = canvasRef.current.toDataURL('image/png');
+    link.click();
+    showToast('QR code downloaded.');
   };
 
-  const downloadQRCode = () => {
-    if (qrCodeData && qrCodeData.qr_code_url) {
-      // Create download link
-      const link = document.createElement('a');
-      link.href = qrCodeData.qr_code_url;
-      link.download = qrCodeData.filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+  // Copy the target URL to clipboard.
+  const copyUrl = async () => {
+    if (!qrData?.target_url) return;
+    try {
+      await navigator.clipboard.writeText(qrData.target_url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      showToast('Grant URL copied to clipboard.');
+    } catch {
+      showToast('Could not copy to clipboard.', 'error');
     }
   };
 
-  const copyQRCodeURL = () => {
-    if (qrCodeData && qrCodeData.target_url) {
-      navigator.clipboard.writeText(qrCodeData.target_url).then(() => {
-        alert('Grant URL copied to clipboard!');
-      }).catch(() => {
-        alert('Failed to copy URL to clipboard');
-      });
-    }
-  };
-
-  const shareQRCode = () => {
-    if (qrCodeData && navigator.share) {
-      navigator.share({
-        title: `${grant.title || grant.name} - Grant Application`,
-        text: `Apply for this grant from ${grant.council_name || 'Council'}`,
-        url: qrCodeData.target_url
-      }).catch(console.error);
+  // Share via Web Share API, fall back to copy.
+  const shareQR = async () => {
+    if (!qrData) return;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${grant?.title || 'Grant'} — Apply Now`,
+          text:  `Apply for this grant from your council`,
+          url:   qrData.target_url,
+        });
+      } catch { /* user cancelled */ }
     } else {
-      copyQRCodeURL();
+      copyUrl();
     }
   };
 
   return (
     <div className="space-y-6">
-      {/* QR Code Style Selection */}
+      {/* Toast */}
+      {toast && (
+        <div
+          className={`fixed top-4 right-4 z-50 flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium shadow-lg ${
+            toast.type === 'error' ? 'bg-rose-600 text-white' : 'bg-emerald-600 text-white'
+          }`}
+        >
+          {toast.type === 'error'
+            ? <AlertCircle className="h-4 w-4" />
+            : <CheckCircle className="h-4 w-4" />}
+          {toast.msg}
+        </div>
+      )}
+
+      {/* Style selector */}
       <Card>
         <CardHeader>
-          <CardTitle>🎨 QR Code Style</CardTitle>
+          <CardTitle>QR Code Style</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {Object.entries(styles).map(([styleKey, styleInfo]) => (
-              <div
-                key={styleKey}
-                onClick={() => setSelectedStyle(styleKey)}
-                className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                  selectedStyle === styleKey
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {Object.entries(STYLES).map(([key, s]) => (
+              <button
+                key={key}
+                onClick={() => setSelectedStyle(key)}
+                className={`rounded-xl border-2 p-4 text-left transition-all ${
+                  selectedStyle === key
                     ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
               >
-                <div className="flex items-center space-x-3 mb-2">
-                  <div 
-                    className="w-6 h-6 rounded"
-                    style={{ backgroundColor: styleInfo.color }}
-                  ></div>
-                  <span className="font-medium">{styleInfo.name}</span>
-                  {selectedStyle === styleKey && (
-                    <span className="text-blue-600">✓</span>
+                <div className="mb-2 flex items-center gap-2">
+                  <span
+                    className="h-5 w-5 rounded"
+                    style={{ backgroundColor: s.dark }}
+                  />
+                  <span className="font-medium text-gray-900">{s.name}</span>
+                  {selectedStyle === key && (
+                    <CheckCircle className="ml-auto h-4 w-4 text-blue-500" />
                   )}
                 </div>
-                <p className="text-sm text-gray-600 mb-2">{styleInfo.description}</p>
-                <p className="text-xs text-gray-500">
-                  <strong>Best for:</strong> {styleInfo.bestFor}
-                </p>
-              </div>
+                <p className="text-xs text-gray-500">{s.description}</p>
+              </button>
             ))}
           </div>
+        </CardContent>
+      </Card>
 
-          <div className="mt-4 flex items-center space-x-4">
-            <label className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                checked={includeLogo}
-                onChange={(e) => setIncludeLogo(e.target.checked)}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+      {/* QR Code preview */}
+      <Card>
+        <CardHeader>
+          <CardTitle>QR Code Preview</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {error && (
+            <div className="mb-4 flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              {error}
+            </div>
+          )}
+
+          <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
+            {/* Canvas */}
+            <div className="shrink-0 rounded-2xl border-2 border-gray-200 bg-white p-4 shadow-sm">
+              {loading && (
+                <div className="flex h-64 w-64 items-center justify-center">
+                  <RefreshCw className="h-8 w-8 animate-spin text-gray-400" />
+                </div>
+              )}
+              <canvas
+                ref={canvasRef}
+                className={loading ? 'hidden' : 'block'}
+                style={{ width: 256, height: 256 }}
               />
-              <span className="text-sm text-gray-700">Include GrantThrive logo</span>
-            </label>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Grant Information Preview */}
-      <Card>
-        <CardHeader>
-          <CardTitle>📋 Grant Information</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-            <div><strong>Grant:</strong> {grant?.title || grant?.name || 'Grant Program'}</div>
-            <div><strong>Council:</strong> {grant?.council_name || 'Council'}</div>
-            <div><strong>Funding:</strong> ${(grant?.funding_amount || grant?.max_amount || 0).toLocaleString()}</div>
-            <div><strong>Deadline:</strong> {grant?.deadline || grant?.closing_date || 'Not specified'}</div>
-            <div><strong>QR Code URL:</strong> https://grantthrive.com/grants/{grant?.grant_id}</div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* QR Code Generation */}
-      <Card>
-        <CardHeader>
-          <CardTitle>🔲 Generate QR Code</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex space-x-3">
-              <button
-                onClick={() => generateQRCode(true)}
-                disabled={loading}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-              >
-                {loading ? 'Generating...' : '👁️ Preview'}
-              </button>
-              <button
-                onClick={() => generateQRCode(false)}
-                disabled={loading}
-                className="px-4 py-2 bg-green-700 text-white rounded-md text-sm font-medium hover:bg-green-800 disabled:opacity-50"
-              >
-                {loading ? 'Generating...' : '🔲 Generate QR Code'}
-              </button>
             </div>
 
-            {loading && (
-              <div className="flex items-center space-x-2 text-blue-600">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                <span className="text-sm">Generating QR code...</span>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Generated QR Code Display */}
-      {qrCodeData && (
-        <Card>
-          <CardHeader>
-            <CardTitle>✅ Generated QR Code</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {/* QR Code Image */}
-              <div className="flex justify-center">
-                <div className="bg-white p-6 rounded-lg border-2 border-gray-200 inline-block">
-                  {qrCodeData.preview_base64 ? (
-                    <img 
-                      src={qrCodeData.preview_base64} 
-                      alt="QR Code Preview"
-                      className="w-48 h-48 object-contain"
-                    />
-                  ) : (
-                    <div className="w-48 h-48 bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center">
-                      <div className="text-center">
-                        <div className="text-4xl mb-2">🔲</div>
-                        <div className="text-sm text-gray-600">QR Code</div>
-                        <div className="text-xs text-gray-500">{selectedStyle}</div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* QR Code Information */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div><strong>Style:</strong> {qrCodeData.style}</div>
-                  <div><strong>File Size:</strong> {qrCodeData.file_size_kb} KB</div>
-                  <div><strong>Created:</strong> {new Date(qrCodeData.created_at).toLocaleString()}</div>
-                  <div><strong>Target URL:</strong> 
-                    <a href={qrCodeData.target_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline ml-1">
-                      View Grant
+            {/* Info + actions */}
+            <div className="flex-1 space-y-4">
+              {qrData && (
+                <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm space-y-2">
+                  <div>
+                    <span className="font-medium text-gray-700">Grant: </span>
+                    <span className="text-gray-600">{qrData.grant_title}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">Style: </span>
+                    <span className="text-gray-600 capitalize">{qrData.style}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">Target URL: </span>
+                    <a
+                      href={qrData.target_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="break-all text-blue-600 hover:underline"
+                    >
+                      {qrData.target_url}
                     </a>
                   </div>
                 </div>
-              </div>
+              )}
 
-              {/* Action Buttons */}
-              <div className="flex flex-wrap gap-3">
-                <button
-                  onClick={downloadQRCode}
-                  className="px-4 py-2 bg-green-600 text-white rounded-md text-sm font-medium hover:bg-green-700"
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  onClick={downloadQR}
+                  disabled={loading || !qrData}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl"
                 >
-                  📥 Download QR Code
-                </button>
-                <button
-                  onClick={copyQRCodeURL}
-                  className="px-4 py-2 bg-green-700 text-white rounded-md text-sm font-medium hover:bg-green-800"
+                  <Download className="mr-2 h-4 w-4" />
+                  Download PNG
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={copyUrl}
+                  disabled={!qrData}
+                  className="rounded-xl"
                 >
-                  📋 Copy Grant URL
-                </button>
-                <button
-                  onClick={shareQRCode}
-                  className="px-4 py-2 bg-purple-600 text-white rounded-md text-sm font-medium hover:bg-purple-700"
+                  {copied
+                    ? <><CheckCircle className="mr-2 h-4 w-4 text-emerald-600" /> Copied</>
+                    : <><Copy className="mr-2 h-4 w-4" /> Copy URL</>}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={shareQR}
+                  disabled={!qrData}
+                  className="rounded-xl"
                 >
-                  📤 Share
-                </button>
-                <button
-                  onClick={() => generateQRCode(false)}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                  <Share2 className="mr-2 h-4 w-4" />
+                  Share
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => generateQR(true)}
+                  disabled={loading}
+                  className="rounded-xl"
                 >
-                  🔄 Regenerate
-                </button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Usage Instructions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>💡 How to Use QR Codes</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3 text-sm text-gray-600">
-            <div className="flex items-start space-x-2">
-              <span className="text-blue-600">📱</span>
-              <div>
-                <strong>Mobile Applications:</strong> Applicants can scan the QR code with their phone camera to instantly access the grant application form.
-              </div>
-            </div>
-            <div className="flex items-start space-x-2">
-              <span className="text-green-600">📄</span>
-              <div>
-                <strong>Print Materials:</strong> Include QR codes on flyers, posters, brochures, and newsletters for easy digital access.
-              </div>
-            </div>
-            <div className="flex items-start space-x-2">
-              <span className="text-purple-600">💻</span>
-              <div>
-                <strong>Digital Sharing:</strong> Use QR codes in emails, social media posts, and websites to drive traffic to grant applications.
-              </div>
-            </div>
-            <div className="flex items-start space-x-2">
-              <span className="text-orange-600">🏢</span>
-              <div>
-                <strong>Events & Meetings:</strong> Display QR codes at community events, council meetings, and information sessions.
+                  <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                  Regenerate
+                </Button>
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Best Practices */}
+      {/* Usage tips */}
       <Card>
         <CardHeader>
-          <CardTitle>🎯 QR Code Best Practices</CardTitle>
+          <CardTitle>How to Use This QR Code</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <div className="space-y-2">
-              <h4 className="font-medium text-gray-900">Design Tips:</h4>
-              <ul className="space-y-1 text-gray-600">
-                <li>• Use high contrast colors for better scanning</li>
-                <li>• Ensure QR code is at least 2cm x 2cm when printed</li>
-                <li>• Test QR codes before distributing</li>
-                <li>• Include clear "Scan to Apply" instructions</li>
-              </ul>
-            </div>
-            <div className="space-y-2">
-              <h4 className="font-medium text-gray-900">Placement Ideas:</h4>
-              <ul className="space-y-1 text-gray-600">
-                <li>• Council website homepage</li>
-                <li>• Community notice boards</li>
-                <li>• Local newspaper advertisements</li>
-                <li>• Social media posts and stories</li>
-              </ul>
-            </div>
+          <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
+            {[
+              { icon: '📱', title: 'Mobile scanning', body: 'Applicants scan with their phone camera to instantly open the grant application form.' },
+              { icon: '📄', title: 'Print materials', body: 'Include on flyers, posters, brochures, and newsletters. Minimum print size: 2 cm × 2 cm.' },
+              { icon: '💻', title: 'Digital sharing', body: 'Embed in emails, social media posts, and websites to drive traffic to the application.' },
+              { icon: '🏢', title: 'Events & meetings', body: 'Display at community events, council meetings, and information sessions.' },
+            ].map(tip => (
+              <div key={tip.title} className="flex gap-3 rounded-xl bg-gray-50 p-3">
+                <span className="text-xl">{tip.icon}</span>
+                <div>
+                  <p className="font-medium text-gray-800">{tip.title}</p>
+                  <p className="text-gray-500">{tip.body}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
@@ -383,4 +351,3 @@ const QRCodeGenerator = ({ grant, onQRCodeGenerated }) => {
 };
 
 export default QRCodeGenerator;
-

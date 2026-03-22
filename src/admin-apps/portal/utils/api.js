@@ -59,6 +59,7 @@ export const {
   councilCreateGrant, councilUpdateGrant, councilDeleteGrant,
   councilGetApplications, councilGetApplication, councilUpdateApplicationStatus,
   councilGetStaff, councilGetStats, councilGetNotifications,
+  getGrantQR, regenerateGrantQR,
 } = apiClient
 
 // ── Named exports — admin & public utilities ──────────────────────────────────
