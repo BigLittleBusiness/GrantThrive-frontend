@@ -1,624 +1,486 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle 
-} from '@shared/components/ui/card';
+import { useState, useEffect, useCallback } from 'react';
+import {
+  Bell, Mail, MessageSquare, CheckCircle, AlertCircle,
+  Info, Loader2, Save, Send, BarChart2, Settings,
+  Lock, ArrowUpRight, RefreshCw
+} from 'lucide-react';
+
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
+const EVENT_TYPES = [
+  { key: 'application_received', label: 'Application Received',  desc: 'When a new grant application is submitted' },
+  { key: 'application_approved', label: 'Application Approved',  desc: 'When an application is approved by a reviewer' },
+  { key: 'application_rejected', label: 'Application Rejected',  desc: 'When an application is declined' },
+  { key: 'deadline_reminder',    label: 'Deadline Reminder',     desc: '48 hours before a grant closes' },
+  { key: 'document_required',    label: 'Document Required',     desc: 'When additional documents are requested' },
+  { key: 'payment_processed',    label: 'Payment Processed',     desc: 'When a grant payment is made' },
+  { key: 'voting_reminder',      label: 'Voting Reminder',       desc: 'When community voting is closing soon' },
+];
+
+const TIMEZONES = [
+  'Australia/Sydney',
+  'Australia/Melbourne',
+  'Australia/Brisbane',
+  'Australia/Adelaide',
+  'Australia/Perth',
+  'Australia/Darwin',
+  'Australia/Hobart',
+  'Pacific/Auckland',
+  'Pacific/Auckland',
+  'Europe/London',
+  'Europe/Dublin',
+  'America/New_York',
+  'America/Los_Angeles',
+  'UTC',
+];
+
+function authHeaders() {
+  const token = localStorage.getItem('token') || sessionStorage.getItem('token') || '';
+  return { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
+}
+
+// ── Plan-gated upgrade prompt ─────────────────────────────────────────────────
+
+function SmsUpgradePrompt({ plan, smsAddonAvailable, onNavigate }) {
+  return (
+    <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 flex flex-col gap-4">
+      <div className="flex items-start gap-3">
+        <Lock className="text-amber-500 mt-0.5 shrink-0" size={22} />
+        <div>
+          <h3 className="font-semibold text-amber-900 text-base">SMS Notifications Not Available</h3>
+          <p className="text-amber-700 text-sm mt-1">
+            {plan === 'trial'
+              ? 'SMS notifications are not available during the free trial. Upgrade to a paid plan to unlock this feature.'
+              : smsAddonAvailable
+              ? 'SMS notifications are available as an add-on for your Small Council plan. Contact GrantThrive to enable it.'
+              : 'SMS notifications are included in the Medium and Large Council plans.'}
+          </p>
+        </div>
+      </div>
+      <div className="bg-white border border-amber-200 rounded-lg p-4">
+        <p className="text-sm font-medium text-gray-700 mb-2">What you get with SMS notifications:</p>
+        <ul className="text-sm text-gray-600 space-y-1">
+          <li className="flex items-center gap-2"><CheckCircle size={14} className="text-green-500" /> Instant alerts for application status changes</li>
+          <li className="flex items-center gap-2"><CheckCircle size={14} className="text-green-500" /> Deadline reminders sent directly to applicants</li>
+          <li className="flex items-center gap-2"><CheckCircle size={14} className="text-green-500" /> Payment confirmation messages</li>
+          <li className="flex items-center gap-2"><CheckCircle size={14} className="text-green-500" /> Community voting reminders</li>
+          <li className="flex items-center gap-2"><CheckCircle size={14} className="text-green-500" /> Managed by GrantThrive — no Twilio account needed</li>
+        </ul>
+      </div>
+      <div className="flex gap-3">
+        <button
+          onClick={() => onNavigate && onNavigate('account-billing')}
+          className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+        >
+          View Plans <ArrowUpRight size={14} />
+        </button>
+        <a
+          href="mailto:support@grantthrive.com?subject=SMS Add-on Enquiry"
+          className="flex items-center gap-2 border border-amber-300 text-amber-700 hover:bg-amber-100 text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+        >
+          Contact GrantThrive
+        </a>
+      </div>
+    </div>
+  );
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
 
 const CommunicationSettings = ({ user, onNavigate, onLogout }) => {
-  const [preferences, setPreferences] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [testingNotification, setTestingNotification] = useState(false);
-  const [statistics, setStatistics] = useState(null);
-  const [activeTab, setActiveTab] = useState('preferences');
+  const councilId = user?.council_id;
+  const [activeTab, setActiveTab] = useState('sms');
 
-  // Mock council ID - in production, get from auth context
-  const councilId = 'council_001';
+  // SMS state
+  const [smsData, setSmsData]   = useState(null);
+  const [smsLoading, setSmsLoading] = useState(true);
+  const [smsSaving, setSmsSaving]   = useState(false);
+  const [smsTesting, setSmsTesting] = useState(false);
+  const [smsUsage, setSmsUsage]     = useState(null);
+  const [toast, setToast]           = useState(null);
 
-  const eventTypes = [
-    { value: 'application_received', display: 'Application Received' },
-    { value: 'application_approved', display: 'Application Approved' },
-    { value: 'application_rejected', display: 'Application Rejected' },
-    { value: 'deadline_reminder', display: 'Deadline Reminder' },
-    { value: 'document_required', display: 'Document Required' },
-    { value: 'payment_processed', display: 'Payment Processed' },
-    { value: 'report_due', display: 'Report Due' },
-    { value: 'meeting_reminder', display: 'Meeting Reminder' },
-    { value: 'general_update', display: 'General Update' }
-  ];
+  // Local editable copies
+  const [eventPrefs, setEventPrefs]           = useState({});
+  const [businessHoursOnly, setBusinessHoursOnly] = useState(true);
+  const [timezone, setTimezone]               = useState('Australia/Sydney');
 
-  const communicationTypes = [
-    { value: 'email', display: 'Email Only', icon: '📧' },
-    { value: 'sms', display: 'SMS Only', icon: '📱' },
-    { value: 'both', display: 'Both Email & SMS', icon: '📧📱' },
-    { value: 'none', display: 'No Communication', icon: '🚫' }
-  ];
+  const showToast = (msg, type = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 4000);
+  };
 
-  const smsProviders = [
-    { value: 'twilio', display: 'Twilio' },
-    { value: 'messagemedia', display: 'MessageMedia (Australian)' },
-    { value: 'clicksend', display: 'ClickSend' }
-  ];
+  const fetchSmsSettings = useCallback(async () => {
+    if (!councilId) return;
+    setSmsLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/councils/${councilId}/sms-settings`, {
+        headers: authHeaders(),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setSmsData(data);
+      setEventPrefs(data.sms_event_prefs || {});
+      setBusinessHoursOnly(data.sms_business_hours_only ?? true);
+      setTimezone(data.sms_timezone || 'Australia/Sydney');
+    } catch (err) {
+      showToast('Failed to load SMS settings. Please try again.', 'error');
+    } finally {
+      setSmsLoading(false);
+    }
+  }, [councilId]);
+
+  const fetchSmsUsage = useCallback(async () => {
+    if (!councilId) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/councils/${councilId}/sms-usage`, {
+        headers: authHeaders(),
+      });
+      if (res.ok) setSmsUsage(await res.json());
+    } catch (_) {}
+  }, [councilId]);
 
   useEffect(() => {
-    loadPreferences();
-    loadStatistics();
-  }, []);
+    fetchSmsSettings();
+    fetchSmsUsage();
+  }, [fetchSmsSettings, fetchSmsUsage]);
 
-  const loadPreferences = async () => {
+  const handleSavePrefs = async () => {
+    if (!councilId) return;
+    setSmsSaving(true);
     try {
-      setLoading(true);
-      // Simulate API call
-      const mockPreferences = {
-        council_id: councilId,
-        email_enabled: true,
-        sms_enabled: true,
-        sms_provider: 'twilio',
-        allow_applicant_override: true,
-        business_hours_only_sms: true,
-        business_hours: '8:00 - 18:00',
-        timezone: 'Australia/Sydney',
-        sms_daily_limit: 1000,
-        sms_monthly_budget: 500.00,
-        preferences: {
-          application_received: { communication_type: 'email', will_send_email: true, will_send_sms: false },
-          application_approved: { communication_type: 'both', will_send_email: true, will_send_sms: true },
-          application_rejected: { communication_type: 'email', will_send_email: true, will_send_sms: false },
-          deadline_reminder: { communication_type: 'sms', will_send_email: false, will_send_sms: true },
-          document_required: { communication_type: 'email', will_send_email: true, will_send_sms: false },
-          payment_processed: { communication_type: 'both', will_send_email: true, will_send_sms: true },
-          report_due: { communication_type: 'email', will_send_email: true, will_send_sms: false },
-          meeting_reminder: { communication_type: 'sms', will_send_email: false, will_send_sms: true },
-          general_update: { communication_type: 'email', will_send_email: true, will_send_sms: false }
-        }
-      };
-      setPreferences(mockPreferences);
-    } catch (error) {
-      console.error('Error loading preferences:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadStatistics = async () => {
-    try {
-      // Simulate API call for statistics
-      const mockStats = {
-        total_notifications: 1247,
-        emails_sent: 892,
-        sms_sent: 355,
-        successful_deliveries: 1198,
-        failed_deliveries: 49,
-        by_event_type: {
-          application_received: 245,
-          application_approved: 89,
-          application_rejected: 156,
-          deadline_reminder: 423,
-          document_required: 178,
-          payment_processed: 89,
-          report_due: 67
-        },
-        by_preference: {
-          email: 567,
-          sms: 234,
-          both: 446
-        }
-      };
-      setStatistics(mockStats);
-    } catch (error) {
-      console.error('Error loading statistics:', error);
-    }
-  };
-
-  const updatePreference = (eventType, communicationType) => {
-    setPreferences(prev => ({
-      ...prev,
-      preferences: {
-        ...prev.preferences,
-        [eventType]: {
-          ...prev.preferences[eventType],
-          communication_type: communicationType,
-          will_send_email: ['email', 'both'].includes(communicationType),
-          will_send_sms: ['sms', 'both'].includes(communicationType)
-        }
+      const res = await fetch(`${API_BASE}/api/councils/${councilId}/sms-settings`, {
+        method: 'PATCH',
+        headers: authHeaders(),
+        body: JSON.stringify({
+          sms_event_prefs:         eventPrefs,
+          sms_business_hours_only: businessHoursOnly,
+          sms_timezone:            timezone,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Save failed');
       }
-    }));
-  };
-
-  const updateGlobalSetting = (setting, value) => {
-    setPreferences(prev => ({
-      ...prev,
-      [setting]: value
-    }));
-  };
-
-  const savePreferences = async () => {
-    try {
-      setSaving(true);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      alert('Communication preferences saved successfully!');
-    } catch (error) {
-      console.error('Error saving preferences:', error);
-      alert('Error saving preferences. Please try again.');
+      showToast('SMS preferences saved successfully.');
+    } catch (err) {
+      showToast(err.message, 'error');
     } finally {
-      setSaving(false);
+      setSmsSaving(false);
     }
   };
 
-  const testNotification = async (testType) => {
+  const handleTestSms = async () => {
+    if (!councilId) return;
+    setSmsTesting(true);
     try {
-      setTestingNotification(true);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      alert(`Test ${testType} notification sent successfully!`);
-    } catch (error) {
-      console.error('Error sending test notification:', error);
-      alert('Error sending test notification. Please try again.');
+      const res = await fetch(`${API_BASE}/api/councils/${councilId}/sms-settings/test`, {
+        method: 'POST',
+        headers: authHeaders(),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Test failed');
+      showToast('Test SMS sent to your registered phone number.');
+    } catch (err) {
+      showToast(err.message, 'error');
     } finally {
-      setTestingNotification(false);
+      setSmsTesting(false);
     }
   };
 
-  const resetToDefaults = async () => {
-    if (window.confirm('Are you sure you want to reset all communication preferences to defaults?')) {
-      try {
-        setSaving(true);
-        await loadPreferences(); // Reload default preferences
-        alert('Communication preferences reset to defaults!');
-      } catch (error) {
-        console.error('Error resetting preferences:', error);
-        alert('Error resetting preferences. Please try again.');
-      } finally {
-        setSaving(false);
-      }
-    }
+  const toggleEventPref = (key) => {
+    setEventPrefs(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  if (loading) {
+  // ── Loading ────────────────────────────────────────────────────────────────
+  if (smsLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading communication settings...</p>
-        </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader2 className="animate-spin text-green-600" size={32} />
       </div>
     );
   }
 
+  const canUseSms  = smsData?.can_use_sms ?? false;
+  const smsEnabled = smsData?.sms_enabled ?? false;
+  const plan       = smsData?.plan ?? 'small';
+  const smsAddonAvailable = smsData?.sms_addon_available ?? false;
+
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Toast */}
+      {toast && (
+        <div className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg text-sm font-medium
+          ${toast.type === 'error' ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`}>
+          {toast.type === 'error' ? <AlertCircle size={16} /> : <CheckCircle size={16} />}
+          {toast.msg}
+        </div>
+      )}
+
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Communication Settings</h1>
-              <p className="text-gray-600">Manage notification preferences and communication templates.</p>
+      <div className="bg-white border-b border-gray-200 px-6 py-5">
+        <div className="max-w-4xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+              <Bell className="text-green-700" size={20} />
             </div>
-            <div className="flex space-x-3">
-              <button
-                onClick={() => onNavigate('council/dashboard')}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-              >
-                ← Back to Dashboard
-              </button>
-              <button
-                onClick={onLogout}
-                className="px-4 py-2 bg-red-600 text-white rounded-md text-sm font-medium hover:bg-red-700"
-              >
-                Logout
-              </button>
+            <div>
+              <h1 className="text-xl font-bold text-gray-900">Communication Settings</h1>
+              <p className="text-sm text-gray-500">Manage how GrantThrive notifies your applicants</p>
             </div>
           </div>
+          <button
+            onClick={() => onNavigate && onNavigate('dashboard')}
+            className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+          >
+            ← Back to Dashboard
+          </button>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-      {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm border p-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Communication Settings</h1>
-        <p className="text-gray-600">
-          Configure how GrantThrive communicates with grant applicants. Choose between email, SMS, or both for different types of notifications.
-        </p>
-      </div>
+      <div className="max-w-4xl mx-auto px-6 py-8 space-y-6">
 
-      {/* Tab Navigation */}
-      <div className="bg-white rounded-lg shadow-sm border">
-        <div className="border-b border-gray-200">
-          <nav className="flex space-x-8 px-6">
-            {[
-              { id: 'preferences', label: 'Notification Preferences', icon: '⚙️' },
-              { id: 'global', label: 'Global Settings', icon: '🌐' },
-              { id: 'statistics', label: 'Statistics', icon: '📊' },
-              { id: 'test', label: 'Test Notifications', icon: '🧪' }
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === tab.id
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                {tab.icon} {tab.label}
-              </button>
-            ))}
-          </nav>
+        {/* Tabs */}
+        <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
+          {[
+            { id: 'sms',   label: 'SMS Notifications', icon: MessageSquare },
+            { id: 'email', label: 'Email Notifications', icon: Mail },
+            { id: 'usage', label: 'Usage', icon: BarChart2 },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors
+                ${activeTab === tab.id
+                  ? 'bg-white text-green-700 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              <tab.icon size={15} />
+              {tab.label}
+            </button>
+          ))}
         </div>
 
-        <div className="p-6">
-          {/* Notification Preferences Tab */}
-          {activeTab === 'preferences' && (
-            <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h2 className="text-lg font-semibold text-gray-900">Event-Specific Communication Preferences</h2>
-                <div className="space-x-3">
-                  <button
-                    onClick={resetToDefaults}
-                    disabled={saving}
-                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-                  >
-                    Reset to Defaults
-                  </button>
-                  <button
-                    onClick={savePreferences}
-                    disabled={saving}
-                    className="px-4 py-2 bg-green-700 text-white rounded-md text-sm font-medium hover:bg-green-800 disabled:opacity-50"
-                  >
-                    {saving ? 'Saving...' : 'Save Changes'}
-                  </button>
-                </div>
-              </div>
+        {/* ── SMS Tab ─────────────────────────────────────────────────────── */}
+        {activeTab === 'sms' && (
+          <div className="space-y-6">
 
-              <div className="bg-gray-50 rounded-lg p-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                  {communicationTypes.map(type => (
-                    <div key={type.value} className="text-center p-3 bg-white rounded-lg border">
-                      <div className="text-2xl mb-2">{type.icon}</div>
-                      <div className="text-sm font-medium text-gray-900">{type.display}</div>
-                    </div>
-                  ))}
-                </div>
+            {/* Status banner */}
+            <div className={`flex items-center gap-3 p-4 rounded-xl border
+              ${canUseSms && smsEnabled
+                ? 'bg-green-50 border-green-200'
+                : canUseSms && !smsEnabled
+                ? 'bg-blue-50 border-blue-200'
+                : 'bg-gray-50 border-gray-200'}`}>
+              <div className={`w-3 h-3 rounded-full shrink-0
+                ${canUseSms && smsEnabled ? 'bg-green-500' : 'bg-gray-400'}`} />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-800">
+                  {canUseSms && smsEnabled
+                    ? 'SMS notifications are active'
+                    : canUseSms && !smsEnabled
+                    ? 'SMS is available but not yet enabled — contact GrantThrive to activate'
+                    : 'SMS notifications are not available on your current plan'}
+                </p>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  SMS is delivered via GrantThrive's centralised Twilio account. No credentials required from you.
+                </p>
               </div>
+              {canUseSms && (
+                <button
+                  onClick={handleTestSms}
+                  disabled={smsTesting || !smsEnabled}
+                  className="flex items-center gap-1.5 text-xs font-medium bg-white border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                >
+                  {smsTesting ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
+                  Send Test
+                </button>
+              )}
+            </div>
 
-              <div className="space-y-4">
-                {eventTypes.map(event => (
-                  <div key={event.value} className="bg-white border rounded-lg p-4">
+            {/* Upgrade prompt if not available */}
+            {!canUseSms && (
+              <SmsUpgradePrompt
+                plan={plan}
+                smsAddonAvailable={smsAddonAvailable}
+                onNavigate={onNavigate}
+              />
+            )}
+
+            {/* Settings — only shown when SMS is available */}
+            {canUseSms && (
+              <>
+                {/* Event preferences */}
+                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                  <div className="px-5 py-4 border-b border-gray-100">
+                    <h2 className="font-semibold text-gray-900">SMS Event Notifications</h2>
+                    <p className="text-sm text-gray-500 mt-0.5">Choose which events trigger an SMS to applicants</p>
+                  </div>
+                  <div className="divide-y divide-gray-100">
+                    {EVENT_TYPES.map(evt => (
+                      <div key={evt.key} className="flex items-center justify-between px-5 py-3.5">
+                        <div>
+                          <p className="text-sm font-medium text-gray-800">{evt.label}</p>
+                          <p className="text-xs text-gray-500">{evt.desc}</p>
+                        </div>
+                        <button
+                          onClick={() => toggleEventPref(evt.key)}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors
+                            ${eventPrefs[evt.key] !== false ? 'bg-green-600' : 'bg-gray-300'}`}
+                        >
+                          <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform
+                            ${eventPrefs[evt.key] !== false ? 'translate-x-6' : 'translate-x-1'}`} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Delivery settings */}
+                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                  <div className="px-5 py-4 border-b border-gray-100">
+                    <h2 className="font-semibold text-gray-900">Delivery Settings</h2>
+                  </div>
+                  <div className="px-5 py-4 space-y-5">
+                    {/* Business hours toggle */}
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="font-medium text-gray-900">{event.display}</h3>
-                        <p className="text-sm text-gray-500 mt-1">
-                          Current setting: {preferences?.preferences[event.value]?.will_send_email && preferences?.preferences[event.value]?.will_send_sms ? 'Email & SMS' :
-                          preferences?.preferences[event.value]?.will_send_email ? 'Email Only' :
-                          preferences?.preferences[event.value]?.will_send_sms ? 'SMS Only' : 'No Communication'}
-                        </p>
+                        <p className="text-sm font-medium text-gray-800">Business hours only</p>
+                        <p className="text-xs text-gray-500">Only send SMS between 8:00 AM – 6:00 PM in the selected timezone</p>
                       </div>
-                      <div className="flex space-x-2">
-                        {communicationTypes.map(type => (
-                          <button
-                            key={type.value}
-                            onClick={() => updatePreference(event.value, type.value)}
-                            className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                              preferences?.preferences[event.value]?.communication_type === type.value
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                            }`}
-                          >
-                            {type.icon} {type.display}
-                          </button>
+                      <button
+                        onClick={() => setBusinessHoursOnly(v => !v)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors
+                          ${businessHoursOnly ? 'bg-green-600' : 'bg-gray-300'}`}
+                      >
+                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform
+                          ${businessHoursOnly ? 'translate-x-6' : 'translate-x-1'}`} />
+                      </button>
+                    </div>
+
+                    {/* Timezone */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">Timezone</label>
+                      <select
+                        value={timezone}
+                        onChange={e => setTimezone(e.target.value)}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                      >
+                        {TIMEZONES.map(tz => (
+                          <option key={tz} value={tz}>{tz}</option>
                         ))}
-                      </div>
+                      </select>
                     </div>
                   </div>
-                ))}
+                </div>
+
+                {/* Save button */}
+                <div className="flex justify-end">
+                  <button
+                    onClick={handleSavePrefs}
+                    disabled={smsSaving}
+                    className="flex items-center gap-2 bg-green-700 hover:bg-green-800 text-white text-sm font-medium px-5 py-2.5 rounded-lg disabled:opacity-60 transition-colors"
+                  >
+                    {smsSaving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
+                    {smsSaving ? 'Saving…' : 'Save SMS Settings'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* ── Email Tab ───────────────────────────────────────────────────── */}
+        {activeTab === 'email' && (
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-start gap-3 mb-4">
+              <Mail className="text-green-600 mt-0.5 shrink-0" size={20} />
+              <div>
+                <h2 className="font-semibold text-gray-900">Email Notifications</h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  Email notifications are always enabled and sent from <strong>noreply@grantthrive.com</strong> on your council's behalf.
+                  All transactional emails — application confirmations, status updates, deadline reminders — are sent automatically.
+                </p>
               </div>
             </div>
-          )}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-2">
+              <Info size={16} className="text-blue-600 mt-0.5 shrink-0" />
+              <p className="text-sm text-blue-700">
+                Email notification templates can be customised by GrantThrive support. Contact <a href="mailto:support@grantthrive.com" className="underline">support@grantthrive.com</a> to request changes to your council's email branding.
+              </p>
+            </div>
+          </div>
+        )}
 
-          {/* Global Settings Tab */}
-          {activeTab === 'global' && (
-            <div className="space-y-6">
-              <h2 className="text-lg font-semibold text-gray-900">Global Communication Settings</h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Email Settings */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>📧 Email Settings</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <label className="text-sm font-medium text-gray-700">Enable Email Notifications</label>
-                      <input
-                        type="checkbox"
-                        checked={preferences?.email_enabled}
-                        onChange={(e) => updateGlobalSetting('email_enabled', e.target.checked)}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* SMS Settings */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>📱 SMS Settings</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <label className="text-sm font-medium text-gray-700">Enable SMS Notifications</label>
-                      <input
-                        type="checkbox"
-                        checked={preferences?.sms_enabled}
-                        onChange={(e) => updateGlobalSetting('sms_enabled', e.target.checked)}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">SMS Provider</label>
-                      <select
-                        value={preferences?.sms_provider}
-                        onChange={(e) => updateGlobalSetting('sms_provider', e.target.value)}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                      >
-                        {smsProviders.map(provider => (
-                          <option key={provider.value} value={provider.value}>
-                            {provider.display}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <label className="text-sm font-medium text-gray-700">Business Hours Only</label>
-                      <input
-                        type="checkbox"
-                        checked={preferences?.business_hours_only_sms}
-                        onChange={(e) => updateGlobalSetting('business_hours_only_sms', e.target.checked)}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Daily SMS Limit</label>
-                      <input
-                        type="number"
-                        value={preferences?.sms_daily_limit}
-                        onChange={(e) => updateGlobalSetting('sms_daily_limit', parseInt(e.target.value))}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Monthly SMS Budget (AUD)</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={preferences?.sms_monthly_budget}
-                        onChange={(e) => updateGlobalSetting('sms_monthly_budget', parseFloat(e.target.value))}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Applicant Settings */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>👥 Applicant Settings</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <label className="text-sm font-medium text-gray-700">Allow Applicant Preference Override</label>
-                      <input
-                        type="checkbox"
-                        checked={preferences?.allow_applicant_override}
-                        onChange={(e) => updateGlobalSetting('allow_applicant_override', e.target.checked)}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      />
-                    </div>
-                    <p className="text-xs text-gray-500">
-                      When enabled, applicants can choose their preferred communication method
-                    </p>
-                  </CardContent>
-                </Card>
-
-                {/* Timezone Settings */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>🌐 Timezone Settings</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Timezone</label>
-                      <select
-                        value={preferences?.timezone}
-                        onChange={(e) => updateGlobalSetting('timezone', e.target.value)}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                      >
-                        <option value="Australia/Sydney">Australia/Sydney</option>
-                        <option value="Australia/Melbourne">Australia/Melbourne</option>
-                        <option value="Australia/Brisbane">Australia/Brisbane</option>
-                        <option value="Australia/Perth">Australia/Perth</option>
-                        <option value="Australia/Adelaide">Australia/Adelaide</option>
-                        <option value="Pacific/Auckland">New Zealand/Auckland</option>
-                      </select>
-                    </div>
-                    <p className="text-xs text-gray-500">
-                      Business hours: {preferences?.business_hours}
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              <div className="flex justify-end">
+        {/* ── Usage Tab ───────────────────────────────────────────────────── */}
+        {activeTab === 'usage' && (
+          <div className="space-y-4">
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-semibold text-gray-900">SMS Usage (Last 30 Days)</h2>
                 <button
-                  onClick={savePreferences}
-                  disabled={saving}
-                  className="px-6 py-2 bg-green-700 text-white rounded-md font-medium hover:bg-green-800 disabled:opacity-50"
+                  onClick={fetchSmsUsage}
+                  className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 transition-colors"
                 >
-                  {saving ? 'Saving...' : 'Save Global Settings'}
+                  <RefreshCw size={13} /> Refresh
                 </button>
               </div>
-            </div>
-          )}
 
-          {/* Statistics Tab */}
-          {activeTab === 'statistics' && statistics && (
-            <div className="space-y-6">
-              <h2 className="text-lg font-semibold text-gray-900">Communication Statistics</h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card>
-                  <CardContent className="text-center p-6">
-                    <div className="text-3xl font-bold text-blue-600">{statistics.total_notifications}</div>
-                    <div className="text-sm text-gray-600">Total Notifications</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="text-center p-6">
-                    <div className="text-3xl font-bold text-green-600">{statistics.emails_sent}</div>
-                    <div className="text-sm text-gray-600">Emails Sent</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="text-center p-6">
-                    <div className="text-3xl font-bold text-purple-600">{statistics.sms_sent}</div>
-                    <div className="text-sm text-gray-600">SMS Sent</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="text-center p-6">
-                    <div className="text-3xl font-bold text-orange-600">{statistics.successful_deliveries}</div>
-                    <div className="text-sm text-gray-600">Successful Deliveries</div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Notifications by Event Type</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {Object.entries(statistics.by_event_type).map(([event, count]) => (
-                        <div key={event} className="flex justify-between items-center">
-                          <span className="text-sm text-gray-600 capitalize">
-                            {event.replace('_', ' ')}
-                          </span>
-                          <span className="font-medium">{count}</span>
-                        </div>
-                      ))}
+              {!canUseSms ? (
+                <div className="text-center py-8 text-gray-400">
+                  <MessageSquare size={36} className="mx-auto mb-2 opacity-30" />
+                  <p className="text-sm">SMS is not enabled on your plan.</p>
+                </div>
+              ) : smsUsage ? (
+                <>
+                  <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className="bg-green-50 rounded-xl p-4 text-center">
+                      <p className="text-3xl font-bold text-green-700">{smsUsage.total_last_30_days}</p>
+                      <p className="text-xs text-green-600 mt-1">Messages sent (30 days)</p>
                     </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Notifications by Preference</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {Object.entries(statistics.by_preference).map(([pref, count]) => (
-                        <div key={pref} className="flex justify-between items-center">
-                          <span className="text-sm text-gray-600 capitalize">{pref}</span>
-                          <span className="font-medium">{count}</span>
-                        </div>
-                      ))}
+                    <div className="bg-gray-50 rounded-xl p-4 text-center">
+                      <p className="text-3xl font-bold text-gray-700">
+                        {smsUsage.daily.length > 0
+                          ? Math.round(smsUsage.total_last_30_days / smsUsage.daily.length)
+                          : 0}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">Avg per active day</p>
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
+                  </div>
+
+                  {smsUsage.daily.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="text-left text-xs text-gray-500 border-b border-gray-100">
+                            <th className="pb-2 font-medium">Date</th>
+                            <th className="pb-2 font-medium text-right">Messages Sent</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50">
+                          {smsUsage.daily.slice(0, 10).map(row => (
+                            <tr key={row.date}>
+                              <td className="py-2 text-gray-700">{row.date}</td>
+                              <td className="py-2 text-right font-medium text-gray-900">{row.messages_sent}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-400 text-center py-4">No SMS messages sent in the last 30 days.</p>
+                  )}
+                </>
+              ) : (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="animate-spin text-gray-400" size={24} />
+                </div>
+              )}
             </div>
-          )}
-
-          {/* Test Notifications Tab */}
-          {activeTab === 'test' && (
-            <div className="space-y-6">
-              <h2 className="text-lg font-semibold text-gray-900">Test Notifications</h2>
-              <p className="text-gray-600">
-                Send test notifications to verify your communication settings are working correctly.
-              </p>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>📧 Test Email</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <input
-                      type="email"
-                      placeholder="test@example.com"
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                    />
-                    <button
-                      onClick={() => testNotification('email')}
-                      disabled={testingNotification}
-                      className="w-full px-4 py-2 bg-green-700 text-white rounded-md text-sm font-medium hover:bg-green-800 disabled:opacity-50"
-                    >
-                      {testingNotification ? 'Sending...' : 'Send Test Email'}
-                    </button>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>📱 Test SMS</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <input
-                      type="tel"
-                      placeholder="+61 4XX XXX XXX"
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                    />
-                    <button
-                      onClick={() => testNotification('sms')}
-                      disabled={testingNotification}
-                      className="w-full px-4 py-2 bg-purple-600 text-white rounded-md text-sm font-medium hover:bg-purple-700 disabled:opacity-50"
-                    >
-                      {testingNotification ? 'Sending...' : 'Send Test SMS'}
-                    </button>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>📧📱 Test Both</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <input
-                      type="email"
-                      placeholder="test@example.com"
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm mb-2"
-                    />
-                    <input
-                      type="tel"
-                      placeholder="+61 4XX XXX XXX"
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                    />
-                    <button
-                      onClick={() => testNotification('both')}
-                      disabled={testingNotification}
-                      className="w-full px-4 py-2 bg-green-600 text-white rounded-md text-sm font-medium hover:bg-green-700 disabled:opacity-50"
-                    >
-                      {testingNotification ? 'Sending...' : 'Send Test Both'}
-                    </button>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+          </div>
+        )}
       </div>
     </div>
   );
 };
-export default CommunicationSettings;
 
+export default CommunicationSettings;
