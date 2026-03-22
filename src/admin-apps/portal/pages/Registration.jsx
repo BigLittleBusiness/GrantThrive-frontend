@@ -103,6 +103,7 @@ export default function Registration({ onLogin }) {
     lastName: '',
     email: '',
     phone: '',
+    phoneCountryCode: '+61',
     password: '',
     confirmPassword: '',
     organizationName: '',
@@ -212,20 +213,31 @@ export default function Registration({ onLogin }) {
       ? 'Please use your official council email (.gov.au or .govt.nz).'
       : '';
 
-  // Phone number validation — AU and NZ formats accepted
+  // Country code → ISO region map used for libphonenumber-js parsing
+  const COUNTRY_CODE_REGION = {
+    '+61':  'AU',
+    '+64':  'NZ',
+    '+1':   'US',
+    '+44':  'GB',
+    '+353': 'IE',
+  };
+
+  // Phone number validation — accepts spaces and dashes; validates against selected country code
   const phoneError = useMemo(() => {
-    const raw = formData.phone.trim();
+    // Strip spaces and dashes to get the raw digit string for parsing
+    const raw = formData.phone.replace(/[\s\-]/g, '').trim();
     if (!raw) return '';
-    // Try parsing as AU first, then NZ, then international
+    const region = COUNTRY_CODE_REGION[formData.phoneCountryCode] || 'AU';
+    // Build the full international number for parsing
+    const fullNumber = formData.phoneCountryCode + raw;
     const parsed =
-      parsePhoneNumberFromString(raw, 'AU') ||
-      parsePhoneNumberFromString(raw, 'NZ') ||
-      parsePhoneNumberFromString(raw);
+      parsePhoneNumberFromString(fullNumber) ||
+      parsePhoneNumberFromString(raw, region);
     if (!parsed || !parsed.isValid()) {
-      return 'Please enter a valid Australian or New Zealand phone number.';
+      return `Please enter a valid phone number for ${formData.phoneCountryCode}.`;
     }
     return '';
-  }, [formData.phone]);
+  }, [formData.phone, formData.phoneCountryCode]);
 
   // Password complexity rules — all five must pass
   const passwordRules = [
@@ -287,7 +299,7 @@ export default function Registration({ onLogin }) {
         first_name: formData.firstName.trim(),
         last_name: formData.lastName.trim(),
         email: formData.email.trim(),
-        phone: formData.phone.trim(),
+        phone: (formData.phoneCountryCode + formData.phone.replace(/[\s\-]/g, '').trim()).trim(),
         password: formData.password,
         user_type: userType,
         organization_name:
@@ -488,21 +500,37 @@ export default function Registration({ onLogin }) {
 
         <div>
           <label className="mb-2 block text-sm font-medium text-slate-700">Phone number *</label>
-          <div className="relative">
-            <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <Input
-              type="tel"
-              value={formData.phone}
-              onChange={(e) => handleInputChange('phone', e.target.value)}
-              placeholder="+61 or +64 number"
-              className={`h-11 rounded-xl pl-10 ${
-                formData.phone && phoneError
-                  ? 'border-rose-300 focus-visible:ring-rose-200'
-                  : formData.phone && !phoneError
-                  ? 'border-emerald-400 focus-visible:ring-emerald-200'
-                  : ''
-              }`}
-            />
+          <div className="flex gap-2">
+            {/* Country code dropdown */}
+            <select
+              value={formData.phoneCountryCode}
+              onChange={(e) => handleInputChange('phoneCountryCode', e.target.value)}
+              className="h-11 rounded-xl border border-input bg-background px-3 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0 shrink-0"
+              style={{ minWidth: '6.5rem' }}
+            >
+              <option value="+61">🇦🇺 +61 AU</option>
+              <option value="+64">🇳🇿 +64 NZ</option>
+              <option value="+1">🇺🇸 +1 US/CA</option>
+              <option value="+44">🇬🇧 +44 UK</option>
+              <option value="+353">🇮🇪 +353 IE</option>
+            </select>
+            {/* Number input */}
+            <div className="relative flex-1">
+              <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Input
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => handleInputChange('phone', e.target.value)}
+                placeholder="e.g. 04 1234 5678 or 04-1234-5678"
+                className={`h-11 rounded-xl pl-10 ${
+                  formData.phone && phoneError
+                    ? 'border-rose-300 focus-visible:ring-rose-200'
+                    : formData.phone && !phoneError
+                    ? 'border-emerald-400 focus-visible:ring-emerald-200'
+                    : ''
+                }`}
+              />
+            </div>
           </div>
           {formData.phone && phoneError && (
             <div className="mt-2 flex items-center gap-2 text-sm text-rose-600">
