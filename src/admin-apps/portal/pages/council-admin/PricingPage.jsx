@@ -52,70 +52,75 @@ const PricingPage = ({ user, onNavigate, onLogout }) => {
 
   const plans = [
     {
-      name: 'Starter',
-      description: 'For small councils',
+      name: 'Small Council',
+      description: 'For small councils running a small number of grant programs each year.',
       monthlyPrice: livePricing.small.monthly,
       annualPrice: livePricing.small.annual,
       popular: false,
       features: [
-        'Key features',
-        'Up to 10 users',
-        '5 GB storage',
-        'Basic support',
-        'Grant creation wizard',
-        'Application management',
-        'Basic analytics',
-        'Email notifications'
+        'Up to 3 active grant programs',
+        'Unlimited applications',
+        'Online application portal',
+        'Email notifications',
+        'Basic reporting & CSV export',
+        'Audit logging',
+        'Up to 3 staff accounts',
+        'Email support (48hr response)',
+        'Community Voting (add-on)',
+        'Interactive Grant Map (add-on)',
+        'SMS Notifications (add-on)',
       ],
       limits: {
-        users: 10,
-        storage: '5 GB',
-        grants: 25,
-        applications: 500
+        users: 3,
+        storage: 'Standard',
+        grants: 3,
+        applications: 'Unlimited'
       }
     },
     {
-      name: 'Professional',
-      description: 'For medium councils',
+      name: 'Medium Council',
+      description: 'The complete solution for mid-size councils with active community programs.',
       monthlyPrice: livePricing.medium.monthly,
       annualPrice: livePricing.medium.annual,
       popular: true,
       features: [
-        'All Starter features',
-        'Up to 25 users',
-        '20 GB storage',
-        'Priority support',
-        'Advanced analytics',
-        'Community forum',
-        'Custom branding',
-        'API access',
-        'Workflow automation',
-        'Document templates'
+        'Unlimited grant programs',
+        'Unlimited applications',
+        'Weighted scoring & multi-reviewer',
+        'Community voting module',
+        'Interactive grant map',
+        'Transparency dashboard',
+        'Advanced analytics & reporting',
+        'PDF & CSV export',
+        'QR code generation',
+        'Up to 10 staff accounts',
+        'Priority support (24hr response)',
+        'SMS Notifications included',
       ],
       limits: {
-        users: 25,
-        storage: '20 GB',
-        grants: 100,
-        applications: 2500
+        users: 10,
+        storage: 'Standard',
+        grants: 50,
+        applications: 'Unlimited'
       }
     },
     {
-      name: 'Enterprise',
-      description: 'For large organizations',
+      name: 'Large Council',
+      description: 'For large councils or regional bodies managing complex grant portfolios.',
       monthlyPrice: livePricing.large.monthly,
       annualPrice: livePricing.large.annual,
       popular: false,
       features: [
-        'All Professional features',
-        'Unlimited users',
-        'Unlimited storage',
-        'Dedicated support',
-        'Custom integrations',
-        'Advanced security',
-        'Multi-tenant architecture',
-        'White-label solution',
-        'SLA guarantee',
-        'Training & onboarding'
+        'Everything in Medium Council',
+        'Multi-council management',
+        'Custom branding & domain',
+        'API access & integrations',
+        'Dedicated account manager',
+        'SLA-backed uptime guarantee',
+        'Custom onboarding & training',
+        'Unlimited staff accounts',
+        'Phone support',
+        'SMS Notifications included',
       ],
       limits: {
         users: 'Unlimited',
@@ -224,7 +229,7 @@ const PricingPage = ({ user, onNavigate, onLogout }) => {
     },
     {
       question: 'Do you offer discounts for annual billing?',
-      answer: 'Yes, annual billing provides approximately 17% savings compared to monthly billing.'
+      answer: 'Yes, annual billing gives you 2 months free — equivalent to a 17% saving compared to monthly billing.'
     }
   ];
 
@@ -295,7 +300,7 @@ const PricingPage = ({ user, onNavigate, onLogout }) => {
               Annual
             </span>
             {billingCycle === 'annual' && (
-              <Badge className="ml-2 bg-green-100 text-green-800">Save 17%</Badge>
+              <Badge className="ml-2 bg-green-100 text-green-800">2 months free</Badge>
             )}
           </div>
         </div>
