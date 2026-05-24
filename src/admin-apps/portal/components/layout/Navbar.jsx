@@ -29,7 +29,7 @@ import {
   Info
 } from 'lucide-react'
 import { useTheme } from 'next-themes'
-import grantThrivelogo from '../../assets/grantthrive_official_logo.png'
+import grantThrivelogo from '../../assets/grantthrive_logo_growth_concept.png'
 import apiClient from '../../utils/api'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

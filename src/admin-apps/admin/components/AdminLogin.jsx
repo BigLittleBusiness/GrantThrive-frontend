@@ -35,7 +35,7 @@ import {
   LogIn,
 } from 'lucide-react';
 import { login, ROLES, setAuth } from '@grantthrive/auth';
-import logoSrc from '../assets/grantthrive_official_logo.png';
+import logoSrc from '../assets/grantthrive_logo_growth_concept.png';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
