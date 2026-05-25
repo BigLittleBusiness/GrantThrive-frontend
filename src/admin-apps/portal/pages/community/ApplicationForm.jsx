@@ -17,6 +17,7 @@ import {
   DollarSign,
   Calendar,
   CheckCircle,
+  CheckCircle2,
   AlertCircle,
   Clock,
   User,
@@ -26,8 +27,11 @@ import {
   MapPin,
   Globe,
   Target,
-  TrendingUp
+  TrendingUp,
+  Loader2,
+  XCircle,
 } from 'lucide-react';
+import apiClient from '../../utils/api.js';
 
 const ApplicationForm = () => {
   const { grantId } = useParams();
@@ -122,6 +126,50 @@ const ApplicationForm = () => {
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: null }));
     }
+  };
+
+  // ── ABN validation state ──────────────────────────────────────────────────
+  const [abnStatus, setAbnStatus] = React.useState('idle');
+  const [abnResult, setAbnResult] = React.useState(null);
+  const abnDebounceRef = React.useRef(null);
+
+  const handleAbnChange = (value) => {
+    updateFormData('abn', value);
+    setAbnStatus('idle');
+    setAbnResult(null);
+    if (abnDebounceRef.current) clearTimeout(abnDebounceRef.current);
+    const stripped = value.replace(/\D/g, '');
+    if (stripped.length < 11) return;
+    abnDebounceRef.current = setTimeout(async () => {
+      setAbnStatus('checking');
+      try {
+        const res = await apiClient.get(`/api/abn/validate?abn=${encodeURIComponent(stripped)}`);
+        const data = res.data;
+        setAbnResult(data);
+        if (!data.valid_format) {
+          setAbnStatus('invalid');
+          setErrors(prev => ({ ...prev, abn: data.error || 'This ABN is not valid.' }));
+        } else if (data.live_validated && data.active === false) {
+          setAbnStatus('inactive');
+          setErrors(prev => ({ ...prev, abn: 'This ABN is registered but not currently active.' }));
+        } else if (data.live_validated && data.active === true) {
+          setAbnStatus('valid');
+          setErrors(prev => ({ ...prev, abn: null }));
+        } else {
+          setAbnStatus('format_only');
+          setErrors(prev => ({ ...prev, abn: null }));
+        }
+      } catch (err) {
+        const errMsg = err?.response?.data?.error;
+        if (errMsg) {
+          setAbnResult({ error: errMsg, valid_format: false });
+          setAbnStatus('invalid');
+          setErrors(prev => ({ ...prev, abn: errMsg }));
+        } else {
+          setAbnStatus('idle');
+        }
+      }
+    }, 600);
   };
 
   const addBudgetItem = () => {
@@ -246,12 +294,37 @@ const ApplicationForm = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-2">ABN *</label>
-                <Input
-                  value={formData.abn}
-                  onChange={(e) => updateFormData('abn', e.target.value)}
-                  placeholder="12 345 678 901"
-                  className={errors.abn ? 'border-red-500' : ''}
-                />
+                <div className="relative">
+                  <Input
+                    value={formData.abn}
+                    onChange={(e) => handleAbnChange(e.target.value)}
+                    placeholder="12 345 678 901"
+                    className={`pr-10 ${
+                      errors.abn ? 'border-red-500' :
+                      abnStatus === 'valid' ? 'border-green-400' : ''
+                    }`}
+                  />
+                  {abnStatus === 'checking' && (
+                    <Loader2 className="absolute right-3 top-2.5 h-4 w-4 animate-spin text-slate-400" />
+                  )}
+                  {abnStatus === 'valid' && (
+                    <CheckCircle2 className="absolute right-3 top-2.5 h-4 w-4 text-green-500" />
+                  )}
+                  {(abnStatus === 'invalid' || abnStatus === 'inactive') && (
+                    <XCircle className="absolute right-3 top-2.5 h-4 w-4 text-red-400" />
+                  )}
+                </div>
+                {abnStatus === 'valid' && abnResult?.entity_name && (
+                  <div className="mt-1.5 rounded-lg bg-green-50 border border-green-200 px-3 py-2 text-xs text-green-800">
+                    <span className="font-semibold">{abnResult.entity_name}</span>
+                    {abnResult.entity_type && <span className="text-green-600"> &mdash; {abnResult.entity_type}</span>}
+                    {abnResult.state && <span className="text-green-600"> ({abnResult.state}{abnResult.postcode ? ` ${abnResult.postcode}` : ''})</span>}
+                    {abnResult.gst_registered === true && <span className="ml-1 text-green-600">&middot; GST Registered</span>}
+                  </div>
+                )}
+                {abnStatus === 'format_only' && (
+                  <p className="text-slate-500 text-xs mt-1">ABN format is valid.</p>
+                )}
                 {errors.abn && <p className="text-red-500 text-sm mt-1">{errors.abn}</p>}
               </div>
               <div>
