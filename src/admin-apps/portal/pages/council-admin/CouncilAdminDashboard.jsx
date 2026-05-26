@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import NotificationBell from '../../components/common/NotificationBell';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card.jsx';
 import { Badge } from '@shared/components/ui/badge.jsx';
 import { Button } from '@shared/components/ui/button.jsx';
+import apiClient from '../utils/api.js';
 import { 
   Users, 
   FileText, 
@@ -24,10 +25,36 @@ import {
   ClipboardList,
   CreditCard,
   User,
-  UserPlus
+  UserPlus,
+  MessageCircle,
+  X,
 } from 'lucide-react';
 
 const CouncilAdminDashboard = ({ user, onNavigate, onLogout }) => {
+  // ── SMS add-on prompt ─────────────────────────────────────────────────────────────────────────────────────
+  const [showSmsBanner, setShowSmsBanner] = useState(false);
+  const [smsBannerDismissed, setSmsBannerDismissed] = useState(
+    () => sessionStorage.getItem('gt_sms_banner_dismissed') === 'true'
+  );
+
+  useEffect(() => {
+    if (user?.role !== 'council_admin' || smsBannerDismissed) return;
+    const councilId = user?.council_id;
+    if (!councilId) return;
+    apiClient.get(`/api/councils/${councilId}/sms-tiers`)
+      .then(res => {
+        const data = res.data || res;
+        if (!data.current_tier && data.council_plan !== 'trial') {
+          setShowSmsBanner(true);
+        }
+      })
+      .catch(() => {});
+  }, [user, smsBannerDismissed]);
+
+  const handleDismissSmsBanner = () => {
+    setShowSmsBanner(false);
+    sessionStorage.setItem('gt_sms_banner_dismissed', 'true');
+  };
   const adminMetrics = {
     totalPrograms: 8,
     activeApplications: 47,
@@ -155,6 +182,37 @@ const CouncilAdminDashboard = ({ user, onNavigate, onLogout }) => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+      {/* SMS Add-on Prompt Banner */}
+      {showSmsBanner && (
+        <div className="mb-6 flex items-center justify-between gap-4 rounded-xl border border-green-200 bg-green-50 px-5 py-4">
+          <div className="flex items-center gap-3">
+            <MessageCircle className="h-5 w-5 shrink-0 text-green-700" />
+            <div>
+              <p className="font-semibold text-green-900">Boost community engagement with SMS notifications</p>
+              <p className="mt-0.5 text-sm text-green-800">
+                Keep applicants informed at every stage. Plans start at just $19/month for up to 500 messages.
+              </p>
+            </div>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <Button
+              size="sm"
+              className="bg-green-700 hover:bg-green-800 text-white"
+              onClick={() => { handleDismissSmsBanner(); onNavigate('account-billing'); }}
+            >
+              View SMS Plans
+            </Button>
+            <button
+              onClick={handleDismissSmsBanner}
+              className="rounded-lg p-1.5 text-green-600 hover:bg-green-100"
+              aria-label="Dismiss"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
