@@ -13,8 +13,24 @@
  */
 import { TOKEN_KEY } from '@grantthrive/auth'
 
-// Base URL — Vite proxy handles routing in development; set VITE_API_URL for production
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000'
+// Base URL — set via VITE_API_URL env var; defaults to production API
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.grantthrive.com'
+
+function buildApiUrl(base, endpoint) {
+  const normalizedBase = String(base || '').replace(/\/+$/, '')
+  const normalizedEndpoint = String(endpoint || '').startsWith('/')
+    ? String(endpoint || '')
+    : `/${String(endpoint || '')}`
+
+  // Avoid accidental double-prefix when base already includes /api
+  // and endpoint is written as /api/* in call sites.
+  if (normalizedBase.endsWith('/api') && (normalizedEndpoint === '/api' || normalizedEndpoint.startsWith('/api/'))) {
+    const suffix = normalizedEndpoint === '/api' ? '' : normalizedEndpoint.slice(4)
+    return `${normalizedBase}${suffix}`
+  }
+
+  return `${normalizedBase}${normalizedEndpoint}`
+}
 
 export class ApiClient {
   constructor() {
@@ -40,8 +56,23 @@ export class ApiClient {
   }
 
   async request(endpoint, options = {}) {
-    const url = `${this.baseURL}${endpoint}`
-    const config = { headers: this.getHeaders(), ...options }
+    const url = buildApiUrl(this.baseURL, endpoint)
+    const defaultHeaders = this.getHeaders()
+    const isFormData = options?.body instanceof FormData
+
+    // Let the browser set multipart boundaries for FormData requests.
+    if (isFormData) {
+      delete defaultHeaders['Content-Type']
+    }
+
+    const config = {
+      ...options,
+      headers: {
+        ...defaultHeaders,
+        ...(options.headers || {}),
+      },
+    }
+
     try {
       const response = await fetch(url, config)
       if (response.status === 401) {
@@ -54,11 +85,16 @@ export class ApiClient {
       if (response.status === 429) {
         throw new Error('Too many requests. Please try again later.')
       }
-      const data = await response.json()
+      const contentType = response.headers.get('content-type') || ''
+      const isJson = contentType.includes('application/json')
+      const data = isJson ? await response.json() : null
+
       if (!response.ok) {
-        throw new Error(data.message || data.error || `HTTP error ${response.status}`)
+        throw new Error(data?.message || data?.error || `HTTP error ${response.status}`)
       }
-      return data
+
+      // Keep compatibility with current call sites expecting object responses.
+      return data ?? { ok: true }
     } catch (error) {
       console.error('API request failed:', error)
       throw error

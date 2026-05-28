@@ -1,81 +1,103 @@
-# GrantThrive Frontend Applications
+# GrantThrive Frontend
 
-This repository contains the five React-based frontend applications for the GrantThrive ecosystem. All apps are managed as a single monorepo using pnpm workspaces.
+Unified React and Vite frontend for the GrantThrive platform.
 
----
+The repository contains one build output that serves multiple app surfaces from route-based entry points:
 
-### Applications
+- Portal (admin, council, community)
+- Public marketing pages
+- Public map and ROI pages
 
-| App Directory | Audience | Purpose |
-|---|---|---|
-| `frontend` | Council staff, applicants, community members | Core grant management portal |
-| `grantthrive-admin-dashboard` | GrantThrive internal team | Platform-level super-admin console |
-| `grantthrive-mapping-component` | General public | Interactive national grant discovery map |
-| `grantthrive-marketing-website` | Prospective council customers | Public marketing and sales site |
-| `grantthrive-roi-calculator` | Prospective council customers | Pre-sales ROI and cost-savings calculator |
+## Local development
 
----
+Prerequisites:
 
-## Local Development Setup
+- Node.js 22+
+- pnpm 10+
 
-This guide covers how to install and run all five frontend applications on your local machine. **You must have the [backend platform](https://github.com/BigLittleBusiness/grantthrive-platform) running first.**
-
-### Prerequisites
-
-- **Node.js 22.0+**
-- **pnpm 10.0+** (install with `npm install -g pnpm`)
-- **Git**
-
-### 1. Clone & Setup
-
-```bash
-# Clone the repository
-git clone https://github.com/BigLittleBusiness/GrantThrive-frontend.git
-cd GrantThrive-frontend
-
-# Create the environment file
-cp .env.example .env
-```
-
-### 2. Configure Environment
-
-Check the `.env` file you just created:
-
-- The default `VITE_API_URL` (`http://localhost:5000/api`) and `VITE_LOGIN_URL` (`http://localhost:5173/login`) should be correct if you are running the backend and frontend with the default settings.
-
-### 3. Install Dependencies
-
-This single command will read the `pnpm-workspace.yaml` file and install dependencies for all five UI apps, including linking the local `@grantthrive/auth` library.
+Setup:
 
 ```bash
 pnpm install
+cp .env.example .env
+pnpm dev
 ```
 
-### 4. Run the Applications
+Local defaults:
 
-You can run any of the apps using the `--filter` flag with the `pnpm dev` command. They will automatically be assigned different ports by Vite.
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:5000
 
-**Run the Core Frontend App (most common):**
+## Environment files
+
+The build mode controls which env file Vite loads.
+
+- .env.uat
+  - VITE_API_URL=https://api.uat.grantthrive.com/api
+  - VITE_LOGIN_URL=https://app.uat.grantthrive.com/login
+- .env.production
+  - VITE_API_URL=https://api.grantthrive.com/api
+  - VITE_LOGIN_URL=https://app.grantthrive.com/login
+
+## UAT deployment
+
+Infrastructure (CloudFront and S3):
 
 ```bash
-# Run the main application (equivalent to app.grantthrive.com)
-pnpm --filter frontend dev
-
-# This will typically run on http://localhost:5173
+cd terraform
+terraform init
+terraform plan -var-file=terraform.uat.tfvars
+terraform apply -var-file=terraform.uat.tfvars
 ```
 
-**Run Other Apps:**
+Application deploy:
 
 ```bash
-# Run the Admin Dashboard
-pnpm --filter grantthrive-admin-dashboard dev
-
-# Run the public Mapping Component
-pnpm --filter grantthrive-mapping-component dev
-
-# Run the ROI Calculator
-pnpm --filter grantthrive-roi-calculator dev
-
-# Run the Marketing Website
-pnpm --filter grantthrive-marketing-website dev
+cd ..
+AWS_PROFILE=biglittle ./scripts/deploy.sh uat
 ```
+
+What deploy.sh does:
+
+1. Builds with Vite mode uat.
+2. Uploads dist assets to UAT S3 bucket.
+3. Invalidates UAT CloudFront distribution.
+
+Verification:
+
+```bash
+curl -I https://app.uat.grantthrive.com/
+```
+
+## Production deployment
+
+Infrastructure:
+
+```bash
+cd terraform
+terraform plan -var-file=terraform.prod.tfvars
+terraform apply -var-file=terraform.prod.tfvars
+```
+
+Application:
+
+```bash
+cd ..
+AWS_PROFILE=biglittle ./scripts/deploy.sh prod
+```
+
+## Useful commands
+
+```bash
+# UAT deploy without rebuilding
+AWS_PROFILE=biglittle ./scripts/deploy.sh uat --skip-build
+
+# Production deploy without rebuilding
+AWS_PROFILE=biglittle ./scripts/deploy.sh prod --skip-build
+```
+
+## References
+
+- Terraform details: ./terraform/README.md
+- Backend repo and deploy flow: ../grantthrive-platform/README.md
+- Shared state management: ../grantthrive-state-management/README.md

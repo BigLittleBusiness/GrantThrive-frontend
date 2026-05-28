@@ -139,8 +139,8 @@ const GrantCreationWizard = ({ onNavigate }) => {
         assigned_reviewer_ids: formData.assignedReviewerIds,
         required_approvals:    formData.requiredApprovals,
       };
-      // Manus need to update this api call from councilCreateGrant ( GrantThrive-frontend/src/admin-apps/portal/utils/apiCouncil.js )
-      const res = await fetch(`http://127.0.0.1:5000/api/grants`, {
+      // Use API_BASE environment variable for production/UAT deployment
+      const res = await fetch(`${API_BASE}/grants`, {
         method:  'POST',
         headers: {
           'Content-Type': 'application/json',

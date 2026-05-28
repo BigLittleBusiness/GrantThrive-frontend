@@ -49,6 +49,10 @@ export const {
   communityGetGrants, communityGetGrant,
   communityGetApplications, communityGetApplication,
   communityCreateApplication, communityUpdateApplication,
+  communityListApplicationDocuments,
+  communityUploadApplicationDocument,
+  communityGetApplicationDocumentDownloadUrl,
+  communityDeleteApplicationDocument,
   communityGetNotifications, communityMarkNotificationRead,
 } = apiClient
 
@@ -58,6 +62,11 @@ export const {
   councilGetGrants, councilGetGrant,
   councilCreateGrant, councilUpdateGrant, councilDeleteGrant,
   councilGetApplications, councilGetApplication, councilUpdateApplicationStatus,
+  councilListApplicationDocuments,
+  councilUploadApplicationDocument,
+  councilGetApplicationDocumentDownloadUrl,
+  councilDeleteApplicationDocument,
+  councilUploadLogo,
   councilGetStaff, councilGetStats, councilGetNotifications,
   getGrantQR, regenerateGrantQR,
 } = apiClient

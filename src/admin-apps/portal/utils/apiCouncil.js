@@ -91,6 +91,49 @@ export function mixInto(proto) {
     return this.put(`/api/council/applications/${id}/status`, { status, notes })
   }
 
+  // ── Application Documents (S3-backed) ─────────────────────────────────────
+
+  /** List document metadata for an application. */
+  proto.councilListApplicationDocuments = function (applicationId) {
+    return this.get(`/api/applications/${applicationId}/documents`)
+  }
+
+  /**
+   * Upload a supporting document for an application.
+   * @param {string|number} applicationId
+   * @param {File} file
+   */
+  proto.councilUploadApplicationDocument = function (applicationId, file) {
+    const form = new FormData()
+    form.append('file', file)
+    return this.request(`/api/applications/${applicationId}/documents`, {
+      method: 'POST',
+      body: form,
+    })
+  }
+
+  /** Get a pre-signed S3 download URL for a document. */
+  proto.councilGetApplicationDocumentDownloadUrl = function (applicationId, documentId) {
+    return this.get(`/api/applications/${applicationId}/documents/${documentId}`)
+  }
+
+  /** Delete an application document. */
+  proto.councilDeleteApplicationDocument = function (applicationId, documentId) {
+    return this.delete(`/api/applications/${applicationId}/documents/${documentId}`)
+  }
+
+  // ── Council Branding (S3-backed logo) ──────────────────────────────────────
+
+  /** Upload a council logo image and return updated council payload. */
+  proto.councilUploadLogo = function (councilId, file) {
+    const form = new FormData()
+    form.append('logo', file)
+    return this.request(`/api/councils/${councilId}/logo`, {
+      method: 'POST',
+      body: form,
+    })
+  }
+
   // ── Staff ─────────────────────────────────────────────────────────────────────
 
   /** Fetch the council's staff members. */
