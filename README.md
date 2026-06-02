@@ -86,6 +86,16 @@ cd ..
 AWS_PROFILE=biglittle ./scripts/deploy.sh prod
 ```
 
+Production serves only `https://app.grantthrive.com` from the dedicated bucket
+`prod.grantthrive.com-frontend`. The main `grantthrive.com` / `www.grantthrive.com`
+CloudFront distribution is separate and should not be changed by this app stack.
+
+If production returns `403`, first check that the bucket contains assets:
+
+```bash
+AWS_PROFILE=biglittle aws s3 ls s3://prod.grantthrive.com-frontend/ --recursive --summarize
+```
+
 ## Useful commands
 
 ```bash

@@ -88,12 +88,22 @@ if [[ "$SKIP_BUILD" != "true" ]]; then
     pnpm install --frozen-lockfile
   fi
 
-  pnpm exec vite build --mode "$VITE_MODE"
+  if [[ -x ./node_modules/.bin/vite ]]; then
+    ./node_modules/.bin/vite build --mode "$VITE_MODE"
+  else
+    pnpm exec vite build --mode "$VITE_MODE"
+  fi
 fi
 
 if ! command -v terraform >/dev/null 2>&1; then
   echo "terraform is required to read deployment outputs." >&2
   exit 1
+fi
+
+if terraform -chdir="$TF_DIR" workspace list | sed 's/*//g' | tr -d ' ' | grep -qx "$TARGET_ENV"; then
+  terraform -chdir="$TF_DIR" workspace select "$TARGET_ENV" >/dev/null
+else
+  terraform -chdir="$TF_DIR" workspace new "$TARGET_ENV" >/dev/null
 fi
 
 S3_BUCKET_NAME="$(terraform -chdir="$TF_DIR" output -raw "$BUCKET_OUTPUT_KEY")"

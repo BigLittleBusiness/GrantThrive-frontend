@@ -230,7 +230,7 @@ resource "aws_cloudfront_distribution" "uat" {
 }
 
 resource "aws_route53_record" "prod_alias" {
-  count   = var.route53_zone_id == "" ? 0 : (local.create_prod_resources ? 1 : 0)
+  count   = 0
   zone_id = var.route53_zone_id
   name    = var.domain_name
   type    = "A"
@@ -243,7 +243,7 @@ resource "aws_route53_record" "prod_alias" {
 }
 
 resource "aws_route53_record" "www_alias" {
-  count   = var.route53_zone_id == "" ? 0 : (local.create_prod_resources ? 1 : 0)
+  count   = 0
   zone_id = var.route53_zone_id
   name    = "www.${var.domain_name}"
   type    = "A"
