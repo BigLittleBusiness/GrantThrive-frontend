@@ -108,6 +108,24 @@ AWS_PROFILE=biglittle ./scripts/deploy.sh prod --skip-build
 
 ## References
 
+Terraform remote state is managed outside this repo by `../grantthrive-state-management`.
+
+New developers should bootstrap or verify state access before running frontend Terraform:
+
+```bash
+cd ../grantthrive-state-management
+AWS_PROFILE=biglittle terraform init
+AWS_PROFILE=biglittle terraform apply
+```
+
+Then initialize this repo's frontend Terraform and select a workspace:
+
+```bash
+cd ../GrantThrive-frontend/terraform
+AWS_PROFILE=biglittle terraform init
+AWS_PROFILE=biglittle terraform workspace select uat || AWS_PROFILE=biglittle terraform workspace new uat
+```
+
 - Terraform details: ./terraform/README.md
 - Backend repo and deploy flow: ../grantthrive-platform/README.md
 - Shared state management: ../grantthrive-state-management/README.md

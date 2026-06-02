@@ -24,22 +24,30 @@ The main domain distribution `E3LRHNA8S8NESA` is for `grantthrive.com` / `www.gr
 
 ## Terraform Workflow
 
+Remote state is required before running this repo. If the state buckets/table do not exist, bootstrap them first:
+
+```bash
+cd ../../grantthrive-state-management
+AWS_PROFILE=biglittle terraform init
+AWS_PROFILE=biglittle terraform apply
+```
+
 ```bash
 cd GrantThrive-frontend/terraform
-terraform init
+AWS_PROFILE=biglittle terraform init
 ```
 
 Apply UAT:
 
 ```bash
-AWS_PROFILE=biglittle terraform workspace select uat
+AWS_PROFILE=biglittle terraform workspace select uat || AWS_PROFILE=biglittle terraform workspace new uat
 AWS_PROFILE=biglittle terraform apply -var-file=terraform.uat.tfvars
 ```
 
 Apply production:
 
 ```bash
-AWS_PROFILE=biglittle terraform workspace select prod
+AWS_PROFILE=biglittle terraform workspace select prod || AWS_PROFILE=biglittle terraform workspace new prod
 AWS_PROFILE=biglittle terraform apply -var-file=terraform.prod.tfvars
 ```
 
@@ -124,6 +132,39 @@ Remote state:
 - Bucket: `grantthrive-terraform-state-frontend-547154049278`
 - Lock table: `grantthrive-terraform-locks`
 - Region: `ap-southeast-2`
+- Backend config file: `backend.tf`
+
+This repo uses Terraform workspaces. State is stored in the frontend state bucket using Terraform's default workspace prefix:
+
+| Workspace | S3 object |
+|-----------|-----------|
+| `uat` | `env:/uat/terraform.tfstate` |
+| `prod` | `env:/prod/terraform.tfstate` |
+
+Do not run this stack from the default workspace. Always select `uat` or `prod` before `plan`, `apply`, `destroy`, or `state` commands.
+
+Useful state commands:
+
+```bash
+AWS_PROFILE=biglittle terraform workspace list
+AWS_PROFILE=biglittle terraform workspace select prod
+AWS_PROFILE=biglittle terraform state list
+AWS_PROFILE=biglittle aws s3api list-object-versions \
+  --bucket grantthrive-terraform-state-frontend-547154049278 \
+  --prefix 'env:/prod/terraform.tfstate'
+```
+
+If Terraform reports a stale lock, first verify no apply is running. Then prefer:
+
+```bash
+AWS_PROFILE=biglittle terraform force-unlock <LOCK_ID>
+```
+
+The state-management repo documents the shared buckets, lock table, and recovery process:
+
+```bash
+../../grantthrive-state-management/README.md
+```
 
 ## Common Issues
 
@@ -133,4 +174,3 @@ Remote state:
 | CloudFront alias conflict | Apex/www aliases attached to another distribution | Keep this stack limited to `app.grantthrive.com` |
 | Certificate error | CloudFront certificate is not in `us-east-1` | Use the us-east-1 ACM certificate ARN |
 | Old frontend content | CloudFront cache | Create invalidation for `/*` |
-
