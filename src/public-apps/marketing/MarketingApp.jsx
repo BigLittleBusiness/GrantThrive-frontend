@@ -611,7 +611,7 @@ function Footer() {
         </div>
 
         <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-          <p>&copy; {new Date().getFullYear()} GrantThrive. All rights reserved. Transforming grant management across Australia and New Zealand.</p>
+          <p>{new Date().getFullYear()} GrantThrive. All rights reserved. Transforming grant management across Australia and New Zealand.</p>
         </div>
       </div>
     </footer>

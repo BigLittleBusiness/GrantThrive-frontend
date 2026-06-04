@@ -121,7 +121,7 @@ Branch triggers:
 | Branch | Target environment | What runs |
 |--------|--------------------|-----------|
 | `staging` | UAT | Terraform apply, frontend build, S3 sync, CloudFront invalidation, frontend health check |
-| `main` | Production | Terraform apply, frontend build, S3 sync, CloudFront invalidation, frontend health check |
+| `prod` | Production | Terraform apply, frontend build, S3 sync, CloudFront invalidation, frontend health check |
 
 Manual deployment is also available from GitHub Actions using `workflow_dispatch` with `target_env` set to `uat` or `prod`.
 
