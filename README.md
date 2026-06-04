@@ -106,6 +106,41 @@ AWS_PROFILE=biglittle ./scripts/deploy.sh uat --skip-build
 AWS_PROFILE=biglittle ./scripts/deploy.sh prod --skip-build
 ```
 
+## GitHub CI/CD
+
+The active GitHub Actions workflow is:
+
+- `.github/workflows/deploy-aws.yml`
+
+The previous EC2 deployment workflow is retained for reference but disabled:
+
+- `.github/workflows/deploy.legacy.disabled`
+
+Branch triggers:
+
+| Branch | Target environment | What runs |
+|--------|--------------------|-----------|
+| `staging` | UAT | Terraform apply, frontend build, S3 sync, CloudFront invalidation, frontend health check |
+| `main` | Production | Terraform apply, frontend build, S3 sync, CloudFront invalidation, frontend health check |
+
+Manual deployment is also available from GitHub Actions using `workflow_dispatch` with `target_env` set to `uat` or `prod`.
+
+Required GitHub Actions secrets:
+
+```text
+AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY
+```
+
+The workflow expects these files to be present in the repository:
+
+```text
+terraform/terraform.uat.tfvars
+terraform/terraform.prod.tfvars
+```
+
+If either tfvars file is intentionally not committed, add a workflow step to generate it from GitHub secrets before `Terraform apply`.
+
 ## References
 
 Terraform remote state is managed outside this repo by `../grantthrive-state-management`.
