@@ -167,7 +167,7 @@ function HeroSection() {
                 <span className='block text-yellow-300'>Grant Management</span>
               </h1>
               <p className='text-xl text-blue-100 leading-relaxed'>
-                Only platform that combines powerful grant management with
+                The only platform that combines powerful grant management with
                 revolutionary community engagement features. Save money, engage
                 citizens, and streamline your processes.
               </p>
