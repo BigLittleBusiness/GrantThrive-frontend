@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import CommunityNavbar from '../../components/layout/CommunityNavbar.jsx';
 import { getToken } from '@grantthrive/auth';
 import {
   MessageSquare, Plus, Users, ChevronLeft, Send,
@@ -37,12 +38,22 @@ function timeAgo(isoString) {
   return `${d}d ago`;
 }
 
-export default function CommunityForum({ user }) {
+export default function CommunityForum({ user, onNavigate, onLogout }) {
   const [selectedForum, setSelectedForum] = useState(null);
   if (selectedForum) {
-    return <ForumThread user={user} forum={selectedForum} onBack={() => setSelectedForum(null)} />;
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <CommunityNavbar user={user} onNavigate={onNavigate} onLogout={onLogout} activePage="forum" />
+        <ForumThread user={user} forum={selectedForum} onBack={() => setSelectedForum(null)} />
+      </div>
+    );
   }
-  return <ForumList user={user} onSelect={setSelectedForum} />;
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <CommunityNavbar user={user} onNavigate={onNavigate} onLogout={onLogout} activePage="forum" />
+      <ForumList user={user} onSelect={setSelectedForum} />
+    </div>
+  );
 }
 
 function ForumList({ user, onSelect }) {

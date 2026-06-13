@@ -163,10 +163,13 @@ const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <div className="flex flex-col items-center gap-3 text-slate-500">
-          <Loader2 className="h-8 w-8 animate-spin" />
-          <p className="text-sm">Loading your dashboard…</p>
+      <div className="min-h-screen bg-slate-50">
+        <CommunityNavbar user={user} onNavigate={onNavigate} onLogout={onLogout} activePage="dashboard" />
+        <div className="flex items-center justify-center py-24">
+          <div className="flex flex-col items-center gap-3 text-slate-500">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <p className="text-sm">Loading your dashboard…</p>
+          </div>
         </div>
       </div>
     );
@@ -174,6 +177,7 @@ const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      <CommunityNavbar user={user} onNavigate={onNavigate} onLogout={onLogout} activePage="dashboard" />
       <div className="mx-auto max-w-7xl p-6 lg:p-8">
         {/* Header */}
         <div className="mb-8 flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm lg:flex-row lg:items-center lg:justify-between">
@@ -205,10 +209,6 @@ const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
               My applications
             </Button>
             <NotificationBell onNavigate={onNavigate} />
-            <Button variant="outline" onClick={onLogout} className="rounded-xl">
-              <LogOut className="mr-2 h-4 w-4" />
-              Logout
-            </Button>
           </div>
         </div>
 

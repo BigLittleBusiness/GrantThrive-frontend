@@ -14,6 +14,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { getToken } from '@grantthrive/auth';
+import StaffNavbar from '../../components/layout/StaffNavbar.jsx';
 import {
   ClipboardList, UserCheck, UserX, CheckCircle, XCircle,
   ChevronDown, ChevronUp, Loader, AlertCircle, RefreshCw,
@@ -411,7 +412,7 @@ function ApplicationRow({ app, user, staffList, onRefresh }) {
   );
 }
 
-export default function PendingApprovals({ user }) {
+export default function PendingApprovals({ user, onNavigate, onLogout }) {
   const [apps, setApps]           = useState([]);
   const [staffList, setStaffList] = useState([]);
   const [loading, setLoading]     = useState(true);
@@ -445,7 +446,9 @@ export default function PendingApprovals({ user }) {
   });
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="min-h-screen bg-gray-50">
+      <StaffNavbar user={user} onNavigate={onNavigate} onLogout={onLogout} activePage="pending-approvals" />
+      <div className="p-6 max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Pending Approvals</h1>
@@ -500,6 +503,7 @@ export default function PendingApprovals({ user }) {
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 }
