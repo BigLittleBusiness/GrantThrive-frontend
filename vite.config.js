@@ -5,7 +5,7 @@ import path from 'path'
 
 // Unified GrantThrive frontend — all apps in one Vite project
 // Dev frontend: http://localhost:5173
-// Backend API:  http://127.0.0.1:5000
+// Backend API:  api.uat.grantthrive.com
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
@@ -21,16 +21,16 @@ export default defineConfig({
     port: 5173,
     allowedHosts: 'all',
     proxy: {
-      '/api': 'http://127.0.0.1:5000',
-      '/auth': 'http://127.0.0.1:5000',
-      '/public': 'http://127.0.0.1:5000',
-      '/mapping': 'http://127.0.0.1:5000',
-      '/reports': 'http://127.0.0.1:5000',
-      '/voting': 'http://127.0.0.1:5000',
-      '/workflows': 'http://127.0.0.1:5000',
-      '/dashboard': 'http://127.0.0.1:5000',
-      '/search': 'http://127.0.0.1:5000',
-      '/grant': 'http://127.0.0.1:5000'
-    }
-  }
+      '/api': 'api.uat.grantthrive.com',
+      '/auth': 'api.uat.grantthrive.com',
+      '/public': 'api.uat.grantthrive.com',
+      '/mapping': 'api.uat.grantthrive.com',
+      '/reports': 'api.uat.grantthrive.com',
+      '/voting': 'api.uat.grantthrive.com',
+      '/workflows': 'api.uat.grantthrive.com',
+      '/dashboard': 'api.uat.grantthrive.com',
+      '/search': 'api.uat.grantthrive.com',
+      '/grant': 'api.uat.grantthrive.com',
+    },
+  },
 })
