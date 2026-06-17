@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import CommunityNavbar from '../../components/layout/CommunityNavbar.jsx';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card.jsx';
 import { Badge } from '@shared/components/ui/badge.jsx';
@@ -33,7 +34,7 @@ import {
 } from 'lucide-react';
 import apiClient from '../../utils/api.js';
 
-const ApplicationForm = () => {
+const ApplicationForm = ({ user, onNavigate, onLogout }) => {
   const { grantId } = useParams();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
@@ -871,13 +872,14 @@ const ApplicationForm = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <CommunityNavbar user={user} onNavigate={onNavigate} onLogout={onLogout} activePage="grants" />
       {/* Header */}
       <div className="bg-green-800 text-white">
         <div className="max-w-4xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Button
-                onClick={() => navigate(-1)}
+                onClick={() => onNavigate ? onNavigate('community/grants') : navigate(-1)}
                 variant="outline"
                 size="sm"
                 className="text-white border-white hover:bg-white hover:text-blue-600"

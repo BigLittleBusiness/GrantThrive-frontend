@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import CommunityNavbar from '../../components/layout/CommunityNavbar.jsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card.jsx';
 import { Badge } from '@shared/components/ui/badge.jsx';
 import { Button } from '@shared/components/ui/button.jsx';
@@ -31,7 +32,7 @@ import {
   Lightbulb
 } from 'lucide-react';
 
-const ResourceHub = () => {
+const ResourceHub = ({ user, onNavigate, onLogout }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
@@ -273,6 +274,7 @@ const ResourceHub = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <CommunityNavbar user={user} onNavigate={onNavigate} onLogout={onLogout} activePage="resources" />
       {/* Header */}
       <div className="bg-green-800 text-white">
         <div className="max-w-7xl mx-auto px-4 py-8">

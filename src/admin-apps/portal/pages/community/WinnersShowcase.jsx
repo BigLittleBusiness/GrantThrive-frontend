@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import CommunityNavbar from '../../components/layout/CommunityNavbar.jsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card.jsx';
 import { Badge } from '@shared/components/ui/badge.jsx';
 import { Button } from '@shared/components/ui/button.jsx';
@@ -27,7 +28,7 @@ import {
   CheckCircle
 } from 'lucide-react';
 
-const WinnersShowcase = () => {
+const WinnersShowcase = ({ user, onNavigate, onLogout }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedYear, setSelectedYear] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -244,6 +245,7 @@ const WinnersShowcase = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <CommunityNavbar user={user} onNavigate={onNavigate} onLogout={onLogout} activePage="winners" />
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white">
         <div className="max-w-7xl mx-auto px-4 py-12">

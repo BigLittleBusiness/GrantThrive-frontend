@@ -17,10 +17,11 @@ import {
   ThumbsUp,
 } from 'lucide-react';
 import apiClient from '../../utils/api.js';
+import CommunityNavbar from '../../components/layout/CommunityNavbar.jsx';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
-const CommunityVoting = ({ user }) => {
+const CommunityVoting = ({ user, onNavigate, onLogout }) => {
   const [sessions, setSessions] = useState([]);
   const [selectedSession, setSelectedSession] = useState(null);
   const [userVotes, setUserVotes] = useState({});
@@ -175,10 +176,13 @@ const CommunityVoting = ({ user }) => {
 
   if (loading && sessions.length === 0) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="flex flex-col items-center gap-3 text-slate-500">
-          <Loader2 className="h-8 w-8 animate-spin" />
-          <p className="text-sm">Loading voting sessions…</p>
+      <div className="min-h-screen bg-slate-50">
+        <CommunityNavbar user={user} onNavigate={onNavigate} onLogout={onLogout} activePage="voting" />
+        <div className="flex items-center justify-center py-24">
+          <div className="flex flex-col items-center gap-3 text-slate-500">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <p className="text-sm">Loading voting sessions…</p>
+          </div>
         </div>
       </div>
     );
@@ -186,11 +190,14 @@ const CommunityVoting = ({ user }) => {
 
   if (!loading && sessions.length === 0) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <div className="text-center">
-          <Vote className="mx-auto mb-4 h-16 w-16 text-slate-300" />
-          <h2 className="text-2xl font-bold text-slate-900">No Active Voting Sessions</h2>
-          <p className="mt-2 text-slate-500">Check back later for new community voting opportunities.</p>
+      <div className="min-h-screen bg-slate-50">
+        <CommunityNavbar user={user} onNavigate={onNavigate} onLogout={onLogout} activePage="voting" />
+        <div className="flex items-center justify-center py-24">
+          <div className="text-center">
+            <Vote className="mx-auto mb-4 h-16 w-16 text-slate-300" />
+            <h2 className="text-2xl font-bold text-slate-900">No Active Voting Sessions</h2>
+            <p className="mt-2 text-slate-500">Check back later for new community voting opportunities.</p>
+          </div>
         </div>
       </div>
     );
@@ -198,6 +205,7 @@ const CommunityVoting = ({ user }) => {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      <CommunityNavbar user={user} onNavigate={onNavigate} onLogout={onLogout} activePage="voting" />
       <div className="mx-auto max-w-7xl p-6 lg:p-8">
         {/* Header */}
         <div className="mb-8">

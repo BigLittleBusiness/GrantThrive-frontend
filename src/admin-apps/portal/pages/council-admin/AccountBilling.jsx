@@ -401,18 +401,57 @@ export default function AccountBilling({ user, onNavigate, onLogout }) {
             )}
           </div>
 
-          <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {[
-              { label: 'Monthly Price',  value: fmt(b.monthly_price_aud_cents) },
-              { label: 'Annual Price',   value: fmt(b.annual_price_aud_cents) },
-              { label: 'Voting Add-on',  value: fmt(b.addon_voting_cents) },
-              { label: 'Mapping Add-on', value: fmt(b.addon_mapping_cents) },
-            ].map(({ label, value }) => (
-              <div key={label} className="rounded-lg bg-gray-50 p-3">
-                <p className="text-xs text-gray-500">{label}</p>
-                <p className="mt-0.5 text-lg font-bold text-gray-900">{value}</p>
+          <div className="mt-6 space-y-3">
+            {/* Base plan + add-on breakdown */}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="rounded-lg bg-gray-50 p-3">
+                <p className="text-xs text-gray-500">Base Monthly</p>
+                <p className="mt-0.5 text-lg font-bold text-gray-900">{fmt(b.monthly_price_aud_cents)}</p>
               </div>
-            ))}
+              <div className="rounded-lg bg-gray-50 p-3">
+                <p className="text-xs text-gray-500">Base Annual</p>
+                <p className="mt-0.5 text-lg font-bold text-gray-900">{fmt(b.annual_price_aud_cents)}</p>
+              </div>
+              <div className="rounded-lg bg-gray-50 p-3">
+                <p className="text-xs text-gray-500">Voting Add-on</p>
+                <p className="mt-0.5 text-lg font-bold text-gray-900">{fmt(b.addon_voting_cents)}</p>
+              </div>
+              <div className="rounded-lg bg-gray-50 p-3">
+                <p className="text-xs text-gray-500">Mapping Add-on</p>
+                <p className="mt-0.5 text-lg font-bold text-gray-900">{fmt(b.addon_mapping_cents)}</p>
+              </div>
+            </div>
+
+            {/* SMS add-on row — only shown when an SMS tier is active */}
+            {b.addon_sms_monthly_cents != null && (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className="rounded-lg bg-green-50 border border-green-200 p-3">
+                  <p className="text-xs text-green-700">SMS Add-on (monthly)</p>
+                  <p className="mt-0.5 text-lg font-bold text-green-900">{fmt(b.addon_sms_monthly_cents)}</p>
+                  {b.addon_sms_tier_name && (
+                    <p className="mt-0.5 text-xs text-green-600">{b.addon_sms_tier_name}</p>
+                  )}
+                </div>
+                <div className="rounded-lg bg-green-50 border border-green-200 p-3">
+                  <p className="text-xs text-green-700">SMS Add-on (annual)</p>
+                  <p className="mt-0.5 text-lg font-bold text-green-900">{fmt(b.addon_sms_annual_cents)}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Combined total row */}
+            {b.total_monthly_cents != null && (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-lg bg-gray-900 p-3">
+                  <p className="text-xs text-gray-400">Total Monthly (ex-GST)</p>
+                  <p className="mt-0.5 text-xl font-bold text-white">{fmt(b.total_monthly_cents)}</p>
+                </div>
+                <div className="rounded-lg bg-gray-900 p-3">
+                  <p className="text-xs text-gray-400">Total Annual (ex-GST)</p>
+                  <p className="mt-0.5 text-xl font-bold text-white">{fmt(b.total_annual_cents)}</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

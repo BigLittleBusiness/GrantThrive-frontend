@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import CommunityNavbar from '../../components/layout/CommunityNavbar.jsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card';
 import { Button } from '@shared/components/ui/button';
 import { Badge } from '@shared/components/ui/badge';
@@ -22,7 +23,7 @@ import {
   Info
 } from 'lucide-react';
 
-const PublicGrantMap = () => {
+const PublicGrantMap = ({ user, onNavigate, onLogout }) => {
   const mapRef = useRef(null);
   const [map, setMap] = useState(null);
   const [markers, setMarkers] = useState([]);
@@ -232,18 +233,22 @@ const PublicGrantMap = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading grant map...</p>
+      <div className="min-h-screen bg-white">
+        <CommunityNavbar user={user} onNavigate={onNavigate} onLogout={onLogout} activePage="grant-map" />
+        <div className="flex items-center justify-center py-24">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading grant map...</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-screen flex flex-col">
-      {/* Header */}
+    <div className="flex flex-col" style={{ height: '100dvh' }}>
+      <CommunityNavbar user={user} onNavigate={onNavigate} onLogout={onLogout} activePage="grant-map" />
+      {/* Map header */}
       <div className="bg-white border-b border-gray-200 p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">

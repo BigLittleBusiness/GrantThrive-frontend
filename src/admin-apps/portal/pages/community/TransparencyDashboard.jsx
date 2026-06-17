@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import CommunityNavbar from '../../components/layout/CommunityNavbar.jsx';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@shared/components/ui/card.jsx';
 import { Badge } from '@shared/components/ui/badge.jsx';
 import {
@@ -15,7 +16,7 @@ import {
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
-const TransparencyDashboard = () => {
+const TransparencyDashboard = ({ user, onNavigate, onLogout }) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -42,10 +43,13 @@ const TransparencyDashboard = () => {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <div className="flex flex-col items-center gap-3 text-slate-500">
-          <Loader2 className="h-8 w-8 animate-spin" />
-          <p className="text-sm">Loading transparency data…</p>
+      <div className="min-h-screen bg-slate-50">
+        <CommunityNavbar user={user} onNavigate={onNavigate} onLogout={onLogout} activePage="transparency" />
+        <div className="flex items-center justify-center py-24">
+          <div className="flex flex-col items-center gap-3 text-slate-500">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <p className="text-sm">Loading transparency data…</p>
+          </div>
         </div>
       </div>
     );
@@ -53,10 +57,13 @@ const TransparencyDashboard = () => {
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <div className="flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700">
-          <AlertCircle className="h-5 w-5 flex-shrink-0" />
-          <p>{error}</p>
+      <div className="min-h-screen bg-slate-50">
+        <CommunityNavbar user={user} onNavigate={onNavigate} onLogout={onLogout} activePage="transparency" />
+        <div className="flex items-center justify-center py-24">
+          <div className="flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700">
+            <AlertCircle className="h-5 w-5 flex-shrink-0" />
+            <p>{error}</p>
+          </div>
         </div>
       </div>
     );
@@ -80,6 +87,7 @@ const TransparencyDashboard = () => {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      <CommunityNavbar user={user} onNavigate={onNavigate} onLogout={onLogout} activePage="transparency" />
       <div className="mx-auto max-w-7xl p-6 lg:p-8">
         {/* Header */}
         <div className="mb-8">

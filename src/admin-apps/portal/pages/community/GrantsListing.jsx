@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import CommunityNavbar from '../../components/layout/CommunityNavbar.jsx';
 import { useLocation } from 'react-router-dom';
 import AuthGateModal from '../../components/common/AuthGateModal.jsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card.jsx';
@@ -546,7 +547,7 @@ const TABS = [
   { id: 'my-applications', label: 'My applications' },
 ];
 
-const GrantsListing = ({ user, council, onNavigate }) => {
+const GrantsListing = ({ user, council, onNavigate, onLogout }) => {
   const location = useLocation();
   const initialTab = location.state?.tab ?? 'browse';
   const [activeTab, setActiveTab] = useState(initialTab);
@@ -561,6 +562,7 @@ const GrantsListing = ({ user, council, onNavigate }) => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <CommunityNavbar user={user} onNavigate={onNavigate} onLogout={onLogout} activePage="grants" />
       {/* Header */}
       <div className="bg-green-800 text-white">
         <div className="max-w-7xl mx-auto px-4 pt-8 pb-0">

@@ -1,5 +1,6 @@
 import React from 'react';
 import NotificationBell from '../../components/common/NotificationBell';
+import StaffNavbar from '../../components/layout/StaffNavbar.jsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card.jsx';
 import { Badge } from '@shared/components/ui/badge.jsx';
 import { Button } from '@shared/components/ui/button.jsx';
@@ -150,7 +151,9 @@ const CouncilStaffDashboard = ({ user, onNavigate, onLogout }) => {
   };
 
   return (
-    <div className="p-6">
+    <div className="min-h-screen bg-gray-50">
+      <StaffNavbar user={user} onNavigate={onNavigate} onLogout={onLogout} activePage="dashboard" />
+      <div className="p-6">
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
@@ -163,10 +166,6 @@ const CouncilStaffDashboard = ({ user, onNavigate, onLogout }) => {
         </div>
         <div className="flex items-center gap-3">
           <NotificationBell onNavigate={onNavigate} />
-          <Button variant="outline" onClick={onLogout} className="flex items-center gap-2">
-            <LogOut className="w-4 h-4" />
-            Logout
-          </Button>
         </div>
       </div>
 
@@ -405,10 +404,10 @@ const CouncilStaffDashboard = ({ user, onNavigate, onLogout }) => {
               </Button>
             </CardContent>
           </Card>
-        </div>
+         </div>
+      </div>
       </div>
     </div>
   );
 };
-
 export default CouncilStaffDashboard;

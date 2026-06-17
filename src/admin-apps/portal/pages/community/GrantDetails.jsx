@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import CommunityNavbar from '../../components/layout/CommunityNavbar.jsx';
 import { useParams, useNavigate } from 'react-router-dom';
 import AuthGateModal from '../../components/common/AuthGateModal.jsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card.jsx';
@@ -28,7 +29,7 @@ import {
   Target
 } from 'lucide-react';
 
-const GrantDetails = ({ user, council, onNavigate }) => {
+const GrantDetails = ({ user, council, onNavigate, onLogout }) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [isSaved, setIsSaved] = useState(false);
@@ -160,14 +161,13 @@ const GrantDetails = ({ user, council, onNavigate }) => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <CommunityNavbar user={user} onNavigate={onNavigate} onLogout={onLogout} activePage="grants" />
       {/* Header */}
       <div className="bg-green-800 text-white">
         <div className="max-w-7xl mx-auto px-4 py-6">
           {/* Breadcrumb */}
           <nav className="flex items-center space-x-2 text-blue-100 mb-4">
-            <button onClick={() => navigate('/')} className="hover:text-white">Home</button>
-            <span>›</span>
-            <button onClick={() => navigate('/grants')} className="hover:text-white">Grants</button>
+            <button onClick={() => onNavigate ? onNavigate('community/grants') : navigate('/portal/community/grants')} className="hover:text-white">Grants</button>
             <span>›</span>
             <span className="text-white">{grant.title}</span>
           </nav>
