@@ -3,7 +3,7 @@ import NotificationBell from '../../components/common/NotificationBell';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card.jsx';
 import { Badge } from '@shared/components/ui/badge.jsx';
 import { Button } from '@shared/components/ui/button.jsx';
-import apiClient from '../utils/api.js';
+import apiClient from '../../utils/api.js';
 import { 
   Users, 
   FileText, 
