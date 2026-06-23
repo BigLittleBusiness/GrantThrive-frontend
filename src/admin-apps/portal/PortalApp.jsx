@@ -10,6 +10,8 @@ import {
 
 import Login from './pages/Login.jsx';
 import Registration from './pages/Registration.jsx';
+import ForgotPassword from './pages/ForgotPassword.jsx';
+import ResetPassword from './pages/ResetPassword.jsx';
 
 import CouncilAdminRoutes from './routes/CouncilAdminRoutes.jsx';
 import CouncilStaffRoutes from './routes/CouncilStaffRoutes.jsx';
@@ -130,7 +132,9 @@ function PortalInner() {
   const isAuthRoute = useMemo(
     () =>
       location.pathname === '/portal/login' ||
-      location.pathname === '/portal/register',
+      location.pathname === '/portal/register' ||
+      location.pathname === '/portal/forgot-password' ||
+      location.pathname === '/portal/reset-password',
     [location.pathname]
   );
 
@@ -206,6 +210,14 @@ function PortalInner() {
       <Route
         path="register"
         element={<Registration council={council} onLogin={handleLogin} />}
+      />
+      <Route
+        path="forgot-password"
+        element={<ForgotPassword council={council} />}
+      />
+      <Route
+        path="reset-password"
+        element={<ResetPassword council={council} />}
       />
 
       {/* Generic /portal entry */}

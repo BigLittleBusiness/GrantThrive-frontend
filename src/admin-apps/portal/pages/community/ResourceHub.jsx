@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import CommunityNavbar from '../../components/layout/CommunityNavbar.jsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card.jsx';
 import { Badge } from '@shared/components/ui/badge.jsx';
@@ -32,7 +32,8 @@ import {
   Lightbulb
 } from 'lucide-react';
 
-const ResourceHub = ({ user, onNavigate, onLogout }) => {
+const ResourceHub = ({ user, council, onNavigate, onLogout }) => {
+  const councilName = council?.name || 'Your Council';
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
@@ -72,7 +73,7 @@ const ResourceHub = ({ user, onNavigate, onLogout }) => {
       views: 1456,
       rating: 4.8,
       reviews: 34,
-      author: 'Mount Isa Council',
+      author: councilName,
       publishDate: '2024-03-15',
       tags: ['beginner', 'applications', 'getting-started'],
       isFeatured: true,
@@ -207,6 +208,35 @@ const ResourceHub = ({ user, onNavigate, onLogout }) => {
     }
   ];
 
+  // Derived stats from live resources array
+  const totalDownloads = resources.reduce((sum, r) => sum + (r.downloads || 0), 0);
+  const avgRating = resources.length
+    ? (resources.reduce((sum, r) => sum + (r.rating || 0), 0) / resources.length).toFixed(1)
+    : '—';
+  const thisMonth = new Date();
+  const newThisMonth = resources.filter(r => {
+    if (!r.publishDate) return false;
+    const d = new Date(r.publishDate);
+    return d.getMonth() === thisMonth.getMonth() && d.getFullYear() === thisMonth.getFullYear();
+  }).length;
+
+  // Popular tags derived from resources
+  const popularTags = useMemo(() => {
+    const tagCounts = {};
+    resources.forEach(r => r.tags.forEach(t => { tagCounts[t] = (tagCounts[t] || 0) + 1; }));
+    return Object.entries(tagCounts).sort((a, b) => b[1] - a[1]).slice(0, 7).map(([t]) => t);
+  }, [resources]);
+
+  // Category counts derived from resources
+  const categoriesWithCounts = [
+    { id: 'all',       name: 'All Resources', count: resources.length },
+    { id: 'guides',    name: 'Guides',     count: resources.filter(r => r.category === 'guides').length,    icon: BookOpen },
+    { id: 'templates', name: 'Templates',  count: resources.filter(r => r.category === 'templates').length, icon: FileText },
+    { id: 'videos',    name: 'Videos',     count: resources.filter(r => r.category === 'videos').length,    icon: Video },
+    { id: 'faqs',      name: 'FAQs',       count: resources.filter(r => r.category === 'faqs').length,      icon: HelpCircle },
+    { id: 'tools',     name: 'Tools',      count: resources.filter(r => r.category === 'tools').length,     icon: Lightbulb },
+  ];
+
   // Featured resources
   const featuredResources = resources.filter(resource => resource.isFeatured);
 
@@ -291,7 +321,7 @@ const ResourceHub = ({ user, onNavigate, onLogout }) => {
 
           {/* Category Tabs */}
           <div className="flex flex-wrap gap-2 mb-6">
-            {categories.map(category => (
+            {categoriesWithCounts.map(category => (
               <button
                 key={category.id}
                 onClick={() => setSelectedCategory(category.id)}
@@ -440,19 +470,19 @@ const ResourceHub = ({ user, onNavigate, onLogout }) => {
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-600">Total Resources</span>
-                    <span className="font-semibold">156</span>
+                    <span className="font-semibold">{resources.length}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-600">Total Downloads</span>
-                    <span className="font-semibold">12,450</span>
+                    <span className="font-semibold">{totalDownloads.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-600">Average Rating</span>
-                    <span className="font-semibold">4.7 ⭐</span>
+                    <span className="font-semibold">{avgRating} ⭐</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-600">New This Month</span>
-                    <span className="font-semibold text-green-600">8</span>
+                    <span className="font-semibold text-green-600">{newThisMonth}</span>
                   </div>
                 </div>
               </CardContent>
@@ -465,7 +495,7 @@ const ResourceHub = ({ user, onNavigate, onLogout }) => {
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-2">
-                  {['beginner', 'template', 'guide', 'video', 'planning', 'budget', 'community'].map(tag => (
+                  {popularTags.map(tag => (
                     <Badge key={tag} variant="outline" className="cursor-pointer hover:bg-gray-100">
                       #{tag}
                     </Badge>

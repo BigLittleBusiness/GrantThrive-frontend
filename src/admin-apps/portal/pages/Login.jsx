@@ -145,7 +145,7 @@ const handleLogin = async (e) => {
                   />
                   <span className="ml-2 text-sm text-gray-600">Remember me</span>
                 </label>
-                <a href="mailto:support@grantthrive.com" className="text-sm text-blue-600 hover:text-blue-500">
+                <a href="/portal/forgot-password" className="text-sm text-green-700 hover:text-green-800 font-medium">
                   Forgot password?
                 </a>
               </div>
