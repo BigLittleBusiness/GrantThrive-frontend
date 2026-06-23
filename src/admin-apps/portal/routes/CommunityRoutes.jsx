@@ -49,7 +49,7 @@ export default function CommunityRoutes({
       />
 
       <Route
-        path="community/grant-details"
+        path="community/grant-details/:id"
         element={
           <ProtectedRoute
             user={currentUser}

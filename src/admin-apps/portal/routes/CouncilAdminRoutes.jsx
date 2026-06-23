@@ -80,7 +80,7 @@ export default function CouncilAdminRoutes({
       />
 
       <Route
-        path="council/grant-details"
+        path="council/grant-details/:id"
         element={
           <ProtectedRoute
             user={currentUser}

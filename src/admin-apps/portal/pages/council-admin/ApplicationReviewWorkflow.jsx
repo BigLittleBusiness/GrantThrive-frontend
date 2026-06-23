@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import apiClient from '../../utils/api.js';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card';
 import { Button } from '@shared/components/ui/button';
 import { Input } from '@shared/components/ui/input';
@@ -26,7 +27,7 @@ import {
   Lightbulb
 } from 'lucide-react';
 
-const ApplicationReviewWorkflow = ({ grantId = 'community-development-grant', user, onNavigate, onLogout }) => {
+const ApplicationReviewWorkflow = ({ grantId, user, onNavigate, onLogout }) => {
   const [applications, setApplications] = useState([]);
   const [filteredApplications, setFilteredApplications] = useState([]);
   const [selectedApplication, setSelectedApplication] = useState(null);
@@ -34,108 +35,73 @@ const ApplicationReviewWorkflow = ({ grantId = 'community-development-grant', us
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('latest');
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
   const [showScoring, setShowScoring] = useState(false);
   const [scores, setScores] = useState({});
 
-  // Mock data - will be replaced with real API calls
-  const mockApplications = [
-    {
-      id: 'app-001',
-      applicantName: 'Alexander Morales',
-      organization: 'Neighborhood Alliance',
-      submissionDate: '2024-03-18',
-      status: 'under_review',
-      score: null,
-      amount: 25000,
-      projectTitle: 'Community Garden Initiative',
-      category: 'Community Development',
-      priority: 'high',
-      reviewers: ['Sarah Johnson', 'Michael Chen'],
-      documents: ['project_plan.pdf', 'budget.xlsx', 'references.pdf'],
-      summary: 'Establishing community gardens to improve food security and social cohesion in underserved neighborhoods.'
-    },
-    {
-      id: 'app-002',
-      applicantName: 'Lily Stevens',
-      organization: 'City Volunteers',
-      submissionDate: '2024-03-14',
-      status: 'under_review',
-      score: null,
-      amount: 15000,
-      projectTitle: 'Youth Mentorship Program',
-      category: 'Youth Programs',
-      priority: 'medium',
-      reviewers: ['Sarah Johnson'],
-      documents: ['program_outline.pdf', 'budget.xlsx'],
-      summary: 'Connecting at-risk youth with positive role models through structured mentorship activities.'
-    },
-    {
-      id: 'app-003',
-      applicantName: 'Tim Robinson',
-      organization: 'Green Spaces',
-      submissionDate: '2024-03-11',
-      status: 'under_review',
-      score: null,
-      amount: 35000,
-      projectTitle: 'Urban Tree Planting Initiative',
-      category: 'Environmental',
-      priority: 'medium',
-      reviewers: ['Michael Chen', 'Lisa Wong'],
-      documents: ['environmental_plan.pdf', 'budget.xlsx', 'permits.pdf'],
-      summary: 'Large-scale tree planting program to improve air quality and urban heat island effects.'
-    },
-    {
-      id: 'app-004',
-      applicantName: 'Emma Fisher',
-      organization: 'Youth Initiatives',
-      submissionDate: '2024-03-09',
-      status: 'approved',
-      score: 62,
-      amount: 20000,
-      projectTitle: 'After School Arts Program',
-      category: 'Arts & Culture',
-      priority: 'high',
-      reviewers: ['Sarah Johnson', 'Michael Chen'],
-      documents: ['arts_curriculum.pdf', 'budget.xlsx', 'facility_agreement.pdf'],
-      summary: 'Providing creative arts education and mentorship for children in low-income areas.'
-    },
-    {
-      id: 'app-005',
-      applicantName: 'Sophie Turner',
-      organization: 'Local Connect',
-      submissionDate: '2024-02-28',
-      status: 'approved',
-      score: 78,
-      amount: 18000,
-      projectTitle: 'Digital Literacy Workshops',
-      category: 'Education',
-      priority: 'medium',
-      reviewers: ['Lisa Wong'],
-      documents: ['curriculum.pdf', 'budget.xlsx'],
-      summary: 'Teaching essential digital skills to seniors and disadvantaged community members.'
-    }
-  ];
+  // ── Normalise backend application shape to local shape ────────────────────
+  const normaliseApp = (app) => ({
+    id: app.id,
+    applicantName: app.applicant_name || app.primary_contact_name || 'Unknown',
+    organization: app.organization_name || '—',
+    submissionDate: app.submitted_at || app.created_at || '',
+    status: app.status || 'submitted',
+    score: app.total_score ?? null,
+    amount: app.requested_amount || app.amount_requested || 0,
+    projectTitle: app.project_title || '—',
+    category: app.category || '—',
+    priority: app.priority || 'medium',
+    reviewers: app.assigned_staff?.map(s => s.name || s.email) || [],
+    documents: app.documents || [],
+    summary: app.project_description || app.summary || '',
+  });
 
-  const analytics = {
-    underReview: 46,
-    approved: 31,
-    declined: 23,
-    commonThemes: [
-      'Community engagement',
-      'Youth programs',
-      'Urban renewal'
-    ],
-    recommendation: 'Prioritize initiatives targeting at-risk youth'
+  // ── Load applications from API ────────────────────────────────────────────
+  const loadApplications = useCallback(async () => {
+    setIsLoading(true);
+    setLoadError(null);
+    try {
+      const filters = grantId ? { grant_id: grantId } : {};
+      const data = await apiClient.councilGetApplications(filters);
+      const raw = data?.applications || data || [];
+      const normalised = raw.map(normaliseApp);
+      setApplications(normalised);
+      setFilteredApplications(normalised);
+    } catch (err) {
+      setLoadError(err?.response?.data?.error || err.message || 'Failed to load applications.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [grantId]);
+
+  useEffect(() => { loadApplications(); }, [loadApplications]);
+
+  // ── Compute sidebar analytics from live data ──────────────────────────────
+  const computeAnalytics = (apps) => {
+    const total = apps.length || 1;
+    const underReview = apps.filter(a => a.status === 'under_review').length;
+    const approved = apps.filter(a => a.status === 'approved').length;
+    const declined = apps.filter(a => a.status === 'declined' || a.status === 'rejected').length;
+    const categories = apps.reduce((acc, a) => {
+      if (a.category && a.category !== '—') acc[a.category] = (acc[a.category] || 0) + 1;
+      return acc;
+    }, {});
+    const topThemes = Object.entries(categories)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([k]) => k);
+    return {
+      underReview: Math.round((underReview / total) * 100),
+      approved: Math.round((approved / total) * 100),
+      declined: Math.round((declined / total) * 100),
+      commonThemes: topThemes.length > 0 ? topThemes : ['No data yet'],
+      recommendation: underReview > approved
+        ? 'Several applications are awaiting review — consider prioritising by deadline.'
+        : 'Review pipeline is on track.',
+    };
   };
 
-  useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setApplications(mockApplications);
-      setFilteredApplications(mockApplications);
-      setIsLoading(false);
-    }, 1000);
-  }, []);
+  const analytics = computeAnalytics(applications);
 
   useEffect(() => {
     let filtered = applications;
@@ -216,22 +182,23 @@ const ApplicationReviewWorkflow = ({ grantId = 'community-development-grant', us
     }));
   };
 
-  const submitReview = async (applicationId, decision, finalScore, comments) => {
+  const submitReview = async (applicationId, decision, finalScore, comments, recommendation) => {
     try {
-      // API call to submit review
-      console.log('Submitting review:', { applicationId, decision, finalScore, comments });
-      
-      // Update local state
-      setApplications(prev => prev.map(app => 
-        app.id === applicationId 
-          ? { ...app, status: decision, score: finalScore }
+      await apiClient.post(`/api/applications/${applicationId}/review`, {
+        total_score:    parseFloat(finalScore) || 0,
+        recommendation: recommendation || decision,
+        comments:       comments || '',
+        is_complete:    true,
+      });
+      // Optimistically update local state
+      setApplications(prev => prev.map(app =>
+        app.id === applicationId
+          ? { ...app, status: decision, score: parseFloat(finalScore) || 0 }
           : app
       ));
-      
       setSelectedApplication(null);
-      alert(`Application ${decision} successfully!`);
     } catch (error) {
-      alert('Error submitting review');
+      alert(error?.response?.data?.error || error.message || 'Error submitting review. Please try again.');
     }
   };
 
@@ -469,14 +436,14 @@ const ApplicationReviewWorkflow = ({ grantId = 'community-development-grant', us
               <Button 
                 variant="outline"
                 className="text-red-600 border-red-600 hover:bg-red-50"
-                onClick={() => submitReview(application.id, 'declined', calculateTotalScore(), reviewData.comments)}
+                onClick={() => submitReview(application.id, 'declined', calculateTotalScore(), reviewData.comments, reviewData.recommendation || 'decline')}
               >
                 <XCircle className="h-4 w-4 mr-2" />
                 Decline
               </Button>
               <Button 
                 className="bg-green-700 hover:bg-green-800"
-                onClick={() => submitReview(application.id, 'approved', calculateTotalScore(), reviewData.comments)}
+                onClick={() => submitReview(application.id, 'approved', calculateTotalScore(), reviewData.comments, reviewData.recommendation || 'approve')}
               >
                 <CheckCircle className="h-4 w-4 mr-2" />
                 Approve
@@ -492,8 +459,20 @@ const ApplicationReviewWorkflow = ({ grantId = 'community-development-grant', us
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading applications...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <p className="text-red-600 font-medium mb-4">{loadError}</p>
+          <Button onClick={loadApplications} className="bg-green-700 hover:bg-green-800">Retry</Button>
         </div>
       </div>
     );

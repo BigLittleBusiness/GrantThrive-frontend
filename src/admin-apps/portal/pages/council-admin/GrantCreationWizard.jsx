@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, ArrowRight, Save, Eye, CheckCircle, FileText, Calendar, Settings, Lightbulb, DollarSign, Users, Clock, UserCheck, UserX, Plus, Minus } from 'lucide-react';
-import { getToken } from '@grantthrive/auth';
+import { ArrowLeft, ArrowRight, Save, Eye, CheckCircle, FileText, Calendar, Settings, Lightbulb, DollarSign, Users, Clock, UserCheck, UserX, Plus, Minus, Loader2, X } from 'lucide-react';
+import apiClient from '../../utils/api.js';
 
-const API_BASE = import.meta.env.VITE_API_URL || '';
-
-const GrantCreationWizard = ({ onNavigate }) => {
+const GrantCreationWizard = ({ onNavigate, council }) => {
+  const [showPreview, setShowPreview] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     title: '',
@@ -29,6 +28,9 @@ const GrantCreationWizard = ({ onNavigate }) => {
   // Submission state
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
+  const [draftSaving, setDraftSaving] = useState(false);
+  const [draftSaved, setDraftSaved] = useState(false);
+  const [grantId, setGrantId] = useState(null); // set after first save
 
   const steps = [
     { id: 1, title: 'Basic Details',    icon: FileText,     description: 'Grant program information' },
@@ -42,14 +44,8 @@ const GrantCreationWizard = ({ onNavigate }) => {
   const loadStaff = useCallback(async () => {
     setStaffLoading(true);
     try {
-      const token = getToken();
-      const res = await fetch(`${API_BASE}/api/grants/council-staff`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setStaffList(data.staff || []);
-      }
+      const data = await apiClient.councilGetStaff();
+      setStaffList(data.staff || data || []);
     } catch (err) {
       console.error('Failed to load staff list', err);
     } finally {
@@ -122,40 +118,63 @@ const GrantCreationWizard = ({ onNavigate }) => {
     });
   };
 
+  // Build API payload
+  const buildPayload = (status = 'open') => ({
+    title:                 formData.title,
+    description:           formData.description,
+    category:              formData.category,
+    eligibility:           formData.eligibility,
+    required_documents:    formData.requiredDocs,
+    custom_questions:      formData.customQuestions,
+    total_budget:          parseFloat(formData.fundingAmount) || 0,
+    project_duration:      formData.projectDuration,
+    review_process:        formData.reviewProcess,
+    opens_at:              new Date().toISOString(),
+    closes_at:             formData.applicationDeadline
+                             ? new Date(formData.applicationDeadline).toISOString()
+                             : new Date(Date.now() + 30 * 86400000).toISOString(),
+    assigned_reviewer_ids: formData.assignedReviewerIds,
+    required_approvals:    formData.requiredApprovals,
+    status,
+  });
+
+  // Save Draft handler
+  const handleSaveDraft = async () => {
+    setDraftSaving(true);
+    setSaveError(null);
+    try {
+      const payload = buildPayload('draft');
+      let result;
+      if (grantId) {
+        result = await apiClient.councilUpdateGrant(grantId, payload);
+      } else {
+        result = await apiClient.councilCreateGrant(payload);
+        const newId = result?.grant?.id || result?.id;
+        if (newId) setGrantId(newId);
+      }
+      setDraftSaved(true);
+      setTimeout(() => setDraftSaved(false), 3000);
+    } catch (err) {
+      setSaveError(err?.response?.data?.error || err.message || 'Failed to save draft.');
+    } finally {
+      setDraftSaving(false);
+    }
+  };
+
+  // Publish handler
   const handlePublish = async () => {
     setSaving(true);
     setSaveError(null);
     try {
-      const token = getToken();
-      const payload = {
-        title:               formData.title,
-        description:         formData.description,
-        category:            formData.category,
-        total_budget:        parseFloat(formData.fundingAmount) || 0,
-        opens_at:            new Date().toISOString(),
-        closes_at:           formData.applicationDeadline
-                               ? new Date(formData.applicationDeadline).toISOString()
-                               : new Date(Date.now() + 30 * 86400000).toISOString(),
-        assigned_reviewer_ids: formData.assignedReviewerIds,
-        required_approvals:    formData.requiredApprovals,
-      };
-      // Manus need to update this api call from councilCreateGrant ( GrantThrive-frontend/src/admin-apps/portal/utils/apiCouncil.js )
-      const res = await fetch(`http://127.0.0.1:5000/api/grants`, {
-        method:  'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Failed to create grant');
+      const payload = buildPayload('open');
+      if (grantId) {
+        await apiClient.councilUpdateGrant(grantId, payload);
+      } else {
+        await apiClient.councilCreateGrant(payload);
       }
-      // Navigate back to grants list on success
       if (onNavigate) onNavigate('grants');
     } catch (err) {
-      setSaveError(err.message);
+      setSaveError(err?.response?.data?.error || err.message || 'Failed to publish grant.');
     } finally {
       setSaving(false);
     }
@@ -625,22 +644,69 @@ const GrantCreationWizard = ({ onNavigate }) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Professional Navigation Header */}
+      {/* Preview Modal */}
+      {showPreview && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto p-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Grant Preview</h2>
+              <button onClick={() => setShowPreview(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="space-y-4 text-sm text-gray-700">
+              <div><span className="font-semibold">Title:</span> {formData.title || '—'}</div>
+              <div><span className="font-semibold">Category:</span> {formData.category || '—'}</div>
+              <div><span className="font-semibold">Description:</span> {formData.description || '—'}</div>
+              <div><span className="font-semibold">Funding Amount:</span> {formData.fundingAmount ? `$${parseFloat(formData.fundingAmount).toLocaleString()}` : '—'}</div>
+              <div><span className="font-semibold">Application Deadline:</span> {formData.applicationDeadline || '—'}</div>
+              <div><span className="font-semibold">Eligibility:</span> {formData.eligibility || '—'}</div>
+              <div><span className="font-semibold">Required Documents:</span> {formData.requiredDocs.length > 0 ? formData.requiredDocs.join(', ') : '—'}</div>
+              <div><span className="font-semibold">Assigned Reviewers:</span> {formData.assignedReviewerIds.length > 0 ? formData.assignedReviewerIds.length + ' reviewer(s) selected' : '—'}</div>
+              <div><span className="font-semibold">Required Approvals:</span> {formData.requiredApprovals}</div>
+            </div>
+            <div className="mt-8 flex justify-end">
+              <button
+                onClick={() => setShowPreview(false)}
+                className="px-6 py-3 bg-green-700 text-white rounded-lg hover:bg-green-800 font-medium"
+              >
+                Close Preview
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Navigation Header */}
       <div className="bg-white border-b-2 border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             <div className="flex items-center">
-              <button className="flex items-center text-gray-700 hover:text-blue-600 transition-colors duration-300 font-medium">
+              <button
+                onClick={() => onNavigate ? onNavigate('dashboard') : undefined}
+                className="flex items-center text-gray-700 hover:text-green-700 transition-colors duration-300 font-medium"
+              >
                 <ArrowLeft className="h-6 w-6 mr-3" />
                 <span className="text-lg">Back to Dashboard</span>
               </button>
             </div>
             <div className="flex items-center space-x-6">
-              <button className="flex items-center px-6 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-300 font-medium">
-                <Save className="h-5 w-5 mr-2" />
-                Save Draft
+              {draftSaved && (
+                <span className="text-green-600 text-sm font-medium flex items-center gap-1">
+                  <CheckCircle className="h-4 w-4" /> Draft saved
+                </span>
+              )}
+              <button
+                onClick={handleSaveDraft}
+                disabled={draftSaving}
+                className="flex items-center px-6 py-3 text-gray-700 hover:text-green-700 hover:bg-green-50 rounded-lg transition-all duration-300 font-medium disabled:opacity-50"
+              >
+                {draftSaving ? <Loader2 className="h-5 w-5 mr-2 animate-spin" /> : <Save className="h-5 w-5 mr-2" />}
+                {draftSaving ? 'Saving...' : 'Save Draft'}
               </button>
-              <button className="flex items-center px-6 py-3 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-300 font-medium">
+              <button
+                onClick={() => setShowPreview(true)}
+                className="flex items-center px-6 py-3 text-gray-700 hover:text-green-700 hover:bg-green-50 rounded-lg transition-all duration-300 font-medium"
+              >
                 <Eye className="h-5 w-5 mr-2" />
                 Preview
               </button>
@@ -653,7 +719,7 @@ const GrantCreationWizard = ({ onNavigate }) => {
         {/* Professional Header */}
         <div className="mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-3">Create New Grant Program</h1>
-          <p className="text-xl text-gray-600 font-medium">Mount Isa Council</p>
+          <p className="text-xl text-gray-600 font-medium">{council?.name || 'Council'}</p>
         </div>
 
         {/* Professional Progress Steps */}

@@ -50,7 +50,7 @@ export default function CouncilStaffRoutes({
       />
 
       <Route
-        path="staff/grant-details"
+        path="staff/grant-details/:id"
         element={
           <ProtectedRoute
             user={currentUser}
