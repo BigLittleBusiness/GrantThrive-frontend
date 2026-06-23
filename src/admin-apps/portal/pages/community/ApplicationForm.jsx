@@ -38,6 +38,11 @@ const ApplicationForm = ({ user, onNavigate, onLogout }) => {
   const { grantId } = useParams();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
+  const [applicationId, setApplicationId] = useState(null); // set after first save/draft
+  const [grantTitle, setGrantTitle] = useState('Grant Application');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
   const [formData, setFormData] = useState({
     // Step 1: Organization Details
     organizationName: '',
@@ -95,6 +100,17 @@ const ApplicationForm = ({ user, onNavigate, onLogout }) => {
   const [lastSaved, setLastSaved] = useState(null);
   const [collaborators, setCollaborators] = useState([]);
 
+  // ── Load grant title from API ─────────────────────────────────────────────
+  useEffect(() => {
+    if (!grantId) return;
+    apiClient.communityGetGrant(grantId)
+      .then(data => {
+        const g = data?.grant || data;
+        if (g?.title) setGrantTitle(g.title);
+      })
+      .catch(() => {}); // non-fatal — title stays as default
+  }, [grantId]);
+
   const steps = [
     { id: 1, title: 'Organization', icon: Building, description: 'Basic organization information' },
     { id: 2, title: 'Contact Details', icon: User, description: 'Primary and secondary contacts' },
@@ -105,21 +121,101 @@ const ApplicationForm = ({ user, onNavigate, onLogout }) => {
     { id: 7, title: 'Review & Submit', icon: CheckCircle, description: 'Final review and declaration' }
   ];
 
-  // Auto-save functionality
-  useEffect(() => {
-    const autoSave = setTimeout(() => {
-      if (Object.keys(formData).some(key => formData[key] !== '')) {
-        setIsAutoSaving(true);
-        // Simulate auto-save
-        setTimeout(() => {
-          setIsAutoSaving(false);
-          setLastSaved(new Date());
-        }, 1000);
-      }
-    }, 2000);
+  // ── Build API payload from formData ──────────────────────────────────────
+  const buildPayload = (status = 'draft') => ({
+    grant_id: grantId || undefined,
+    status,
+    organization_name: formData.organizationName,
+    organization_type: formData.organizationType,
+    abn: formData.abn,
+    address: formData.address,
+    city: formData.city,
+    postcode: formData.postcode,
+    website: formData.website,
+    established_year: formData.establishedYear,
+    primary_contact_name: formData.primaryContactName,
+    primary_contact_title: formData.primaryContactTitle,
+    primary_contact_email: formData.primaryContactEmail,
+    primary_contact_phone: formData.primaryContactPhone,
+    secondary_contact_name: formData.secondaryContactName,
+    secondary_contact_email: formData.secondaryContactEmail,
+    project_title: formData.projectTitle,
+    project_description: formData.projectDescription,
+    project_category: formData.projectCategory,
+    project_location: formData.projectLocation,
+    project_start_date: formData.projectStartDate,
+    project_end_date: formData.projectEndDate,
+    total_project_cost: parseFloat(formData.totalProjectCost) || 0,
+    requested_amount: parseFloat(formData.amountRequested) || 0,
+    budget_items: formData.budgetItems,
+    other_funding: formData.otherFunding,
+    in_kind_contributions: formData.inKindContributions,
+    community_need: formData.communityNeed,
+    project_impact: formData.projectImpact,
+    sustainability: formData.sustainability,
+    risk_management: formData.riskManagement,
+    team_experience: formData.teamExperience,
+    declaration_accepted: formData.declarationAccepted,
+    privacy_accepted: formData.privacyAccepted,
+    terms_accepted: formData.termsAccepted,
+  });
 
+  // ── Save Draft handler ────────────────────────────────────────────────────
+  const handleSaveDraft = async () => {
+    setIsAutoSaving(true);
+    setSubmitError(null);
+    try {
+      const payload = buildPayload('draft');
+      let result;
+      if (applicationId) {
+        result = await apiClient.communityUpdateApplication(applicationId, payload);
+      } else {
+        result = await apiClient.communityCreateApplication(payload);
+        const newId = result?.application?.id || result?.id;
+        if (newId) setApplicationId(newId);
+      }
+      setLastSaved(new Date());
+    } catch (err) {
+      setSubmitError(err?.response?.data?.error || 'Failed to save draft. Please try again.');
+    } finally {
+      setIsAutoSaving(false);
+    }
+  };
+
+  // ── Submit Application handler ────────────────────────────────────────────
+  const handleSubmit = async () => {
+    if (!canSubmit) return;
+    setIsSubmitting(true);
+    setSubmitError(null);
+    try {
+      const payload = buildPayload('submitted');
+      if (applicationId) {
+        await apiClient.communityUpdateApplication(applicationId, payload);
+      } else {
+        await apiClient.communityCreateApplication(payload);
+      }
+      setSubmitSuccess(true);
+      // Navigate back to grants list after short delay
+      setTimeout(() => {
+        if (onNavigate) onNavigate('grants');
+        else navigate('/portal/community/grants');
+      }, 2000);
+    } catch (err) {
+      setSubmitError(err?.response?.data?.error || 'Submission failed. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // ── Auto-save (real API call) ─────────────────────────────────────────────
+  useEffect(() => {
+    const hasData = Object.entries(formData).some(([k, v]) =>
+      k !== 'budgetItems' && k !== 'uploadedFiles' && v !== '' && v !== false
+    );
+    if (!hasData) return;
+    const autoSave = setTimeout(() => handleSaveDraft(), 3000);
     return () => clearTimeout(autoSave);
-  }, [formData]);
+  }, [formData]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const updateFormData = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -887,7 +983,7 @@ const ApplicationForm = ({ user, onNavigate, onLogout }) => {
                 <ArrowLeft className="w-4 h-4" />
               </Button>
               <div>
-                <h1 className="text-2xl font-bold">Community Development Grant</h1>
+                <h1 className="text-2xl font-bold">{grantTitle}</h1>
                 <p className="text-blue-100">Application Form</p>
               </div>
             </div>
@@ -970,9 +1066,9 @@ const ApplicationForm = ({ user, onNavigate, onLogout }) => {
           </Button>
 
           <div className="flex items-center gap-3">
-            <Button variant="outline">
+            <Button variant="outline" onClick={handleSaveDraft} disabled={isAutoSaving || isSubmitting}>
               <Save className="w-4 h-4 mr-2" />
-              Save Draft
+              {isAutoSaving ? 'Saving...' : 'Save Draft'}
             </Button>
             
             {currentStep < 7 ? (
@@ -981,13 +1077,29 @@ const ApplicationForm = ({ user, onNavigate, onLogout }) => {
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             ) : (
-              <Button
-                disabled={!canSubmit}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                Submit Application
-                <CheckCircle className="w-4 h-4 ml-2" />
-              </Button>
+              submitSuccess ? (
+                <div className="flex items-center gap-2 text-green-600 font-medium">
+                  <CheckCircle className="w-5 h-5" />
+                  Application Submitted!
+                </div>
+              ) : (
+                <>
+                  {submitError && (
+                    <p className="text-red-600 text-sm mr-2">{submitError}</p>
+                  )}
+                  <Button
+                    disabled={!canSubmit || isSubmitting}
+                    onClick={handleSubmit}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    {isSubmitting ? (
+                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Submitting...</>
+                    ) : (
+                      <>Submit Application<CheckCircle className="w-4 h-4 ml-2" /></>
+                    )}
+                  </Button>
+                </>
+              )
             )}
           </div>
         </div>

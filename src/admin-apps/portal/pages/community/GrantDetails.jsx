@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import apiClient from '../../utils/api.js';
 import CommunityNavbar from '../../components/layout/CommunityNavbar.jsx';
 import { useParams, useNavigate } from 'react-router-dom';
 import AuthGateModal from '../../components/common/AuthGateModal.jsx';
@@ -35,87 +36,91 @@ const GrantDetails = ({ user, council, onNavigate, onLogout }) => {
   const [isSaved, setIsSaved] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showAuthGate, setShowAuthGate] = useState(false);
+  const [grant, setGrant] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+
+  const loadGrant = useCallback(async () => {
+    if (!id) {
+      setLoadError('No grant selected. Please return to the grants list and choose a grant.');
+      setIsLoading(false);
+      return;
+    }
+    setIsLoading(true);
+    setLoadError(null);
+    try {
+      const data = await apiClient.communityGetGrant(id);
+      const g = data?.grant || data;
+      // Normalise API response into the shape the UI expects
+      const closes = g.closes_at || g.deadline || g.close_date || '';
+      let daysLeft = 0;
+      let statusLabel = g.status || 'Open';
+      if (closes) {
+        daysLeft = Math.ceil((new Date(closes) - Date.now()) / 86400000);
+        if (daysLeft < 0) statusLabel = 'Closed';
+        else if (daysLeft <= 7) statusLabel = 'Closing Soon';
+        else statusLabel = 'Open';
+      }
+      setGrant({
+        id: g.id,
+        title: g.title || g.name || '—',
+        category: g.category || g.grant_type || 'General',
+        amount: g.max_amount || g.total_budget || g.amount || 0,
+        status: statusLabel,
+        daysLeft,
+        deadline: closes ? new Date(closes).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' }) : '—',
+        deadlineTime: '11:59 pm',
+        openDate: g.opens_at ? new Date(g.opens_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' }) : '—',
+        outcomeDate: g.outcome_date || '—',
+        completionDate: g.completion_date || '—',
+        description: g.description || g.summary || '',
+        longDescription: g.long_description || g.description || '',
+        eligibilityCriteria: Array.isArray(g.eligibility_criteria) ? g.eligibility_criteria : (g.eligibility ? [g.eligibility] : []),
+        documentsRequired: Array.isArray(g.documents_required) ? g.documents_required : [],
+        applicationProcess: Array.isArray(g.application_process) ? g.application_process : [],
+        contact: {
+          email: g.contact_email || council?.contact_email || '',
+          phone: g.contact_phone || council?.phone || '',
+          office: g.contact_office || council?.name || '',
+          hours: g.contact_hours || 'Monday – Friday, 8:30 AM – 4:30 PM',
+        },
+        relatedGrants: Array.isArray(g.related_grants) ? g.related_grants : [],
+        statistics: {
+          totalApplicants: g.application_count ?? 0,
+          successRate: g.success_rate ?? null,
+          averageAward: g.average_award ?? null,
+          totalFunded: g.funded_count ?? null,
+          communityImpact: g.community_impact || '',
+        },
+        tags: Array.isArray(g.tags) ? g.tags : (g.category ? [g.category] : []),
+        location: g.location || g.council_name || council?.name || '',
+        councilArea: g.council_area || council?.name || '',
+      });
+    } catch (err) {
+      setLoadError(err?.response?.data?.error || err.message || 'Unable to load grant details. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [id, council]);
+
+  useEffect(() => { loadGrant(); }, [loadGrant]);
 
   function handleApplyClick() {
     if (user) {
-      // Already logged in — go straight to the application form
-      if (onNavigate) onNavigate('application-form');
-      else navigate('/portal/community/application-form');
+      const dest = id ? `application-form?grantId=${id}` : 'application-form';
+      if (onNavigate) onNavigate(dest);
+      else navigate(`/portal/community/application-form${id ? `?grantId=${id}` : ''}`);
     } else {
       setShowAuthGate(true);
     }
   }
 
-  function handleAuthSuccess(loggedInUser) {
+  function handleAuthSuccess() {
     setShowAuthGate(false);
-    // After login/register, navigate to the application form
-    if (onNavigate) onNavigate('application-form');
-    else navigate('/portal/community/application-form');
+    const dest = id ? `application-form?grantId=${id}` : 'application-form';
+    if (onNavigate) onNavigate(dest);
+    else navigate(`/portal/community/application-form${id ? `?grantId=${id}` : ''}`);
   }
-
-  // Enhanced grant data with comprehensive details
-  const grant = {
-    id: 1,
-    title: 'Community Development Grant',
-    category: 'Community',
-    amount: 10000,
-    status: 'Open',
-    daysLeft: 22,
-    deadline: '17 May 2024',
-    deadlineTime: '11:59 pm',
-    openDate: '1 April 2024',
-    outcomeDate: 'June 2024',
-    completionDate: 'June 2025',
-    description: 'This Grant aims to support community projects that foster social cohesion, cultural enrichment, and overall community well-being. We encourage innovative approaches that bring people together and create lasting positive impact.',
-    longDescription: `The Community Development Grant is designed to strengthen local communities through targeted funding for projects that demonstrate measurable social impact. This program prioritizes initiatives that address community-identified needs and create sustainable, long-term benefits for residents.
-
-    Our funding supports a wide range of community-driven projects including neighborhood improvement initiatives, cultural celebrations, educational programs, and social services that enhance quality of life for all community members.
-
-    Successful applicants will demonstrate strong community support, clear project planning, and the capacity to deliver meaningful outcomes within the specified timeframe.`,
-    eligibilityCriteria: [
-      'Applicants must be not-for-profit organizations or community groups',
-      'Be registered within Mount Isa local government area, or directly benefit Mount Isa residents',
-      'Demonstrate community support and engagement',
-      'Have appropriate insurance and governance structures',
-      'Show capacity to complete the project within the specified timeframe'
-    ],
-    documentsRequired: [
-      'Completed application form',
-      'Project plan with timeline and milestones',
-      'Detailed budget breakdown',
-      'Letters of support from community members',
-      'Proof of insurance and registration',
-      'Risk management plan'
-    ],
-    applicationProcess: [
-      { stage: 'Application Opens', date: '1 April 2024', status: 'completed' },
-      { stage: 'Application Deadline', date: '17 May 2024', status: 'current' },
-      { stage: 'Assessment Period', date: 'May - June 2024', status: 'upcoming' },
-      { stage: 'Outcome Notification', date: 'June 2024', status: 'upcoming' },
-      { stage: 'Project Completion', date: 'June 2025', status: 'upcoming' }
-    ],
-    contact: {
-      email: 'grants@mountisa.qld.gov.au',
-      phone: '(07) 4747 3200',
-      office: 'Community Services Department',
-      hours: 'Monday - Friday, 8:30 AM - 4:30 PM'
-    },
-    relatedGrants: [
-      { id: 2, title: 'Event Support Grant', category: 'Community', amount: 5000 },
-      { id: 3, title: 'Cultural Heritage Grant', category: 'Arts', amount: 8000 },
-      { id: 4, title: 'Youth Leadership Program', category: 'Education', amount: 12000 }
-    ],
-    statistics: {
-      totalApplicants: 45,
-      successRate: 68,
-      averageAward: 7500,
-      totalFunded: 15,
-      communityImpact: '2,500+ residents benefited'
-    },
-    tags: ['Community Building', 'Social Cohesion', 'Cultural Enrichment', 'Neighborhood Development'],
-    location: 'Mount Isa',
-    councilArea: 'Mount Isa City Council'
-  };
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -158,6 +163,35 @@ const GrantDetails = ({ user, council, onNavigate, onLogout }) => {
     }
     setShowShareModal(false);
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <CommunityNavbar user={user} onNavigate={onNavigate} onLogout={onLogout} activePage="grants" />
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading grant details...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError || !grant) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <CommunityNavbar user={user} onNavigate={onNavigate} onLogout={onLogout} activePage="grants" />
+        <div className="flex flex-col items-center justify-center h-64 text-center px-4">
+          <AlertCircle className="mb-3 h-10 w-10 text-red-500" />
+          <p className="text-gray-700 mb-4">{loadError || 'Grant not found.'}</p>
+          <Button variant="outline" onClick={() => onNavigate ? onNavigate('community/grants') : navigate('/portal/community/grants')}>
+            ← Back to Grants
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">

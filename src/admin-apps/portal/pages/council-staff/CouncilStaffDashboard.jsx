@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import NotificationBell from '../../components/common/NotificationBell';
 import StaffNavbar from '../../components/layout/StaffNavbar.jsx';
+import apiClient from '../../utils/api.js';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card.jsx';
 import { Badge } from '@shared/components/ui/badge.jsx';
 import { Button } from '@shared/components/ui/button.jsx';
@@ -21,97 +22,68 @@ import {
 } from 'lucide-react';
 
 const CouncilStaffDashboard = ({ user, onNavigate, onLogout }) => {
+  const [dashboardData, setDashboardData] = useState(null);
+  const [myApplications, setMyApplications] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+
+  const loadDashboard = useCallback(async () => {
+    setIsLoading(true);
+    setLoadError(null);
+    try {
+      // Load dashboard summary and assigned applications in parallel
+      const [dashRes, appsRes] = await Promise.all([
+        apiClient.councilGetDashboard().catch(() => null),
+        apiClient.councilGetApplications({ assigned_to_me: true }).catch(() => ({ applications: [] })),
+      ]);
+      setDashboardData(dashRes);
+      const apps = appsRes?.applications || appsRes || [];
+      setMyApplications(apps.map(app => ({
+        id: app.id,
+        applicant: app.organization_name || app.applicant_name || '—',
+        contact: app.primary_contact_name || '—',
+        email: app.primary_contact_email || '',
+        phone: app.primary_contact_phone || '',
+        program: app.grant_title || app.category || '—',
+        amount: app.requested_amount || app.amount_requested || 0,
+        status: app.status || 'submitted',
+        priority: app.priority || 'medium',
+        assignedDate: app.assigned_at || app.created_at || '',
+        dueDate: app.review_due_at || app.closes_at || '',
+        completionPercent: app.completion_percent ?? 0,
+        lastAction: app.last_action || app.latest_note || '',
+      })));
+    } catch (err) {
+      setLoadError(err?.response?.data?.error || err.message || 'Failed to load dashboard.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadDashboard(); }, [loadDashboard]);
+
+  // Derive metrics from live data
   const staffMetrics = {
-    assignedApplications: 15,
-    completedToday: 3,
-    pendingReview: 8,
-    awaitingDocuments: 4,
-    averageReviewTime: 5.2,
-    communityContacts: 12
+    assignedApplications: myApplications.length,
+    pendingReview: myApplications.filter(a => a.status === 'submitted' || a.status === 'under_review').length,
+    awaitingDocuments: myApplications.filter(a => a.status === 'awaiting_documents').length,
+    completedToday: dashboardData?.completed_today ?? 0,
+    averageReviewTime: dashboardData?.average_review_time_days ?? '—',
+    communityContacts: dashboardData?.community_contacts ?? '—',
   };
 
-  const myApplications = [
-    {
-      id: 1,
-      applicant: 'Riverside Community Garden',
-      contact: 'Maria Santos',
-      email: 'maria@riverside.org.au',
-      phone: '0412 345 678',
-      program: 'Community Development Grant',
-      amount: 35000,
-      status: 'review_in_progress',
-      priority: 'medium',
-      assignedDate: '2024-02-12',
-      dueDate: '2024-02-19',
-      completionPercent: 60,
-      lastAction: 'Requested additional budget breakdown'
-    },
-    {
-      id: 2,
-      applicant: 'Youth Basketball League',
-      contact: 'James Wilson',
-      email: 'james@ybl.org.au',
-      phone: '0423 456 789',
-      program: 'Youth Programs Initiative',
-      amount: 18000,
-      status: 'awaiting_documents',
-      priority: 'high',
-      assignedDate: '2024-02-10',
-      dueDate: '2024-02-17',
-      completionPercent: 30,
-      lastAction: 'Waiting for insurance certificates'
-    },
-    {
-      id: 3,
-      applicant: 'Green Schools Network',
-      contact: 'Dr. Sarah Chen',
-      email: 'sarah@greenschools.edu.au',
-      phone: '0434 567 890',
-      program: 'Environmental Sustainability',
-      amount: 52000,
-      status: 'ready_for_approval',
-      priority: 'low',
-      assignedDate: '2024-02-08',
-      dueDate: '2024-02-15',
-      completionPercent: 95,
-      lastAction: 'Completed assessment - ready for final approval'
-    }
-  ];
-
-  const todaysTasks = [
-    {
-      id: 1,
-      task: 'Complete review of Riverside Community Garden application',
-      type: 'review',
-      priority: 'high',
-      estimatedTime: '2 hours',
-      dueTime: '2:00 PM'
-    },
-    {
-      id: 2,
-      task: 'Follow up with Youth Basketball League for missing documents',
-      type: 'communication',
-      priority: 'high',
-      estimatedTime: '30 minutes',
-      dueTime: '11:00 AM'
-    },
-    {
-      id: 3,
-      task: 'Prepare recommendation report for Green Schools Network',
-      type: 'documentation',
-      priority: 'medium',
-      estimatedTime: '1 hour',
-      dueTime: '4:00 PM'
-    },
-    {
-      id: 4,
-      task: 'Attend weekly grant committee meeting',
-      type: 'meeting',
-      priority: 'medium',
-      estimatedTime: '1 hour',
-      dueTime: '3:00 PM'
-    }
-  ];
+  // Tasks are derived from high-priority applications needing action
+  const todaysTasks = myApplications
+    .filter(a => a.status !== 'approved' && a.status !== 'declined')
+    .slice(0, 5)
+    .map(a => ({
+      id: a.id,
+      task: a.lastAction || `Review application: ${a.applicant}`,
+      type: a.status === 'awaiting_documents' ? 'communication' : 'review',
+      priority: a.priority,
+      estimatedTime: '—',
+      dueTime: a.dueDate ? new Date(a.dueDate).toLocaleDateString() : '—',
+    }));
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-AU', {
@@ -149,6 +121,34 @@ const CouncilStaffDashboard = ({ user, onNavigate, onLogout }) => {
       default: return <Clock className="w-4 h-4" />;
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <StaffNavbar user={user} onNavigate={onNavigate} onLogout={onLogout} activePage="dashboard" />
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading dashboard...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <StaffNavbar user={user} onNavigate={onNavigate} onLogout={onLogout} activePage="dashboard" />
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <p className="text-red-600 font-medium mb-4">{loadError}</p>
+            <button onClick={loadDashboard} className="px-4 py-2 bg-green-700 text-white rounded-md hover:bg-green-800">Retry</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">

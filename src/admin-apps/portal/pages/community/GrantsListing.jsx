@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import CommunityNavbar from '../../components/layout/CommunityNavbar.jsx';
 import { useLocation } from 'react-router-dom';
 import AuthGateModal from '../../components/common/AuthGateModal.jsx';
@@ -26,7 +26,7 @@ import {
   Edit,
   Eye,
 } from 'lucide-react';
-import { communityGetApplications } from '../../utils/api.js';
+import { communityGetApplications, communityGetGrants } from '../../utils/api.js';
 
 // ─── My Applications tab ─────────────────────────────────────────────────────
 
@@ -204,66 +204,69 @@ function MyApplicationsPanel({ onNavigate }) {
 
 // ─── Browse Grants tab ────────────────────────────────────────────────────────
 
-const GRANTS = [
-  {
-    id: 1, title: 'Community Development Grant', category: 'Community',
-    amount: 5000, status: 'Open', daysLeft: 10,
-    description: 'Support local community initiatives that bring people together and strengthen neighbourhood connections through events, programs, and infrastructure improvements.',
-    location: 'Mount Isa', applicants: 23, successRate: 75,
-    tags: ['Community Building', 'Local Events', 'Infrastructure'],
-  },
-  {
-    id: 2, title: 'Local Arts Support Program', category: 'Arts',
-    amount: 12000, status: 'Open', daysLeft: 30,
-    description: 'Funding for local artists, art installations, cultural events, and creative workshops that enhance the cultural landscape of our community.',
-    location: 'Mount Isa', applicants: 15, successRate: 68,
-    tags: ['Visual Arts', 'Performing Arts', 'Cultural Events'],
-  },
-  {
-    id: 3, title: 'Sports Equipment Grant', category: 'Sports',
-    amount: 3000, status: 'Closing Soon', daysLeft: 7,
-    description: 'Equipment grants for local sports clubs and recreational groups to purchase essential sporting equipment and safety gear.',
-    location: 'Mount Isa', applicants: 31, successRate: 82,
-    tags: ['Equipment', 'Youth Sports', 'Safety'],
-  },
-  {
-    id: 4, title: 'Environmental Sustainability Fund', category: 'Environment',
-    amount: 6000, status: 'Open', daysLeft: 23,
-    description: 'Projects focused on environmental conservation, renewable energy, waste reduction, and sustainable community practices.',
-    location: 'Mount Isa', applicants: 18, successRate: 71,
-    tags: ['Sustainability', 'Conservation', 'Green Energy'],
-  },
-  {
-    id: 5, title: 'Youth Leadership Program', category: 'Education',
-    amount: 8000, status: 'Open', daysLeft: 45,
-    description: 'Empowering young people through leadership development, mentorship programs, and skill-building workshops.',
-    location: 'Mount Isa', applicants: 12, successRate: 79,
-    tags: ['Youth Development', 'Leadership', 'Mentorship'],
-  },
-  {
-    id: 6, title: 'Small Business Innovation Grant', category: 'Business',
-    amount: 15000, status: 'Open', daysLeft: 60,
-    description: 'Supporting local entrepreneurs and small businesses with innovative ideas that benefit the community and create local employment.',
-    location: 'Mount Isa', applicants: 8, successRate: 65,
-    tags: ['Innovation', 'Entrepreneurship', 'Job Creation'],
-  },
-];
+/** Normalise a raw API grant object into the shape the UI expects */
+function normaliseGrant(g) {
+  const closes = g.closes_at || g.deadline || g.close_date || '';
+  let daysLeft = null;
+  let status = 'Open';
+  if (closes) {
+    daysLeft = Math.ceil((new Date(closes) - Date.now()) / 86400000);
+    if (daysLeft < 0) status = 'Closed';
+    else if (daysLeft <= 7) status = 'Closing Soon';
+  }
+  return {
+    id: g.id,
+    title: g.title || g.name || '—',
+    category: g.category || g.grant_type || 'General',
+    amount: g.max_amount || g.total_budget || g.amount || 0,
+    status,
+    daysLeft: daysLeft ?? 0,
+    description: g.description || g.summary || '',
+    location: g.location || g.council_name || '',
+    applicants: g.application_count ?? 0,
+    successRate: g.success_rate ?? null,
+    tags: Array.isArray(g.tags) ? g.tags : (g.category ? [g.category] : []),
+  };
+}
 
 function BrowseGrantsPanel({ user, council, onNavigate }) {
+  const [grants, setGrants] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [selectedStatus, setSelectedStatus] = useState([]);
-  const [fundingRange, setFundingRange] = useState([0, 50000]);
+  const [fundingRange, setFundingRange] = useState([0, 500000]);
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
   const [savedGrants, setSavedGrants] = useState(new Set());
   const [showAuthGate, setShowAuthGate] = useState(false);
   const [pendingGrantId, setPendingGrantId] = useState(null);
 
-  const categories = ['Community', 'Arts', 'Sports', 'Environment', 'Education', 'Business'];
+  const loadGrants = useCallback(async () => {
+    setIsLoading(true);
+    setLoadError(null);
+    try {
+      const data = await communityGetGrants();
+      const raw = Array.isArray(data) ? data : (data?.grants ?? []);
+      setGrants(raw.map(normaliseGrant));
+    } catch (err) {
+      setLoadError('Unable to load grants. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadGrants(); }, [loadGrants]);
+
+  // Derive unique categories from live data
+  const categories = useMemo(() => {
+    const cats = [...new Set(grants.map(g => g.category).filter(Boolean))];
+    return cats.length ? cats : ['Community', 'Arts', 'Sports', 'Environment', 'Education', 'Business'];
+  }, [grants]);
   const statuses = ['Open', 'Closing Soon', 'Closed'];
 
-  const filteredGrants = GRANTS.filter(grant => {
+  const filteredGrants = useMemo(() => grants.filter(grant => {
     const matchesSearch =
       grant.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       grant.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -272,7 +275,7 @@ function BrowseGrantsPanel({ user, council, onNavigate }) {
     const matchesStatus = selectedStatus.length === 0 || selectedStatus.includes(grant.status);
     const matchesFunding = grant.amount >= fundingRange[0] && grant.amount <= fundingRange[1];
     return matchesSearch && matchesCategory && matchesStatus && matchesFunding;
-  });
+  }), [grants, searchTerm, selectedCategories, selectedStatus, fundingRange]);
 
   const grantsPerPage = 6;
   const totalPages = Math.ceil(filteredGrants.length / grantsPerPage);
@@ -312,7 +315,7 @@ function BrowseGrantsPanel({ user, council, onNavigate }) {
 
   function handleLearnMore(grantId) {
     if (user) {
-      if (onNavigate) onNavigate('grant-details');
+      if (onNavigate) onNavigate(`grant-details/${grantId}`);
     } else {
       setPendingGrantId(grantId);
       setShowAuthGate(true);
@@ -321,7 +324,25 @@ function BrowseGrantsPanel({ user, council, onNavigate }) {
 
   function handleAuthSuccess() {
     setShowAuthGate(false);
-    if (onNavigate) onNavigate('grant-details');
+    if (pendingGrantId && onNavigate) onNavigate(`grant-details/${pendingGrantId}`);
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-green-700 border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-center">
+        <AlertCircle className="mb-3 h-10 w-10 text-red-500" />
+        <p className="text-gray-700">{loadError}</p>
+        <Button variant="outline" className="mt-4" onClick={loadGrants}>Try again</Button>
+      </div>
+    );
   }
 
   return (
@@ -409,15 +430,17 @@ function BrowseGrantsPanel({ user, council, onNavigate }) {
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Total funding available</span>
-                  <span className="font-semibold">${GRANTS.reduce((s, g) => s + g.amount, 0).toLocaleString()}</span>
+                  <span className="font-semibold">${grants.reduce((s, g) => s + g.amount, 0).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Average grant size</span>
-                  <span className="font-semibold">${Math.round(GRANTS.reduce((s, g) => s + g.amount, 0) / GRANTS.length).toLocaleString()}</span>
+                  <span className="font-semibold">
+                    {grants.length ? `$${Math.round(grants.reduce((s, g) => s + g.amount, 0) / grants.length).toLocaleString()}` : '—'}
+                  </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Success rate</span>
-                  <span className="font-semibold text-green-600">74%</span>
+                  <span className="text-sm text-gray-600">Open grants</span>
+                  <span className="font-semibold text-green-600">{grants.filter(g => g.status === 'Open').length}</span>
                 </div>
               </div>
             </CardContent>

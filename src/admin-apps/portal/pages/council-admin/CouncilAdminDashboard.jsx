@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import NotificationBell from '../../components/common/NotificationBell';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card.jsx';
 import { Badge } from '@shared/components/ui/badge.jsx';
@@ -31,11 +31,73 @@ import {
 } from 'lucide-react';
 
 const CouncilAdminDashboard = ({ user, onNavigate, onLogout }) => {
-  // ── SMS add-on prompt ─────────────────────────────────────────────────────────────────────────────────────
+  // ── SMS add-on prompt ─────────────────────────────────────────────────────
   const [showSmsBanner, setShowSmsBanner] = useState(false);
   const [smsBannerDismissed, setSmsBannerDismissed] = useState(
     () => sessionStorage.getItem('gt_sms_banner_dismissed') === 'true'
   );
+
+  // ── Dashboard live data ───────────────────────────────────────────────────
+  const [dashboardData, setDashboardData] = useState(null);
+  const [pendingApplications, setPendingApplications] = useState([]);
+  const [grantPrograms, setGrantPrograms] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+
+  const loadDashboard = useCallback(async () => {
+    setIsLoading(true);
+    setLoadError(null);
+    try {
+      const [dashRes, appsRes, grantsRes] = await Promise.all([
+        apiClient.councilGetDashboard().catch(() => null),
+        apiClient.councilGetApplications({ status: 'submitted,under_review,pending_documents,committee_review' }).catch(() => ({ applications: [] })),
+        apiClient.councilGetGrants().catch(() => ({ grants: [] })),
+      ]);
+      setDashboardData(dashRes);
+      const apps = appsRes?.applications || appsRes || [];
+      setPendingApplications(apps.slice(0, 10).map(app => ({
+        id: app.id,
+        applicant: app.organization_name || app.applicant_name || '—',
+        program: app.grant_title || app.category || '—',
+        amount: app.requested_amount || app.amount_requested || 0,
+        submittedDate: app.submitted_at || app.created_at || '',
+        daysWaiting: app.submitted_at
+          ? Math.floor((Date.now() - new Date(app.submitted_at)) / 86400000)
+          : 0,
+        priority: app.priority || 'medium',
+        status: app.status || 'submitted',
+      })));
+      const grants = grantsRes?.grants || grantsRes || [];
+      setGrantPrograms(grants.map(g => ({
+        id: g.id,
+        name: g.title || g.name || '—',
+        budget: g.total_budget || g.budget || 0,
+        allocated: g.allocated_budget || g.allocated || 0,
+        applications: g.application_count ?? 0,
+        approved: g.approved_count ?? 0,
+        status: g.status || 'active',
+        deadline: g.closes_at || g.deadline || '',
+      })));
+    } catch (err) {
+      setLoadError(err?.response?.data?.error || err.message || 'Failed to load dashboard.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadDashboard(); }, [loadDashboard]);
+
+  // Derive admin metrics from live data
+  const adminMetrics = {
+    totalPrograms: grantPrograms.length || dashboardData?.total_grants || 0,
+    activeApplications: pendingApplications.length || dashboardData?.active_applications || 0,
+    pendingReviews: pendingApplications.filter(a => a.status === 'under_review' || a.status === 'committee_review').length || dashboardData?.pending_reviews || 0,
+    totalBudget: grantPrograms.reduce((s, g) => s + g.budget, 0) || dashboardData?.total_budget || 0,
+    approvedThisMonth: dashboardData?.approved_this_month || 0,
+    rejectedThisMonth: dashboardData?.rejected_this_month || 0,
+    communityMembers: dashboardData?.community_members || 0,
+    averageProcessingTime: dashboardData?.average_processing_time_days || '—',
+  };
 
   useEffect(() => {
     if (user?.role !== 'council_admin' || smsBannerDismissed) return;
@@ -55,82 +117,6 @@ const CouncilAdminDashboard = ({ user, onNavigate, onLogout }) => {
     setShowSmsBanner(false);
     sessionStorage.setItem('gt_sms_banner_dismissed', 'true');
   };
-  const adminMetrics = {
-    totalPrograms: 8,
-    activeApplications: 47,
-    pendingReviews: 12,
-    totalBudget: 2500000,
-    approvedThisMonth: 15,
-    rejectedThisMonth: 3,
-    communityMembers: 1247,
-    averageProcessingTime: 14
-  };
-
-  const pendingApplications = [
-    {
-      id: 1,
-      applicant: 'Westside Community Centre',
-      program: 'Community Development Grant',
-      amount: 45000,
-      submittedDate: '2024-02-10',
-      daysWaiting: 5,
-      priority: 'high',
-      status: 'under_review'
-    },
-    {
-      id: 2,
-      applicant: 'Youth Sports Alliance',
-      program: 'Youth Programs Initiative',
-      amount: 22000,
-      submittedDate: '2024-02-08',
-      daysWaiting: 7,
-      priority: 'medium',
-      status: 'pending_documents'
-    },
-    {
-      id: 3,
-      applicant: 'Green Future Collective',
-      program: 'Environmental Sustainability',
-      amount: 67000,
-      submittedDate: '2024-02-05',
-      daysWaiting: 10,
-      priority: 'high',
-      status: 'committee_review'
-    }
-  ];
-
-  const grantPrograms = [
-    {
-      id: 1,
-      name: 'Community Development Grant',
-      budget: 500000,
-      allocated: 320000,
-      applications: 23,
-      approved: 8,
-      status: 'active',
-      deadline: '2024-03-15'
-    },
-    {
-      id: 2,
-      name: 'Youth Programs Initiative',
-      budget: 300000,
-      allocated: 180000,
-      applications: 15,
-      approved: 5,
-      status: 'active',
-      deadline: '2024-02-28'
-    },
-    {
-      id: 3,
-      name: 'Environmental Sustainability',
-      budget: 750000,
-      allocated: 425000,
-      applications: 31,
-      approved: 12,
-      status: 'active',
-      deadline: '2024-04-01'
-    }
-  ];
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-AU', {
@@ -159,6 +145,28 @@ const CouncilAdminDashboard = ({ user, onNavigate, onLogout }) => {
       default: return 'bg-gray-100 text-gray-800';
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 font-medium mb-4">{loadError}</p>
+          <button onClick={loadDashboard} className="px-4 py-2 bg-green-700 text-white rounded-md hover:bg-green-800">Retry</button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
