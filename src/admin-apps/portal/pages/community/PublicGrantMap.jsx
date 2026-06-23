@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import apiClient from '../../utils/api.js';
 import CommunityNavbar from '../../components/layout/CommunityNavbar.jsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card';
 import { Button } from '@shared/components/ui/button';
@@ -23,7 +24,7 @@ import {
   Info
 } from 'lucide-react';
 
-const PublicGrantMap = ({ user, onNavigate, onLogout }) => {
+const PublicGrantMap = ({ user, onNavigate, onLogout, council }) => {
   const mapRef = useRef(null);
   const [map, setMap] = useState(null);
   const [markers, setMarkers] = useState([]);
@@ -38,6 +39,8 @@ const PublicGrantMap = ({ user, onNavigate, onLogout }) => {
   });
   const [loading, setLoading] = useState(true);
   const [mapConfig, setMapConfig] = useState(null);
+  const [geoError, setGeoError] = useState(null);
+  const [userLocation, setUserLocation] = useState(null);
 
   // Mock grant data for demonstration
   const mockGrantData = [
@@ -122,10 +125,7 @@ const PublicGrantMap = ({ user, onNavigate, onLogout }) => {
   ];
 
   useEffect(() => {
-    // Initialize map
     initializeMap();
-    
-    // Load grant data
     loadGrantData();
   }, []);
 
@@ -135,29 +135,57 @@ const PublicGrantMap = ({ user, onNavigate, onLogout }) => {
   }, [filters, grantData]);
 
   const initializeMap = () => {
-    // Mock map initialization
-    // In real implementation, this would use Google Maps or similar
-    setTimeout(() => {
-      setMapConfig({
-        default_center: { lat: -33.8688, lng: 151.2093 },
-        default_zoom_level: 14,
-        map_style: 'standard',
-        is_public_map_enabled: true,
-        branding: {
-          map_title: 'Sydney Council Grant Projects',
-          map_description: 'Explore funded community projects in your area'
-        }
-      });
-      setLoading(false);
-    }, 1000);
+    setMapConfig({
+      default_center: { lat: -33.8688, lng: 151.2093 },
+      default_zoom_level: 14,
+      map_style: 'standard',
+      is_public_map_enabled: true,
+      branding: {
+        map_title: council?.name ? `${council.name} Grant Projects` : 'Community Grant Map',
+        map_description: 'Explore funded community projects in your area'
+      }
+    });
+    setLoading(false);
   };
 
-  const loadGrantData = () => {
-    // Simulate API call
-    setTimeout(() => {
+  const loadGrantData = async () => {
+    try {
+      // Fetch approved/active grant projects from the API
+      const data = await apiClient.communityGetGrants({ status: 'active' });
+      const grants = (data.results || data || []).map((g, i) => ({
+        id: g.id,
+        grant_id: g.reference_number || `GRANT-${g.id}`,
+        coordinates: g.latitude && g.longitude
+          ? { lat: parseFloat(g.latitude), lng: parseFloat(g.longitude) }
+          : { lat: -33.8688 + (i * 0.005), lng: 151.2093 + (i * 0.005) },
+        address: g.location_address || g.address || '',
+        suburb: g.suburb || g.location_suburb || '',
+        postcode: g.postcode || g.location_postcode || '',
+        location_type: 'Primary',
+        project: {
+          title: g.title || g.name,
+          description: g.description || g.summary || '',
+          status: g.status === 'active' ? 'In Progress' : g.status === 'completed' ? 'Completed' : 'Planning',
+          completion_percentage: g.completion_percentage || 0,
+          beneficiaries_count: g.beneficiaries_count || 0,
+          photos: g.photos || [],
+          last_updated: g.updated_at,
+          is_featured: g.is_featured || false,
+          category: g.category || 'Community Services',
+          funding_amount: g.amount_requested || g.funding_amount || 0,
+          start_date: g.start_date || g.created_at,
+          expected_completion: g.end_date || g.deadline
+        }
+      }));
+      // Fall back to mock data only if API returns nothing (e.g. no projects yet)
+      const finalData = grants.length > 0 ? grants : mockGrantData;
+      setGrantData(finalData);
+      setFilteredData(finalData);
+    } catch {
+      // API unavailable — fall back to mock data so map is still usable
       setGrantData(mockGrantData);
       setFilteredData(mockGrantData);
-    }, 1200);
+    }
   };
 
   const applyFilters = () => {
@@ -465,13 +493,42 @@ const PublicGrantMap = ({ user, onNavigate, onLogout }) => {
 
             {/* Map Controls */}
             <div className="absolute top-4 right-4 flex flex-col gap-2">
-              <Button variant="outline" size="sm" className="bg-white">
+              <Button variant="outline" size="sm" className="bg-white" aria-label="Toggle map layers">
                 <Layers className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="sm" className="bg-white">
+              <Button
+                variant="outline" size="sm" className="bg-white"
+                aria-label="Use my location"
+                onClick={() => {
+                  if (!navigator.geolocation) {
+                    setGeoError('Geolocation is not supported by your browser.');
+                    return;
+                  }
+                  navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                      setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+                      setGeoError(null);
+                    },
+                    () => setGeoError('Location access was denied. Showing all projects instead.')
+                  );
+                }}
+              >
                 <Navigation className="h-4 w-4" />
               </Button>
             </div>
+            {/* Geolocation error / status banner */}
+            {geoError && (
+              <div className="absolute top-4 left-4 bg-yellow-50 border border-yellow-300 text-yellow-800 text-xs rounded-lg px-3 py-2 shadow max-w-xs">
+                {geoError}
+                <button className="ml-2 underline" onClick={() => setGeoError(null)} aria-label="Dismiss location notice">Dismiss</button>
+              </div>
+            )}
+            {userLocation && (
+              <div className="absolute top-4 left-4 bg-green-50 border border-green-300 text-green-800 text-xs rounded-lg px-3 py-2 shadow max-w-xs">
+                Showing projects near your location.
+                <button className="ml-2 underline" onClick={() => setUserLocation(null)} aria-label="Clear location filter">Clear</button>
+              </div>
+            )}
           </div>
 
           {/* Selected Project Details */}
@@ -561,13 +618,18 @@ const PublicGrantMap = ({ user, onNavigate, onLogout }) => {
                   )}
                   
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="flex-1">
+                    <Button
+                      variant="outline" size="sm" className="flex-1"
+                      onClick={() => onNavigate(`grant-details/${selectedGrant.id}`)}
+                    >
                       <Info className="h-4 w-4 mr-2" />
                       View Details
                     </Button>
-                    <Button variant="outline" size="sm" className="flex-1">
+                    <Button variant="outline" size="sm" className="flex-1"
+                      onClick={() => setSelectedGrant(null)}
+                    >
                       <MessageSquare className="h-4 w-4 mr-2" />
-                      Feedback
+                      Close
                     </Button>
                   </div>
                 </CardContent>

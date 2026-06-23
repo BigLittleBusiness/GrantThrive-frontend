@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import CommunityNavbar from '../../components/layout/CommunityNavbar.jsx';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card.jsx';
 import { Badge } from '@shared/components/ui/badge.jsx';
 import { Button } from '@shared/components/ui/button.jsx';
@@ -35,7 +35,9 @@ import {
 import apiClient from '../../utils/api.js';
 
 const ApplicationForm = ({ user, onNavigate, onLogout }) => {
-  const { grantId } = useParams();
+  const { grantId: grantIdParam } = useParams();
+  const [searchParams] = useSearchParams();
+  const grantId = grantIdParam || searchParams.get('grantId');
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [applicationId, setApplicationId] = useState(null); // set after first save/draft
@@ -450,7 +452,7 @@ const ApplicationForm = ({ user, onNavigate, onLogout }) => {
                 <Input
                   value={formData.city}
                   onChange={(e) => updateFormData('city', e.target.value)}
-                  placeholder="Mount Isa"
+                  placeholder="City"
                 />
               </div>
               <div>
@@ -609,7 +611,7 @@ const ApplicationForm = ({ user, onNavigate, onLogout }) => {
                 <Input
                   value={formData.projectLocation}
                   onChange={(e) => updateFormData('projectLocation', e.target.value)}
-                  placeholder="Mount Isa"
+                  placeholder="City"
                 />
               </div>
             </div>

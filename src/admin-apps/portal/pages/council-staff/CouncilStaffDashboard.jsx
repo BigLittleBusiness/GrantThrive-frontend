@@ -18,7 +18,8 @@ import {
   Edit,
   Download,
   LogOut,
-  ClipboardList
+  ClipboardList,
+  MapPin
 } from 'lucide-react';
 
 const CouncilStaffDashboard = ({ user, onNavigate, onLogout }) => {
@@ -199,9 +200,9 @@ const CouncilStaffDashboard = ({ user, onNavigate, onLogout }) => {
           <User className="w-4 h-4 mr-2" />
           My Profile
         </Button>
-        <Button variant="outline" className="h-12" onClick={() => onNavigate('community-forum')}>
-          <Calendar className="w-4 h-4 mr-2" />
-          Community Events
+        <Button variant="outline" className="h-12" onClick={() => onNavigate('grant-map')}>
+          <MapPin className="w-4 h-4 mr-2" />
+          Grant Map
         </Button>
       </div>
 
