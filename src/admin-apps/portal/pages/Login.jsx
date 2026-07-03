@@ -59,16 +59,27 @@ const handleLogin = async (e) => {
 
     onLogin?.(data.user);
   } catch (error) {
-    // Login error handled by loginAttempt state below
+    // Classify the error type without leaking backend detail to the user.
+    // Security best practice: credential errors use a single generic message
+    // so that attackers cannot enumerate valid email addresses.
     const isPending =
       error.message?.toLowerCase().includes('pending') ||
       error.message?.toLowerCase().includes('approval');
+    const isNetwork =
+      error.message?.toLowerCase().includes('network') ||
+      error.message?.toLowerCase().includes('connect') ||
+      error.message?.toLowerCase().includes('fetch') ||
+      error.message?.toLowerCase().includes('500') ||
+      error.message?.toLowerCase().includes('502') ||
+      error.message?.toLowerCase().includes('503');
     setLoginAttempt({
       success: false,
       isPending,
       message: isPending
-        ? 'Your account is awaiting admin approval. You will be notified by email.'
-        : error.message || 'Unable to connect to the server. Please try again.',
+        ? 'Your account is awaiting admin approval. You will be notified by email once it has been reviewed.'
+        : isNetwork
+        ? 'We could not reach the server. Please check your connection and try again.'
+        : 'The email address or password you entered is incorrect. Please try again.',
     });
   } finally {
     setIsLoading(false);
