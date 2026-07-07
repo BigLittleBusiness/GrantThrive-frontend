@@ -278,7 +278,7 @@ function App() {
                   <TabsTrigger value="summary">ROI Summary</TabsTrigger>
                   <TabsTrigger value="breakdown">Cost Breakdown</TabsTrigger>
                   <TabsTrigger value="benefits">Benefits Analysis</TabsTrigger>
-                  <TabsTrigger value="competitive">vs SmartyGrants</TabsTrigger>
+                  <TabsTrigger value="competitive">vs The Old Way</TabsTrigger>
                 </TabsList>
 
                 {/* Summary Tab */}

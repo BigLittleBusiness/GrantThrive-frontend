@@ -419,11 +419,11 @@ function ComparisonSection() {
             Competitive Advantage
           </Badge>
           <h2 className='text-3xl lg:text-5xl font-bold text-gray-900'>
-            GrantThrive vs SmartyGrants
+            GrantThrive vs The Old Way
           </h2>
           <p className='text-xl text-gray-600 max-w-3xl mx-auto'>
-            See why progressive councils are switching to GrantThrive for
-            superior features and better value.
+            Clunky forms. Desktop-only. Steep setup fees. Sound familiar?
+            See why progressive councils are making the switch.
           </p>
         </div>
 
@@ -445,9 +445,9 @@ function ComparisonSection() {
                   <div className='w-16 h-16 bg-gray-400 rounded-full flex items-center justify-center mx-auto mb-2'>
                     <span className='text-white font-bold text-xl'>S</span>
                   </div>
-                  <h3 className='font-bold text-gray-600'>SmartyGrants</h3>
+                  <h3 className='font-bold text-gray-600'>The Old Way</h3>
                   <Badge variant='secondary' className='mt-1'>
-                    Traditional
+                    Outdated
                   </Badge>
                 </div>
               </div>
@@ -513,7 +513,7 @@ function ROISection() {
                 <span className='block text-yellow-300'>Gaining Features</span>
               </h2>
               <p className='text-xl text-blue-100'>
-                GrantThrive costs less than SmartyGrants while providing 320%
+                GrantThrive costs less than legacy grant software while providing 320%
                 more features. See your exact savings with our ROI calculator.
               </p>
             </div>
@@ -526,7 +526,7 @@ function ROISection() {
                 <div>
                   <h3 className='text-xl font-semibold'>Lower Annual Costs</h3>
                   <p className='text-blue-100'>
-                    Save 1-24% annually vs SmartyGrants
+                    Save 1-24% annually vs legacy grant software
                   </p>
                 </div>
               </div>
@@ -548,7 +548,7 @@ function ROISection() {
                 <div>
                   <h3 className='text-xl font-semibold'>More Features</h3>
                   <p className='text-blue-100'>
-                    21 features vs 5 in SmartyGrants
+                    21 features vs 5 in legacy grant software
                   </p>
                 </div>
               </div>
@@ -586,7 +586,7 @@ function ROISection() {
                     <span className='font-bold text-yellow-300'>$7,500</span>
                   </div>
                   <div>
-                    vs SmartyGrants:{' '}
+                    vs legacy software:{' '}
                     <span className='font-bold text-yellow-300'>
                       $4,104/year
                     </span>
@@ -611,7 +611,7 @@ function ROISection() {
                     <span className='font-bold text-yellow-300'>$22,500+</span>
                   </div>
                   <div>
-                    vs SmartyGrants:{' '}
+                    vs legacy software:{' '}
                     <span className='font-bold text-yellow-300'>
                       $12,312/year
                     </span>
