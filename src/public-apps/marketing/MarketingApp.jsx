@@ -42,6 +42,8 @@ import {
   Send,
 } from 'lucide-react'
 import './MarketingApp.css'
+import logoStandard from './assets/logo_standard.png'
+import logoReversed from './assets/logo_reversed.png'
 
 // Navigation Component
 function Navigation() {
@@ -63,11 +65,8 @@ function Navigation() {
       <div className='container-custom'>
         <div className='flex items-center justify-between h-16'>
           {/* Logo */}
-          <Link to='/' className='flex items-center space-x-2'>
-            <div className='w-8 h-8 bg-primary rounded-lg flex items-center justify-center'>
-              <span className='text-white font-bold text-lg'>G</span>
-            </div>
-            <span className='text-xl font-bold text-gray-900'>GrantThrive</span>
+          <Link to='/' className='flex items-center'>
+            <img src={logoStandard} alt='GrantThrive' className='h-10 w-auto' />
           </Link>
 
           {/* Desktop Navigation */}
@@ -164,7 +163,7 @@ function HeroSection() {
               </Badge>
               <h1 className='text-4xl lg:text-6xl font-bold leading-tight'>
                 Transform Your
-                <span className='block text-yellow-300'>Grant Management</span>
+                <span className='block text-gradient'>Grant Management</span>
               </h1>
               <p className='text-xl text-blue-100 leading-relaxed'>
                 A purpose-built grant management platform that combines powerful administration tools with genuine community engagement features. Designed specifically for Australian and New Zealand councils.
@@ -193,15 +192,15 @@ function HeroSection() {
 
             <div className='grid grid-cols-3 gap-8 pt-8'>
               <div className='text-center'>
-                <div className='text-3xl font-bold text-yellow-300'>312%</div>
+                <div className='text-3xl font-bold' style={{color:'#04B802'}}>312%</div>
                 <div className='text-sm text-blue-100'>Modelled ROI*</div>
               </div>
               <div className='text-center'>
-                <div className='text-3xl font-bold text-yellow-300'>~4mo</div>
+                <div className='text-3xl font-bold' style={{color:'#04B802'}}>~4mo</div>
                 <div className='text-sm text-blue-100'>Payback Period*</div>
               </div>
               <div className='text-center'>
-                <div className='text-3xl font-bold text-yellow-300'>$7.5K+</div>
+                <div className='text-3xl font-bold' style={{color:'#04B802'}}>$7.5K+</div>
                 <div className='text-sm text-blue-100'>Annual Benefit*</div>
               </div>
             </div>
@@ -211,7 +210,7 @@ function HeroSection() {
             <div className='bg-white/10 backdrop-blur-sm rounded-2xl p-8 animate-float'>
               <div className='space-y-6'>
                 <div className='flex items-center space-x-3'>
-                  <div className='w-12 h-12 bg-green-400 rounded-full flex items-center justify-center'>
+                  <div className='w-12 h-12 gt-icon-gradient rounded-full flex items-center justify-center'>
                     <Vote className='h-6 w-6 text-white' />
                   </div>
                   <div>
@@ -222,7 +221,7 @@ function HeroSection() {
                   </div>
                 </div>
                 <div className='flex items-center space-x-3'>
-                  <div className='w-12 h-12 bg-purple-400 rounded-full flex items-center justify-center'>
+                  <div className='w-12 h-12 gt-icon-gradient rounded-full flex items-center justify-center'>
                     <Map className='h-6 w-6 text-white' />
                   </div>
                   <div>
@@ -233,7 +232,7 @@ function HeroSection() {
                   </div>
                 </div>
                 <div className='flex items-center space-x-3'>
-                  <div className='w-12 h-12 bg-orange-400 rounded-full flex items-center justify-center'>
+                  <div className='w-12 h-12 gt-icon-gradient rounded-full flex items-center justify-center'>
                     <BarChart3 className='h-6 w-6 text-white' />
                   </div>
                   <div>
@@ -262,7 +261,7 @@ function FeaturesSection() {
       description:
         'An advisory community voting tool that lets citizens indicate their priorities for grant funding — giving councils richer community insight while retaining full decision-making authority under the Local Government Act.',
       badge: 'Exclusive to GrantThrive',
-      color: 'bg-blue-500',
+      color: 'gt-icon-gradient',
     },
     {
       icon: Map,
@@ -270,7 +269,7 @@ function FeaturesSection() {
       description:
         'Visual mapping system showing grant locations, outcomes, and community impact across your region.',
       badge: 'Exclusive to GrantThrive',
-      color: 'bg-green-500',
+      color: 'gt-icon-gradient',
     },
     {
       icon: Zap,
@@ -278,7 +277,7 @@ function FeaturesSection() {
       description:
         'Step-by-step grant creation with intelligent templates and automated workflows.',
       badge: 'AI-Enhanced',
-      color: 'bg-purple-500',
+      color: 'gt-icon-gradient',
     },
     {
       icon: BarChart3,
@@ -286,7 +285,7 @@ function FeaturesSection() {
       description:
         'Live dashboards showing application trends, community engagement, and performance metrics.',
       badge: 'Advanced Analytics',
-      color: 'bg-orange-500',
+      color: 'gt-icon-gradient',
     },
     {
       icon: Shield,
@@ -294,7 +293,7 @@ function FeaturesSection() {
       description:
         'Data hosted in Australia (AWS Sydney). Role-based access control, full audit logs, and WCAG 2.1 AA accessibility. Built to support compliance with the Australian Privacy Principles and NZ Privacy Act 2020.',
       badge: 'Compliant',
-      color: 'bg-red-500',
+      color: 'gt-icon-gradient',
     },
     {
       icon: Smartphone,
@@ -302,7 +301,7 @@ function FeaturesSection() {
       description:
         'Fully responsive interface optimized for mobile devices and touch interactions.',
       badge: 'Mobile Optimized',
-      color: 'bg-indigo-500',
+      color: 'gt-icon-gradient',
     },
   ]
 
@@ -412,7 +411,7 @@ function ComparisonSection() {
     <section className='section-padding'>
       <div className='container-custom'>
         <div className='text-center space-y-4 mb-16'>
-          <Badge className='bg-green-100 text-green-800'>
+          <Badge className='bg-primary/10 text-primary'>
             Platform Comparison
           </Badge>
           <h2 className='text-3xl lg:text-5xl font-bold text-gray-900'>
@@ -426,15 +425,15 @@ function ComparisonSection() {
 
         <div className='max-w-4xl mx-auto'>
           <Card className='overflow-hidden'>
-            <CardHeader className='bg-gradient-to-r from-blue-50 to-green-50'>
+            <CardHeader className='gt-tint-bg'>
               <div className='grid grid-cols-3 gap-4'>
                 <div></div>
                 <div className='text-center'>
-                  <div className='w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-2'>
-                    <span className='text-white font-bold text-xl'>G</span>
+                  <div className='w-16 h-16 flex items-center justify-center mx-auto mb-2'>
+                    <img src={logoStandard} alt='GrantThrive' className='h-12 w-auto' />
                   </div>
                   <h3 className='font-bold text-primary'>GrantThrive</h3>
-                  <Badge className='bg-green-600 text-white mt-1'>
+                  <Badge className='bg-primary text-white mt-1'>
                     Recommended
                   </Badge>
                 </div>
@@ -497,7 +496,7 @@ function ComparisonSection() {
 function ROISection() {
   const navigate = useNavigate()
   return (
-    <section className='section-padding bg-gradient-to-r from-blue-600 to-green-600 text-white'>
+    <section className='section-padding gt-dark-section text-white'>
       <div className='container-custom'>
         <div className='grid lg:grid-cols-2 gap-12 items-center'>
           <div className='space-y-8'>
@@ -507,7 +506,7 @@ function ROISection() {
               </Badge>
               <h2 className='text-3xl lg:text-5xl font-bold'>
                 Save Money While
-                <span className='block text-yellow-300'>Gaining Features</span>
+                <span className='block text-gradient'>Gaining Features</span>
               </h2>
               <p className='text-xl text-blue-100'>
                 GrantThrive is priced to be competitive with legacy grant software while providing significantly more features. See your estimated savings with our ROI calculator.
@@ -516,7 +515,7 @@ function ROISection() {
 
             <div className='space-y-6'>
               <div className='flex items-center space-x-4'>
-                <div className='w-12 h-12 bg-green-400 rounded-full flex items-center justify-center'>
+                <div className='w-12 h-12 gt-icon-gradient rounded-full flex items-center justify-center'>
                   <DollarSign className='h-6 w-6 text-white' />
                 </div>
                 <div>
@@ -527,7 +526,7 @@ function ROISection() {
                 </div>
               </div>
               <div className='flex items-center space-x-4'>
-                <div className='w-12 h-12 bg-purple-400 rounded-full flex items-center justify-center'>
+                <div className='w-12 h-12 gt-icon-gradient rounded-full flex items-center justify-center'>
                   <TrendingUp className='h-6 w-6 text-white' />
                 </div>
                 <div>
@@ -538,7 +537,7 @@ function ROISection() {
                 </div>
               </div>
               <div className='flex items-center space-x-4'>
-                <div className='w-12 h-12 bg-orange-400 rounded-full flex items-center justify-center'>
+                <div className='w-12 h-12 gt-icon-gradient rounded-full flex items-center justify-center'>
                   <Award className='h-6 w-6 text-white' />
                 </div>
                 <div>
@@ -564,7 +563,7 @@ function ROISection() {
             <h3 className='text-2xl font-bold mb-2 text-center'>
                 Modelled ROI Estimates
             </h3>
-            <p className='text-xs text-blue-200 text-center mb-4'>Based on internal financial modelling. <a href='/roi-calculator' className='underline text-yellow-300'>See how we calculate this.</a></p>
+            <p className='text-xs text-blue-200 text-center mb-4'>Based on internal financial modelling. <a href='/roi-calculator' className='underline' style={{color:'#04B802'}}>See how we calculate this.</a></p>
             <div className='space-y-6'>
               <div className='bg-white/20 rounded-lg p-4'>
                 <h4 className='font-semibold mb-2'>
@@ -572,19 +571,19 @@ function ROISection() {
                 </h4>
                 <div className='grid grid-cols-2 gap-4 text-sm'>
                   <div>
-                    Modelled ROI: <span className='font-bold text-yellow-300'>312%</span>
+                    Modelled ROI: <span className='font-bold' style={{color:'#04B802'}}>312%</span>
                   </div>
                   <div>
                     Payback:{' '}
-                    <span className='font-bold text-yellow-300'>~4 months</span>
+                    <span className='font-bold' style={{color:'#04B802'}}>~4 months</span>
                   </div>
                   <div>
                     Total annual benefit:{' '}
-                    <span className='font-bold text-yellow-300'>~$7,500</span>
+                    <span className='font-bold' style={{color:'#04B802'}}>~$7,500</span>
                   </div>
                   <div>
                     Subscription cost:{' '}
-                    <span className='font-bold text-yellow-300'>
+                    <span className='font-bold' style={{color:'#04B802'}}>
                       $2,000/year
                     </span>
                   </div>
@@ -597,19 +596,19 @@ function ROISection() {
                 <div className='grid grid-cols-2 gap-4 text-sm'>
                   <div>
                     Modelled ROI:{' '}
-                    <span className='font-bold text-yellow-300'>450%+</span>
+                    <span className='font-bold' style={{color:'#04B802'}}>450%+</span>
                   </div>
                   <div>
                     Payback:{' '}
-                    <span className='font-bold text-yellow-300'>~3 months</span>
+                    <span className='font-bold' style={{color:'#04B802'}}>~3 months</span>
                   </div>
                   <div>
                     Total annual benefit:{' '}
-                    <span className='font-bold text-yellow-300'>~$22,500+</span>
+                    <span className='font-bold' style={{color:'#04B802'}}>~$22,500+</span>
                   </div>
                   <div>
                     Subscription cost:{' '}
-                    <span className='font-bold text-yellow-300'>
+                    <span className='font-bold' style={{color:'#04B802'}}>
                       $5,000/year
                     </span>
                   </div>
@@ -627,7 +626,7 @@ function ROISection() {
 function CTASection() {
   const navigate = useNavigate()
   return (
-    <section className='section-padding bg-gray-900 text-white'>
+    <section className='section-padding gt-dark-section text-white'>
       <div className='container-custom text-center'>
         <div className='max-w-3xl mx-auto space-y-8'>
           <h2 className='text-3xl lg:text-5xl font-bold'>
@@ -679,15 +678,12 @@ function CTASection() {
 // Footer Component
 function Footer() {
   return (
-    <footer className='bg-gray-900 text-white py-12'>
+    <footer className='gt-dark-section text-white py-12'>
       <div className='container-custom'>
         <div className='grid md:grid-cols-4 gap-8'>
           <div className='space-y-4'>
-            <div className='flex items-center space-x-2'>
-              <div className='w-8 h-8 bg-primary rounded-lg flex items-center justify-center'>
-                <span className='text-white font-bold text-lg'>G</span>
-              </div>
-              <span className='text-xl font-bold'>GrantThrive</span>
+            <div className='flex items-center'>
+              <img src={logoReversed} alt='GrantThrive' className='h-10 w-auto' />
             </div>
             <p className='text-gray-400'>
               Purpose-built grant management platform for Australian and New Zealand councils.
@@ -851,7 +847,7 @@ function FeaturesPage() {
       description:
         'Let citizens vote on grant priorities and applications. Set voting windows, display live results, and publish outcomes for full transparency.',
       badge: 'Exclusive',
-      color: 'bg-blue-500',
+      color: 'gt-icon-gradient',
     },
     {
       icon: Map,
@@ -859,7 +855,7 @@ function FeaturesPage() {
       description:
         'Visualise every grant on an interactive map. Filter by category, status, or council area. Embed the public map on your council website.',
       badge: 'Exclusive',
-      color: 'bg-green-500',
+      color: 'gt-icon-gradient',
     },
     {
       icon: Zap,
@@ -867,7 +863,7 @@ function FeaturesPage() {
       description:
         'Create a complete grant program in minutes with intelligent templates, automated eligibility rules, and guided workflows.',
       badge: 'AI-Enhanced',
-      color: 'bg-purple-500',
+      color: 'gt-icon-gradient',
     },
     {
       icon: BarChart3,
@@ -875,7 +871,7 @@ function FeaturesPage() {
       description:
         'Live dashboards for application volumes, approval rates, processing times, community engagement scores, and budget utilisation.',
       badge: 'Advanced',
-      color: 'bg-orange-500',
+      color: 'gt-icon-gradient',
     },
     {
       icon: Shield,
@@ -883,7 +879,7 @@ function FeaturesPage() {
       description:
         'Data hosted in Australia (AWS Sydney). Role-based access control, full audit logs, and WCAG 2.1 AA accessibility. Designed to support compliance with the Australian Privacy Principles (APPs) and the NZ Privacy Act 2020. SOC 2 certification in progress.',
       badge: 'Compliant',
-      color: 'bg-red-500',
+      color: 'gt-icon-gradient',
     },
     {
       icon: Smartphone,
@@ -891,7 +887,7 @@ function FeaturesPage() {
       description:
         'Every page is fully responsive. Applicants can submit and track applications from any device.',
       badge: 'Mobile',
-      color: 'bg-indigo-500',
+      color: 'gt-icon-gradient',
     },
     {
       icon: FileText,
@@ -899,7 +895,7 @@ function FeaturesPage() {
       description:
         'Receive, assess, and decide on applications in one place. Assign reviewers, set scoring rubrics, and track every step.',
       badge: 'Core',
-      color: 'bg-teal-500',
+      color: 'gt-icon-gradient',
     },
     {
       icon: MessageSquare,
@@ -923,7 +919,7 @@ function FeaturesPage() {
       description:
         'Provide applicants with guides, templates, and FAQs. Reduce support requests and improve application quality.',
       badge: 'Core',
-      color: 'bg-yellow-500',
+      color: 'gt-icon-gradient',
     },
     {
       icon: Award,
@@ -931,7 +927,7 @@ function FeaturesPage() {
       description:
         'Publicly celebrate successful grant recipients with a branded showcase page that builds community trust.',
       badge: 'Engagement',
-      color: 'bg-amber-500',
+      color: 'gt-icon-gradient',
     },
     {
       icon: TrendingUp,
@@ -1169,7 +1165,7 @@ function PricingPage() {
                 className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                   isAnnual
                     ? 'bg-white text-primary'
-                    : 'bg-green-100 text-green-700'
+                    : 'bg-primary/10 text-primary'
                 }`}
               >
                 2 MONTHS FREE
@@ -1177,7 +1173,7 @@ function PricingPage() {
             </button>
           </div>
           {isAnnual ? (
-            <p className='text-sm text-green-700 font-medium flex items-center gap-1'>
+            <p className='text-sm text-primary font-medium flex items-center gap-1'>
               <CheckCircle className='h-4 w-4' />
               You&apos;re saving 2 months on every plan &mdash; billed as one
               annual payment
@@ -1185,7 +1181,7 @@ function PricingPage() {
           ) : (
             <p className='text-sm text-gray-500'>
               Switch to annual billing and get{' '}
-              <span className='font-semibold text-green-700'>
+              <span className='font-semibold text-primary'>
                 2 months free
               </span>{' '}
               on any plan
@@ -1216,7 +1212,7 @@ function PricingPage() {
                   <span className='text-gray-500'>/month</span>
                   {isAnnual ? (
                     <div className='mt-2 space-y-1'>
-                      <p className='text-sm font-semibold text-green-700 bg-green-50 rounded-full px-3 py-1 inline-block'>
+                      <p className='text-sm font-semibold text-primary bg-primary/10 rounded-full px-3 py-1 inline-block'>
                         Save ${savingsAmount(plan)}/year &mdash; 2 months free
                       </p>
                       <p className='text-sm text-gray-500'>
@@ -1227,7 +1223,7 @@ function PricingPage() {
                     <div className='mt-2'>
                       <p className='text-sm text-gray-400'>
                         Or{' '}
-                        <span className='text-green-700 font-medium'>
+                        <span className='text-primary font-medium'>
                           ${plan.annualMonthlyPrice}/mo
                         </span>{' '}
                         billed annually &mdash; 2 months free
@@ -1279,7 +1275,7 @@ function PricingPage() {
 
         {/* Annual savings callout banner — only shown on monthly view */}
         {!isAnnual && (
-          <div className='bg-gradient-to-r from-primary/10 to-green-50 border border-primary/20 rounded-2xl p-6 mb-12 text-center'>
+          <div className='gt-tint-bg border border-primary/20 rounded-2xl p-6 mb-12 text-center'>
             <p className='text-lg font-semibold text-gray-900 mb-1'>
               Switch to annual billing and get 2 months completely free
             </p>
@@ -1506,7 +1502,7 @@ function ROICalculatorPage() {
           </Card>
 
           <div className='space-y-6'>
-            <Card className='p-6 bg-gradient-to-r from-green-50 to-blue-50'>
+            <Card className='p-6 gt-tint-bg'>
               <CardHeader>
                 <CardTitle className='text-2xl text-center'>
                   Your ROI Results
@@ -1521,19 +1517,19 @@ function ROICalculatorPage() {
                     <div className='text-sm text-gray-600'>ROI</div>
                   </div>
                   <div>
-                    <div className='text-3xl font-bold text-blue-600'>
+                    <div className='text-3xl font-bold text-primary'>
                       {results.paybackMonths}mo
                     </div>
                     <div className='text-sm text-gray-600'>Payback Period</div>
                   </div>
                   <div>
-                    <div className='text-3xl font-bold text-purple-600'>
+                    <div className='text-3xl font-bold text-primary'>
                       ${results.annualSavings.toLocaleString()}
                     </div>
                     <div className='text-sm text-gray-600'>Annual Savings</div>
                   </div>
                   <div>
-                    <div className='text-3xl font-bold text-orange-600'>
+                    <div className='text-3xl font-bold text-primary'>
                       ${results.fiveYearSavings.toLocaleString()}
                     </div>
                     <div className='text-sm text-gray-600'>5-Year Value</div>
@@ -1717,7 +1713,7 @@ function ContactPage() {
     return (
       <div className='section-padding'>
         <div className='container-custom max-w-2xl mx-auto text-center'>
-          <div className='w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6'>
+          <div className='w-20 h-20 gt-tint-bg rounded-full flex items-center justify-center mx-auto mb-6'>
             <CheckCircle className='h-10 w-10 text-green-600' />
           </div>
           <h1 className='text-3xl font-bold text-gray-900 mb-4'>Thank You!</h1>

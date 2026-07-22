@@ -49,31 +49,32 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.5 0.15 180); /* GrantThrive teal/blue gradient */
+  /* GrantThrive Brand — logo gradient: Navy #001A6A → Teal #06898A → Lime #04B802 */
+  --primary: oklch(0.52 0.10 192);  /* teal #06898A */
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.6 0.12 150); /* GrantThrive green accent */
+  --accent: oklch(0.55 0.12 162);   /* green #0D8C66 */
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.5 0.15 180); /* GrantThrive primary */
-  --chart-2: oklch(0.6 0.12 150); /* GrantThrive green */
-  --chart-3: oklch(0.4 0.18 200); /* GrantThrive dark blue */
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.5 0.15 180);
+  --ring: oklch(0.52 0.10 192);
+  --chart-1: oklch(0.52 0.10 192);  /* teal */
+  --chart-2: oklch(0.55 0.12 162);  /* green */
+  --chart-3: oklch(0.35 0.14 255);  /* navy */
+  --chart-4: oklch(0.42 0.12 220);  /* mid-blue */
+  --chart-5: oklch(0.65 0.14 145);  /* lime */
+  --sidebar: #0D1B3E;               /* unified dark sidebar */
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.52 0.10 192);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar-accent: rgba(6, 137, 138, 0.15);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: oklch(0.52 0.10 192);
 }
 
 .dark {
@@ -117,4 +118,26 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* ─── Portal Brand Utilities ─────────────────────────────────────────────────────── */
+
+/* Brand gradient for icon backgrounds */
+.gt-icon-gradient {
+  background: linear-gradient(135deg, #001A6A, #06898A);
+}
+
+/* Subtle brand tint for light section backgrounds */
+.gt-tint-bg {
+  background: linear-gradient(135deg,
+    rgba(6, 137, 138, 0.06) 0%,
+    rgba(4, 184, 2, 0.04) 100%);
+}
+
+/* Brand text gradient */
+.text-gradient {
+  background: linear-gradient(135deg, #06898A, #04B802);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }

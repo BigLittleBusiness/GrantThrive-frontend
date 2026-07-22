@@ -32,6 +32,7 @@ import {
 } from '@mui/icons-material';
 import { styled, alpha } from '@mui/material/styles';
 import { useAuth } from '../../contexts/AuthContext';
+import grantThriveLogo from '../../assets/grantthrive_logo_growth_concept.png';
 
 const SearchContainer = styled('div')(({ theme }) => ({
   position: 'relative',
@@ -171,21 +172,10 @@ const ProfessionalNavbar = ({ onMenuClick, onSearch }) => {
         <LogoContainer>
           <Box
             component="img"
-            src="/logo-icon.png"
+            src={grantThriveLogo}
             alt="GrantThrive"
-            sx={{ height: 32, width: 32 }}
+            sx={{ height: 36, width: 'auto' }}
           />
-          <Typography
-            variant="h6"
-            component="div"
-            sx={{
-              fontWeight: 600,
-              color: 'primary.main',
-              display: { xs: 'none', sm: 'block' },
-            }}
-          >
-            GrantThrive
-          </Typography>
         </LogoContainer>
 
         {/* Desktop Navigation */}
