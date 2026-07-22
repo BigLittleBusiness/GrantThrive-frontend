@@ -92,7 +92,7 @@ export default function CompetitiveComparison({ councilSize, features = {} }) {
                   <CardTitle className="text-green-800">GrantThrive</CardTitle>
                   <Badge className="bg-green-600">Recommended</Badge>
                 </div>
-                <CardDescription>Revolutionary community-centric platform</CardDescription>
+                <CardDescription>Purpose-built grant management for local government</CardDescription>
               </CardHeader>
               <CardContent className="pt-6">
                 <div className="space-y-4">
@@ -225,7 +225,7 @@ export default function CompetitiveComparison({ councilSize, features = {} }) {
                 </CardTitle>
                 {categoryKey === 'community' && (
                   <CardDescription className="text-blue-600 font-medium">
-                    Revolutionary features exclusive to GrantThrive
+                    Features exclusive to GrantThrive
                   </CardDescription>
                 )}
               </CardHeader>
@@ -353,7 +353,7 @@ export default function CompetitiveComparison({ councilSize, features = {} }) {
                     </li>
                     <li className="flex items-center gap-2">
                       <CheckCircle className="h-4 w-4 text-blue-600" />
-                      <span>Revolutionary community engagement</span>
+                      <span>Community engagement tools</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <CheckCircle className="h-4 w-4 text-blue-600" />

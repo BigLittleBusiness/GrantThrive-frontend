@@ -290,16 +290,16 @@ export function generateCompetitiveSummary(councilSize) {
   });
 
   return {
-    headline: `Save ${Math.abs(comparison.comparison.savingsPercentage)}% annually vs SmartyGrants`,
-    subheadline: `${comparison.comparison.featureAdvantage}% more features with revolutionary community engagement`,
+    headline: `Estimated ${Math.abs(comparison.comparison.savingsPercentage)}% annual savings vs legacy grant software`,
+    subheadline: `${comparison.comparison.featureAdvantage}% more features, including community engagement tools not available in desktop-first systems`,
     keyPoints: [
-      `$${comparison.comparison.annualSavings.toLocaleString()} annual savings`,
-      `$${comparison.comparison.firstYearSavings.toLocaleString()} first-year savings (including setup costs)`,
-      `${comparison.comparison.uniqueFeatures} exclusive community features`,
-      `${comparison.grantThrive.features} total features vs ${comparison.smartyGrants.features}`,
+      `~$${comparison.comparison.annualSavings.toLocaleString()} modelled annual savings`,
+      `~$${comparison.comparison.firstYearSavings.toLocaleString()} modelled first-year savings (including setup costs)`,
+      `${comparison.comparison.uniqueFeatures} exclusive community engagement features`,
+      `${comparison.grantThrive.features} total features vs ${comparison.smartyGrants.features} in legacy systems`,
       'Setup, training, and support included at no extra cost'
     ],
-    callToAction: "Switch to GrantThrive and transform your community engagement while saving money"
+    callToAction: "See how GrantThrive can transform grant management for your council"
   };
 }
 

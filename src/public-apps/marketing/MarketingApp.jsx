@@ -160,16 +160,14 @@ function HeroSection() {
           <div className='space-y-8'>
             <div className='space-y-4'>
               <Badge className='bg-white/20 text-white border-white/30'>
-                🚀 Revolutionary Community Engagement
+                Built for Local Government
               </Badge>
               <h1 className='text-4xl lg:text-6xl font-bold leading-tight'>
                 Transform Your
                 <span className='block text-yellow-300'>Grant Management</span>
               </h1>
               <p className='text-xl text-blue-100 leading-relaxed'>
-                The only platform that combines powerful grant management with
-                revolutionary community engagement features. Save money, engage
-                citizens, and streamline your processes.
+                A purpose-built grant management platform that combines powerful administration tools with genuine community engagement features. Designed specifically for Australian and New Zealand councils.
               </p>
             </div>
 
@@ -177,34 +175,34 @@ function HeroSection() {
               <Button
                 size='lg'
                 className='bg-white text-primary hover:bg-gray-100'
-                onClick={() => navigate('/roi-calculator')}
+                onClick={() => navigate('/contact')}
               >
-                <Calculator className='mr-2 h-5 w-5' />
-                Calculate Your ROI
+                <Users className='mr-2 h-5 w-5' />
+                Schedule a Demo
               </Button>
               <Button
                 size='lg'
                 variant='outline'
                 className='border-white text-white hover:bg-white/10'
-                onClick={() => navigate('/features')}
+                onClick={() => navigate('/roi-calculator')}
               >
-                <Users className='mr-2 h-5 w-5' />
-                See Community Features
+                <Calculator className='mr-2 h-5 w-5' />
+                Calculate Your ROI
               </Button>
             </div>
 
             <div className='grid grid-cols-3 gap-8 pt-8'>
               <div className='text-center'>
                 <div className='text-3xl font-bold text-yellow-300'>312%</div>
-                <div className='text-sm text-blue-100'>Average ROI</div>
+                <div className='text-sm text-blue-100'>Modelled ROI*</div>
               </div>
               <div className='text-center'>
-                <div className='text-3xl font-bold text-yellow-300'>4mo</div>
-                <div className='text-sm text-blue-100'>Payback Period</div>
+                <div className='text-3xl font-bold text-yellow-300'>~4mo</div>
+                <div className='text-sm text-blue-100'>Payback Period*</div>
               </div>
               <div className='text-center'>
                 <div className='text-3xl font-bold text-yellow-300'>$7.5K+</div>
-                <div className='text-sm text-blue-100'>Annual Savings</div>
+                <div className='text-sm text-blue-100'>Annual Benefit*</div>
               </div>
             </div>
           </div>
@@ -262,7 +260,7 @@ function FeaturesSection() {
       icon: Vote,
       title: 'Community Voting System',
       description:
-        'Revolutionary feature that lets citizens vote on grant priorities and applications, creating unprecedented transparency and engagement.',
+        'An advisory community voting tool that lets citizens indicate their priorities for grant funding — giving councils richer community insight while retaining full decision-making authority under the Local Government Act.',
       badge: 'Exclusive to GrantThrive',
       color: 'bg-blue-500',
     },
@@ -292,9 +290,9 @@ function FeaturesSection() {
     },
     {
       icon: Shield,
-      title: 'Enterprise Security',
+      title: 'Security & Compliance',
       description:
-        'Bank-grade security with compliance features for Australian and New Zealand councils.',
+        'Data hosted in Australia (AWS Sydney). Role-based access control, full audit logs, and WCAG 2.1 AA accessibility. Built to support compliance with the Australian Privacy Principles and NZ Privacy Act 2020.',
       badge: 'Compliant',
       color: 'bg-red-500',
     },
@@ -313,15 +311,14 @@ function FeaturesSection() {
       <div className='container-custom'>
         <div className='text-center space-y-4 mb-16'>
           <Badge className='bg-primary/10 text-primary'>
-            Revolutionary Features
+            Purpose-Built for Councils
           </Badge>
           <h2 className='text-3xl lg:text-5xl font-bold text-gray-900'>
-            Features No Competitor Offers
+            Capabilities Designed Around How Councils Actually Work
           </h2>
           <p className='text-xl text-gray-600 max-w-3xl mx-auto'>
-            GrantThrive isn't just another grant management system. We're
-            pioneering community-centric features that transform how councils
-            engage with citizens.
+            GrantThrive combines grant administration with community engagement
+            tools built specifically for the needs of Australian and New Zealand local government.
           </p>
         </div>
 
@@ -416,14 +413,14 @@ function ComparisonSection() {
       <div className='container-custom'>
         <div className='text-center space-y-4 mb-16'>
           <Badge className='bg-green-100 text-green-800'>
-            Competitive Advantage
+            Platform Comparison
           </Badge>
           <h2 className='text-3xl lg:text-5xl font-bold text-gray-900'>
-            GrantThrive vs The Old Way
+            GrantThrive vs Legacy Desktop-Based Grant Systems
           </h2>
           <p className='text-xl text-gray-600 max-w-3xl mx-auto'>
-            Clunky forms. Desktop-only. Steep setup fees. Sound familiar?
-            See why progressive councils are making the switch.
+            Many councils still rely on desktop-first grant software built before mobile and community engagement were priorities.
+            Here is how GrantThrive compares on the features that matter most.
           </p>
         </div>
 
@@ -506,15 +503,14 @@ function ROISection() {
           <div className='space-y-8'>
             <div className='space-y-4'>
               <Badge className='bg-white/20 text-white border-white/30'>
-                💰 Proven ROI
+                Modelled ROI
               </Badge>
               <h2 className='text-3xl lg:text-5xl font-bold'>
                 Save Money While
                 <span className='block text-yellow-300'>Gaining Features</span>
               </h2>
               <p className='text-xl text-blue-100'>
-                GrantThrive costs less than legacy grant software while providing 320%
-                more features. See your exact savings with our ROI calculator.
+                GrantThrive is priced to be competitive with legacy grant software while providing significantly more features. See your estimated savings with our ROI calculator.
               </p>
             </div>
 
@@ -526,7 +522,7 @@ function ROISection() {
                 <div>
                   <h3 className='text-xl font-semibold'>Lower Annual Costs</h3>
                   <p className='text-blue-100'>
-                    Save 1-24% annually vs legacy grant software
+                    Competitive annual pricing vs legacy grant software
                   </p>
                 </div>
               </div>
@@ -548,7 +544,7 @@ function ROISection() {
                 <div>
                   <h3 className='text-xl font-semibold'>More Features</h3>
                   <p className='text-blue-100'>
-                    21 features vs 5 in legacy grant software
+                    Significantly more features than legacy grant software
                   </p>
                 </div>
               </div>
@@ -565,9 +561,10 @@ function ROISection() {
           </div>
 
           <div className='bg-white/10 backdrop-blur-sm rounded-2xl p-8'>
-            <h3 className='text-2xl font-bold mb-6 text-center'>
-              Sample ROI Results
+            <h3 className='text-2xl font-bold mb-2 text-center'>
+                Modelled ROI Estimates
             </h3>
+            <p className='text-xs text-blue-200 text-center mb-4'>Based on internal financial modelling. <a href='/roi-calculator' className='underline text-yellow-300'>See how we calculate this.</a></p>
             <div className='space-y-6'>
               <div className='bg-white/20 rounded-lg p-4'>
                 <h4 className='font-semibold mb-2'>
@@ -575,20 +572,20 @@ function ROISection() {
                 </h4>
                 <div className='grid grid-cols-2 gap-4 text-sm'>
                   <div>
-                    ROI: <span className='font-bold text-yellow-300'>312%</span>
+                    Modelled ROI: <span className='font-bold text-yellow-300'>312%</span>
                   </div>
                   <div>
                     Payback:{' '}
-                    <span className='font-bold text-yellow-300'>4 months</span>
+                    <span className='font-bold text-yellow-300'>~4 months</span>
                   </div>
                   <div>
-                    Annual Savings:{' '}
-                    <span className='font-bold text-yellow-300'>$7,500</span>
+                    Total annual benefit:{' '}
+                    <span className='font-bold text-yellow-300'>~$7,500</span>
                   </div>
                   <div>
-                    vs legacy software:{' '}
+                    Subscription cost:{' '}
                     <span className='font-bold text-yellow-300'>
-                      $4,104/year
+                      $2,000/year
                     </span>
                   </div>
                 </div>
@@ -599,21 +596,21 @@ function ROISection() {
                 </h4>
                 <div className='grid grid-cols-2 gap-4 text-sm'>
                   <div>
-                    ROI:{' '}
+                    Modelled ROI:{' '}
                     <span className='font-bold text-yellow-300'>450%+</span>
                   </div>
                   <div>
                     Payback:{' '}
-                    <span className='font-bold text-yellow-300'>3 months</span>
+                    <span className='font-bold text-yellow-300'>~3 months</span>
                   </div>
                   <div>
-                    Annual Savings:{' '}
-                    <span className='font-bold text-yellow-300'>$22,500+</span>
+                    Total annual benefit:{' '}
+                    <span className='font-bold text-yellow-300'>~$22,500+</span>
                   </div>
                   <div>
-                    vs legacy software:{' '}
+                    Subscription cost:{' '}
                     <span className='font-bold text-yellow-300'>
-                      $12,312/year
+                      $5,000/year
                     </span>
                   </div>
                 </div>
@@ -638,39 +635,22 @@ function CTASection() {
             <span className='text-gradient block'>Grant Management?</span>
           </h2>
           <p className='text-xl text-gray-300'>
-            Join progressive councils across Australia and New Zealand who are
-            revolutionizing their grant management with GrantThrive.
+            GrantThrive is purpose-built for Australian and New Zealand councils. Be among the first to transform how your community engages with grants.
           </p>
 
-          <div className='flex flex-col sm:flex-row gap-4 justify-center'>
+          <div className='flex flex-col items-center gap-4'>
             <Button
               size='lg'
-              className='bg-primary hover:bg-primary/90'
+              className='bg-primary hover:bg-primary/90 px-10'
               onClick={() => navigate('/contact')}
             >
               <Users className='mr-2 h-5 w-5' />
               Schedule a Demo
             </Button>
-            <Button
-              size='lg'
-              variant='outline'
-              className='border-white text-white hover:bg-white/10'
-              onClick={() => navigate('/roi-calculator')}
-            >
-              <Calculator className='mr-2 h-5 w-5' />
-              Calculate ROI
-            </Button>
-            <Button
-              asChild
-              size='lg'
-              variant='outline'
-              className='border-white text-white hover:bg-white/10'
-            >
-              <a href='/GrantThrive_Brochure.pdf' download>
-                <Download className='mr-2 h-5 w-5' />
-                Download Brochure
-              </a>
-            </Button>
+            <div className='flex gap-6 text-sm text-gray-400'>
+              <button onClick={() => navigate('/roi-calculator')} className='hover:text-white underline underline-offset-2 transition-colors'>Calculate your ROI</button>
+              <a href='/GrantThrive_Brochure.pdf' download className='hover:text-white underline underline-offset-2 transition-colors'>Download brochure</a>
+            </div>
           </div>
 
           <div className='grid md:grid-cols-3 gap-8 pt-12'>
@@ -710,8 +690,7 @@ function Footer() {
               <span className='text-xl font-bold'>GrantThrive</span>
             </div>
             <p className='text-gray-400'>
-              Revolutionary grant management platform for Australian and New
-              Zealand councils.
+              Purpose-built grant management platform for Australian and New Zealand councils.
             </p>
             <div className='flex space-x-4'>
               <a
@@ -729,7 +708,7 @@ function Footer() {
                 <Mail className='h-5 w-5' />
               </a>
               <a
-                href='tel:1300472687'
+                href='tel:+61391249824'
                 className='text-gray-400 hover:text-white transition-colors'
                 aria-label='Phone'
               >
@@ -795,12 +774,12 @@ function Footer() {
                   Grant Guides
                 </Link>
               </li>
-              <li>
+                  <li>
                 <Link
-                  to='/resources#case-studies'
+                  to='/resources'
                   className='hover:text-white transition-colors'
                 >
-                  Case Studies
+                  Resources
                 </Link>
               </li>
               <li>
@@ -828,12 +807,7 @@ function Footer() {
               </li>
               <li className='flex items-center space-x-2'>
                 <Phone className='h-4 w-4 flex-shrink-0' />
-                <a
-                  href='tel:1300472687'
-                  className='hover:text-white transition-colors'
-                >
-                  1300 GRANTS
-                </a>
+                <span>AU &amp; NZ: +61 3 9124&#8209;9824</span>
               </li>
               <li className='flex items-center space-x-2'>
                 <MapPin className='h-4 w-4 flex-shrink-0' />
@@ -905,9 +879,9 @@ function FeaturesPage() {
     },
     {
       icon: Shield,
-      title: 'Enterprise Security',
+      title: 'Security & Compliance',
       description:
-        'SOC 2-aligned security, role-based access control, full audit logs, and data residency in Australia.',
+        'Data hosted in Australia (AWS Sydney). Role-based access control, full audit logs, and WCAG 2.1 AA accessibility. Designed to support compliance with the Australian Privacy Principles (APPs) and the NZ Privacy Act 2020. SOC 2 certification in progress.',
       badge: 'Compliant',
       color: 'bg-red-500',
     },
@@ -1901,10 +1875,10 @@ function ContactPage() {
                   <div>
                     <p className='font-semibold'>Phone</p>
                     <a
-                      href='tel:1300472687'
+                      href='tel:+61391249824'
                       className='text-primary hover:underline'
                     >
-                      1300 GRANTS (1300 472 687)
+                      +61 3 9124&#8209;9824 (AU &amp; NZ)
                     </a>
                   </div>
                 </div>
