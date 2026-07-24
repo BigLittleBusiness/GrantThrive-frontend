@@ -31,6 +31,7 @@ const GrantCreationWizard = ({ onNavigate, council }) => {
   const [draftSaving, setDraftSaving] = useState(false);
   const [draftSaved, setDraftSaved] = useState(false);
   const [grantId, setGrantId] = useState(null); // set after first save
+  const [stepError, setStepError] = useState('');
 
   const steps = [
     { id: 1, title: 'Basic Details',    icon: FileText,     description: 'Grant program information' },
@@ -95,6 +96,17 @@ const GrantCreationWizard = ({ onNavigate, council }) => {
   };
 
   const nextStep = () => {
+    setStepError('');
+    if (currentStep === 1) {
+      if (!formData.title.trim()) { setStepError('Grant title is required.'); return; }
+      if (!formData.category) { setStepError('Please select a category.'); return; }
+      if (!formData.description.trim()) { setStepError('A description is required.'); return; }
+      if (!formData.eligibility.trim()) { setStepError('Eligibility criteria are required.'); return; }
+    }
+    if (currentStep === 2) {
+      if (!formData.fundingAmount || parseFloat(formData.fundingAmount) <= 0) { setStepError('A valid funding amount is required.'); return; }
+      if (!formData.applicationDeadline) { setStepError('An application deadline is required.'); return; }
+    }
     if (currentStep < 5) setCurrentStep(currentStep + 1);
   };
 
@@ -767,6 +779,13 @@ const GrantCreationWizard = ({ onNavigate, council }) => {
         <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-12 mb-12">
           {renderStepContent()}
         </div>
+
+        {/* Step validation error */}
+        {stepError && (
+          <div className="max-w-4xl mx-auto mb-4 p-3 bg-red-50 border border-red-300 rounded-lg text-red-700 text-sm font-medium">
+            {stepError}
+          </div>
+        )}
 
         {/* Professional Navigation */}
         <div className="flex items-center justify-between max-w-4xl mx-auto">

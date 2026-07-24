@@ -322,7 +322,7 @@ const CouncilStaffDashboard = ({ user, onNavigate, onLogout }) => {
                     </div>
 
                     <div className="flex gap-2">
-                      <Button size="sm" className="flex-1" onClick={() => onNavigate('grant-details')}>
+                      <Button size="sm" className="flex-1" onClick={() => onNavigate('review-workflow', { applicationId: app.id })}>
                         <Eye className="w-4 h-4 mr-1" />
                         Review
                       </Button>
@@ -330,7 +330,7 @@ const CouncilStaffDashboard = ({ user, onNavigate, onLogout }) => {
                         <MessageSquare className="w-4 h-4 mr-1" />
                         Contact
                       </Button>
-                      <Button size="sm" variant="outline" onClick={() => onNavigate('grant-details')}>
+                      <Button size="sm" variant="outline" onClick={() => onNavigate('review-workflow', { applicationId: app.id })}>
                         <Edit className="w-4 h-4 mr-1" />
                         Update
                       </Button>

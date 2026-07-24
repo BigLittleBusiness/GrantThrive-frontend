@@ -465,6 +465,14 @@ function BrowseGrantsPanel({ user, council, onNavigate }) {
             </select>
           </div>
 
+          {filteredGrants.length === 0 && (
+            <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 py-20 text-center mb-8">
+              <Search className="mb-3 h-12 w-12 text-gray-300" />
+              <p className="text-lg font-semibold text-gray-600">No grants match your filters</p>
+              <p className="mt-1 text-sm text-gray-400">Try adjusting or clearing your filters to see more results.</p>
+              <Button variant="outline" className="mt-4 rounded-xl" onClick={() => { setSearchTerm(''); setSelectedCategories([]); setSelectedStatus([]); setFundingRange([0, 500000]); }}>Clear all filters</Button>
+            </div>
+          )}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             {currentGrants.map(grant => (
               <Card key={grant.id} className="hover:shadow-lg transition-all duration-300 border-l-4 border-l-blue-500">

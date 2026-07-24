@@ -386,7 +386,7 @@ const CouncilAdminDashboard = ({ user, onNavigate, onLogout }) => {
                     </span>
                   </div>
                   <div className="flex gap-2 mt-3">
-                    <Button size="sm" className="flex-1" onClick={() => onNavigate('grant-details')}>
+                    <Button size="sm" className="flex-1" onClick={() => onNavigate('review-workflow', { applicationId: app.id })}>
                       <Eye className="w-4 h-4 mr-1" />
                       Review
                     </Button>
@@ -444,7 +444,7 @@ const CouncilAdminDashboard = ({ user, onNavigate, onLogout }) => {
                   
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-600">Deadline: {program.deadline}</span>
-                    <Button size="sm" variant="outline" onClick={() => onNavigate('grant-details')}>
+                    <Button size="sm" variant="outline" onClick={() => onNavigate('grants', { grantId: program.id })}>
                       <Settings className="w-4 h-4 mr-1" />
                       Manage
                     </Button>

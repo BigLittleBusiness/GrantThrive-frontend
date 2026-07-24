@@ -282,7 +282,7 @@ const ApplicationReviewWorkflow = ({ grantId, user, onNavigate, onLogout }) => {
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto m-4">
+        <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto m-4">
           <div className="p-6 border-b">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold">{application.projectTitle}</h2>
