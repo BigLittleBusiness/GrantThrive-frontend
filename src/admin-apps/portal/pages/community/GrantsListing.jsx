@@ -177,7 +177,7 @@ function MyApplicationsPanel({ onNavigate }) {
                         <Button
                           size="sm"
                           className="bg-green-700 hover:bg-green-800 whitespace-nowrap"
-                          onClick={() => onNavigate && onNavigate(`community/application-form/${app.id}`)}
+                          onClick={() => onNavigate && onNavigate(`community/application-form/${app.grant_id || app.id}`)}
                         >
                           Continue
                         </Button>
@@ -185,7 +185,7 @@ function MyApplicationsPanel({ onNavigate }) {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => onNavigate && onNavigate(`community/application-form/${app.id}`)}
+                          onClick={() => onNavigate && onNavigate(`community/application-form/${app.grant_id || app.id}`)}
                         >
                           View
                         </Button>
