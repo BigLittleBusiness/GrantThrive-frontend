@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+Allow: /features
+Allow: /pricing
+Allow: /roi-calculator
+Allow: /resources
+Allow: /contact
+Allow: /map
+Allow: /roi
+Disallow: /portal/
+Disallow: /admin/
+
+# Sitemap location
+Sitemap: https://grantthrive.com/sitemap.xml

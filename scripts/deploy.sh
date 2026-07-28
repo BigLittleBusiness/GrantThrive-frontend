@@ -88,11 +88,15 @@ if [[ "$SKIP_BUILD" != "true" ]]; then
     pnpm install --frozen-lockfile
   fi
 
+  # Build the app, then pre-render marketing routes for SEO.
+  # CHROMIUM_PATH can be overridden in CI; defaults to system Chromium.
+  export CHROMIUM_PATH="${CHROMIUM_PATH:-/usr/bin/chromium}"
   if [[ -x ./node_modules/.bin/vite ]]; then
-    ./node_modules/.bin/vite build --mode "$VITE_MODE"
+    ./node_modules/.bin/vite build --mode "$VITE_MODE" --config vite.config.cjs
   else
-    pnpm exec vite build --mode "$VITE_MODE"
+    pnpm exec vite build --mode "$VITE_MODE" --config vite.config.cjs
   fi
+  node scripts/prerender.mjs
 fi
 
 if ! command -v terraform >/dev/null 2>&1; then

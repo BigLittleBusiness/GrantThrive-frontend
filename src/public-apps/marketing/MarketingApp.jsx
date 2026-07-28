@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom'
+import { usePageSeo, SEO_PAGES } from '@shared/lib/seo'
 import { Button } from '@shared/components/ui/button.jsx'
 import {
   Card,
@@ -826,6 +827,7 @@ function Footer() {
 
 // Home Page Component
 function HomePage() {
+  usePageSeo(SEO_PAGES.home)
   return (
     <div>
       <HeroSection />
@@ -839,6 +841,7 @@ function HomePage() {
 
 // Full Features Page
 function FeaturesPage() {
+  usePageSeo(SEO_PAGES.features)
   const navigate = useNavigate()
   const allFeatures = [
     {
@@ -1094,6 +1097,7 @@ const PRICING_API_URL = (() => {
 
 // Full Pricing Page
 function PricingPage() {
+  usePageSeo(SEO_PAGES.pricing)
   const navigate = useNavigate()
   const [billingCycle, setBillingCycle] = useState('annual')
   const [plans, setPlans] = useState(FALLBACK_PLANS)
@@ -1316,6 +1320,7 @@ function PricingPage() {
 
 // ROI Calculator Page
 function ROICalculatorPage() {
+  usePageSeo(SEO_PAGES.roiCalculator)
   const navigate = useNavigate()
   const [councilSize, setCouncilSize] = useState('small')
   const [applications, setApplications] = useState(100)
@@ -1591,6 +1596,7 @@ function ROICalculatorPage() {
 
 // Full Resources Page
 function ResourcesPage() {
+  usePageSeo(SEO_PAGES.resources)
   const resources = [
     {
       icon: BookOpen,
@@ -1689,6 +1695,7 @@ function ResourcesPage() {
 
 // Full Contact Page
 function ContactPage() {
+  usePageSeo(SEO_PAGES.contact)
   const [formData, setFormData] = useState({
     name: '',
     email: '',
