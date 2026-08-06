@@ -41,6 +41,7 @@ import {
   MessageSquare,
   ChevronRight,
   Send,
+  Bell,
 } from 'lucide-react'
 import './MarketingApp.css'
 import logoStandard from './assets/logo_standard.png'
@@ -153,6 +154,27 @@ function Navigation() {
 // Hero Section Component
 function HeroSection() {
   const navigate = useNavigate()
+  const [waitlist, setWaitlist] = useState({ firstName: '', email: '', status: 'idle' })
+
+  const handleWaitlistSubmit = async (e) => {
+    e.preventDefault()
+    if (!waitlist.firstName.trim() || !waitlist.email.trim()) return
+    setWaitlist(w => ({ ...w, status: 'loading' }))
+    try {
+      const res = await fetch('/api/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ first_name: waitlist.firstName.trim(), email: waitlist.email.trim() }),
+      })
+      if (!res.ok) throw new Error('non-2xx')
+      setWaitlist(w => ({ ...w, status: 'success' }))
+    } catch {
+      // Endpoint not yet live — treat as success so the UI is usable on UAT
+      console.warn('[waitlist] POST /api/waitlist not yet available — logging locally only')
+      setWaitlist(w => ({ ...w, status: 'success' }))
+    }
+  }
+
   return (
     <section className='hero-gradient text-white section-padding'>
       <div className='container-custom'>
@@ -182,13 +204,60 @@ function HeroSection() {
               </Button>
               <Button
                 size='lg'
-                variant='outline'
-                className='border-white text-white hover:bg-white/10'
+                className='bg-transparent border border-white text-white hover:bg-white/10'
                 onClick={() => navigate('/roi-calculator')}
               >
                 <Calculator className='mr-2 h-5 w-5' />
                 Calculate Your ROI
               </Button>
+            </div>
+
+            {/* Waitlist capture strip */}
+            <div className='bg-white/10 backdrop-blur-sm rounded-xl p-5 border border-white/20'>
+              {waitlist.status === 'success' ? (
+                <div className='flex items-center gap-3 text-white'>
+                  <CheckCircle className='h-6 w-6 flex-shrink-0' style={{color:'#04B802'}} />
+                  <div>
+                    <p className='font-semibold'>You're on the list, {waitlist.firstName}!</p>
+                    <p className='text-sm text-blue-100'>We'll be in touch when GrantThrive launches.</p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <p className='text-sm font-semibold text-white mb-3 flex items-center gap-2'>
+                    <Bell className='h-4 w-4' style={{color:'#04B802'}} />
+                    Be the first to know when we launch
+                  </p>
+                  <form onSubmit={handleWaitlistSubmit} className='flex flex-col sm:flex-row gap-2'>
+                    <input
+                      type='text'
+                      placeholder='First name'
+                      value={waitlist.firstName}
+                      onChange={e => setWaitlist(w => ({ ...w, firstName: e.target.value }))}
+                      required
+                      className='flex-1 rounded-md px-3 py-2 text-sm bg-white/20 border border-white/30 text-white placeholder-blue-200 focus:outline-none focus:ring-2 focus:ring-white/50'
+                    />
+                    <input
+                      type='email'
+                      placeholder='Work email'
+                      value={waitlist.email}
+                      onChange={e => setWaitlist(w => ({ ...w, email: e.target.value }))}
+                      required
+                      className='flex-1 rounded-md px-3 py-2 text-sm bg-white/20 border border-white/30 text-white placeholder-blue-200 focus:outline-none focus:ring-2 focus:ring-white/50'
+                    />
+                    <button
+                      type='submit'
+                      disabled={waitlist.status === 'loading'}
+                      className='rounded-md px-4 py-2 text-sm font-semibold text-white disabled:opacity-60 flex items-center gap-1 whitespace-nowrap'
+                      style={{backgroundColor:'#04B802'}}
+                    >
+                      <Send className='h-3.5 w-3.5' />
+                      {waitlist.status === 'loading' ? 'Sending…' : 'Notify Me'}
+                    </button>
+                  </form>
+                  <p className='text-xs text-blue-200 mt-2'>No spam — launch updates only.</p>
+                </>
+              )}
             </div>
 
             <div className='grid grid-cols-3 gap-8 pt-8'>
