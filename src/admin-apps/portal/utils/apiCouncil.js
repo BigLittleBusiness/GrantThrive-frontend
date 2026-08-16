@@ -65,6 +65,11 @@ export function mixInto(proto) {
     return this.delete(`/api/council/grants/${id}`)
   }
 
+  /** Generate advisory-only AI suggestions for a non-applicant grant draft. */
+  proto.councilGetGrantSuggestions = function (data) {
+    return this.post('/api/ai/grant-suggestions', data)
+  }
+
   // ── Applications ─────────────────────────────────────────────────────────────
 
   /**

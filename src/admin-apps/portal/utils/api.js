@@ -61,6 +61,7 @@ export const {
   councilGetProfile, councilUpdateProfile, councilGetDashboard,
   councilGetGrants, councilGetGrant,
   councilCreateGrant, councilUpdateGrant, councilDeleteGrant,
+  councilGetGrantSuggestions,
   councilGetApplications, councilGetApplication, councilUpdateApplicationStatus,
   councilListApplicationDocuments,
   councilUploadApplicationDocument,
