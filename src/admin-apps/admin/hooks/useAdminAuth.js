@@ -15,15 +15,30 @@
  */
 
 import { useCallback } from 'react';
-import { getStoredUser, clearAuth } from '@grantthrive/auth';
+import { API_BASE_URL, getAuthHeaders, getStoredUser, clearAuth } from '@grantthrive/auth';
 
 export function useAdminAuth() {
   const user = getStoredUser();
 
-  const logout = useCallback(() => {
-    clearAuth();
-    // Notify AdminAuthGate to return to the login screen
-    window.dispatchEvent(new CustomEvent('gt:logout'));
+  const logout = useCallback(async () => {
+    try {
+      // The dedicated admin endpoint writes an audit event. Logout must still
+      // complete locally if the network is unavailable or the token has expired.
+      await fetch(`${API_BASE_URL}/admin/logout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders(),
+        },
+        keepalive: true,
+      });
+    } catch {
+      // Deliberately ignored: removing local credentials is the safe outcome.
+    } finally {
+      clearAuth();
+      // Notify AdminAuthGate to return to the login screen.
+      window.dispatchEvent(new CustomEvent('gt:logout'));
+    }
   }, []);
 
   return {
