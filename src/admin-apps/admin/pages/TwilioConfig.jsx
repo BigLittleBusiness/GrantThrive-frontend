@@ -23,7 +23,10 @@ import {
 const API_BASE = import.meta.env.VITE_API_URL || 'https://api.grantthrive.com';
 
 const getToken = () =>
-  localStorage.getItem('admin_token') || localStorage.getItem('token') || '';
+  localStorage.getItem('gt_auth_token') ||
+  localStorage.getItem('admin_token') ||
+  localStorage.getItem('token') ||
+  '';
 
 const apiFetch = async (path, options = {}) => {
   const res = await fetch(`${API_BASE}${path}`, {
