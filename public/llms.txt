@@ -52,6 +52,4 @@ The portal application at https://app.grantthrive.com/portal/ contains authentic
 
 ## Contact
 
-- Email: info@grantthrive.com
-- Phone: +61&#8209;3&#8209;9124&#8209;9824
-- Website: https://grantthrive.com
+Use the protected contact form at https://grantthrive.com/contact for demos, support and general enquiries.

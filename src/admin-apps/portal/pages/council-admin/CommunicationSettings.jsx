@@ -542,7 +542,7 @@ const CommunicationSettings = ({ user, onNavigate, onLogout }) => {
               <div>
                 <h2 className="font-semibold text-gray-900">Email Notifications</h2>
                 <p className="text-sm text-gray-500 mt-1">
-                  Email notifications are always enabled and sent from <strong>noreply@grantthrive.com</strong> on your council's behalf.
+                  Email notifications are always enabled and sent by <strong>GrantThrive</strong> on your council's behalf.
                   All transactional emails — application confirmations, status updates, deadline reminders — are sent automatically.
                 </p>
               </div>
@@ -550,7 +550,7 @@ const CommunicationSettings = ({ user, onNavigate, onLogout }) => {
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-2">
               <Info size={16} className="text-blue-600 mt-0.5 shrink-0" />
               <p className="text-sm text-blue-700">
-                Email notification templates can be customised by GrantThrive support. Contact <a href="mailto:support@grantthrive.com" className="underline">support@grantthrive.com</a> to request changes to your council's email branding.
+                Email notification templates can be customised by GrantThrive support. Use the <a href="https://grantthrive.com/contact" className="underline">GrantThrive contact form</a> to request changes to your council's email branding.
               </p>
             </div>
           </div>

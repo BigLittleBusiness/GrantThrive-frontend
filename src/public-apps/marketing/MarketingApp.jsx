@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom'
 import { usePageSeo, SEO_PAGES } from '@shared/lib/seo'
 import { Button } from '@shared/components/ui/button.jsx'
+import TurnstileWidget from '@shared/components/TurnstileWidget.jsx'
 import {
   Card,
   CardContent,
@@ -46,6 +47,19 @@ import {
 import './MarketingApp.css'
 import logoStandard from './assets/logo_standard.png'
 import logoReversed from './assets/logo_reversed.png'
+
+const PUBLIC_API_BASE = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
+
+async function submitPublicForm(path, payload) {
+  const response = await fetch(`${PUBLIC_API_BASE}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  const data = await response.json().catch(() => ({}))
+  if (!response.ok) throw new Error(data.error || 'We could not send your message. Please try again.')
+  return data
+}
 
 // Navigation Component
 function Navigation() {
@@ -154,24 +168,32 @@ function Navigation() {
 // Hero Section Component
 function HeroSection() {
   const navigate = useNavigate()
-  const [waitlist, setWaitlist] = useState({ firstName: '', email: '', status: 'idle' })
+  const [waitlist, setWaitlist] = useState({
+    firstName: '', email: '', turnstileToken: '', status: 'idle', error: '', resetKey: 0,
+  })
+  const handleWaitlistToken = useCallback((turnstileToken) => {
+    setWaitlist((current) => ({ ...current, turnstileToken, error: '' }))
+  }, [])
 
   const handleWaitlistSubmit = async (e) => {
     e.preventDefault()
-    if (!waitlist.firstName.trim() || !waitlist.email.trim()) return
-    setWaitlist(w => ({ ...w, status: 'loading' }))
+    if (!waitlist.firstName.trim() || !waitlist.email.trim() || !waitlist.turnstileToken) return
+    setWaitlist(w => ({ ...w, status: 'loading', error: '' }))
     try {
-      const res = await fetch('/api/waitlist', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ first_name: waitlist.firstName.trim(), email: waitlist.email.trim() }),
+      await submitPublicForm('/waitlist', {
+        first_name: waitlist.firstName.trim(),
+        email: waitlist.email.trim(),
+        turnstile_token: waitlist.turnstileToken,
       })
-      if (!res.ok) throw new Error('non-2xx')
       setWaitlist(w => ({ ...w, status: 'success' }))
-    } catch {
-      // Endpoint not yet live — treat as success so the UI is usable on UAT
-      console.warn('[waitlist] POST /api/waitlist not yet available — logging locally only')
-      setWaitlist(w => ({ ...w, status: 'success' }))
+    } catch (error) {
+      setWaitlist(w => ({
+        ...w,
+        status: 'idle',
+        turnstileToken: '',
+        resetKey: w.resetKey + 1,
+        error: error.message || 'We could not save your details. Please try again.',
+      }))
     }
   }
 
@@ -228,7 +250,8 @@ function HeroSection() {
                     <Bell className='h-4 w-4' style={{color:'#04B802'}} />
                     Be the first to know when we launch
                   </p>
-                  <form onSubmit={handleWaitlistSubmit} className='flex flex-col sm:flex-row gap-2'>
+                  <form onSubmit={handleWaitlistSubmit} className='space-y-3'>
+                    <div className='flex flex-col sm:flex-row gap-2'>
                     <input
                       type='text'
                       placeholder='First name'
@@ -245,9 +268,17 @@ function HeroSection() {
                       required
                       className='flex-1 rounded-md px-3 py-2 text-sm bg-white/20 border border-white/30 text-white placeholder-blue-200 focus:outline-none focus:ring-2 focus:ring-white/50'
                     />
+                    </div>
+                    <TurnstileWidget
+                      action='waitlist'
+                      theme='dark'
+                      size='flexible'
+                      onToken={handleWaitlistToken}
+                      resetKey={waitlist.resetKey}
+                    />
                     <button
                       type='submit'
-                      disabled={waitlist.status === 'loading'}
+                      disabled={waitlist.status === 'loading' || !waitlist.turnstileToken}
                       className='rounded-md px-4 py-2 text-sm font-semibold text-white disabled:opacity-60 flex items-center gap-1 whitespace-nowrap'
                       style={{backgroundColor:'#04B802'}}
                     >
@@ -255,6 +286,7 @@ function HeroSection() {
                       {waitlist.status === 'loading' ? 'Sending…' : 'Notify Me'}
                     </button>
                   </form>
+                  {waitlist.error && <p className='text-sm text-red-200 mt-2' role='alert'>{waitlist.error}</p>}
                   <p className='text-xs text-blue-200 mt-2'>No spam — launch updates only.</p>
                 </>
               )}
@@ -767,19 +799,19 @@ function Footer() {
                 <Globe className='h-5 w-5' />
               </a>
               <a
-                href='mailto:info@grantthrive.com'
+                href='/contact'
                 className='text-gray-400 hover:text-white transition-colors'
-                aria-label='Email'
+                aria-label='Contact GrantThrive'
               >
                 <Mail className='h-5 w-5' />
               </a>
-              <a
-                href='tel:+61391249824'
+              <Link
+                to='/contact'
                 className='text-gray-400 hover:text-white transition-colors'
-                aria-label='Phone'
+                aria-label='Contact GrantThrive'
               >
-                <Phone className='h-5 w-5' />
-              </a>
+                <MessageSquare className='h-5 w-5' />
+              </Link>
             </div>
           </div>
 
@@ -864,16 +896,15 @@ function Footer() {
             <ul className='space-y-2 text-gray-400'>
               <li className='flex items-center space-x-2'>
                 <Mail className='h-4 w-4 flex-shrink-0' />
-                <a
-                  href='mailto:info@grantthrive.com'
-                  className='hover:text-white transition-colors'
-                >
-                  info@grantthrive.com
-                </a>
+                <Link to='/contact' className='hover:text-white transition-colors'>
+                  Send a message
+                </Link>
               </li>
               <li className='flex items-center space-x-2'>
-                <Phone className='h-4 w-4 flex-shrink-0' />
-                <span>AU &amp; NZ: +61 3 9124&#8209;9824</span>
+                <MessageSquare className='h-4 w-4 flex-shrink-0' />
+                <Link to='/contact' className='hover:text-white transition-colors'>
+                  Contact form
+                </Link>
               </li>
               <li className='flex items-center space-x-2'>
                 <MapPin className='h-4 w-4 flex-shrink-0' />
@@ -1774,11 +1805,38 @@ function ContactPage() {
     type: 'demo',
   })
   const [submitted, setSubmitted] = useState(false)
+  const [turnstileToken, setTurnstileToken] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [formError, setFormError] = useState('')
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0)
+  const handleContactToken = useCallback((token) => {
+    setTurnstileToken(token)
+    setFormError('')
+  }, [])
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    // In production this would POST to the backend API
-    setSubmitted(true)
+    if (!turnstileToken || isSubmitting) return
+    setIsSubmitting(true)
+    setFormError('')
+    try {
+      await submitPublicForm('/contact', {
+        type: formData.type,
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        organisation: formData.council.trim(),
+        phone: formData.phone.trim(),
+        message: formData.message.trim(),
+        turnstile_token: turnstileToken,
+      })
+      setSubmitted(true)
+    } catch (error) {
+      setTurnstileToken('')
+      setTurnstileResetKey((current) => current + 1)
+      setFormError(error.message || 'We could not send your message. Please try again.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleChange = (e) => {
@@ -1909,12 +1967,19 @@ function ContactPage() {
                     placeholder='Tell us about your grant management needs...'
                   />
                 </div>
+                <TurnstileWidget
+                  action='contact'
+                  onToken={handleContactToken}
+                  resetKey={turnstileResetKey}
+                />
+                {formError && <p className='text-sm text-red-700' role='alert'>{formError}</p>}
                 <Button
                   type='submit'
                   className='w-full bg-primary hover:bg-primary/90'
+                  disabled={isSubmitting || !turnstileToken}
                 >
                   <Send className='mr-2 h-4 w-4' />
-                  Send Message
+                  {isSubmitting ? 'Sending…' : 'Send Message'}
                 </Button>
               </form>
             </CardContent>
@@ -1923,7 +1988,7 @@ function ContactPage() {
           <div className='space-y-8'>
             <div>
               <h2 className='text-2xl font-bold text-gray-900 mb-6'>
-                Contact Information
+                Contact GrantThrive
               </h2>
               <div className='space-y-4'>
                 <div className='flex items-start gap-4'>
@@ -1931,13 +1996,8 @@ function ContactPage() {
                     <Mail className='h-5 w-5 text-primary' />
                   </div>
                   <div>
-                    <p className='font-semibold'>Email</p>
-                    <a
-                      href='mailto:info@grantthrive.com'
-                      className='text-primary hover:underline'
-                    >
-                      info@grantthrive.com
-                    </a>
+                    <p className='font-semibold'>Message us securely</p>
+                    <p className='text-gray-600'>Use the form to book a demo, ask a question or request support.</p>
                   </div>
                 </div>
                 <div className='flex items-start gap-4'>
@@ -1946,12 +2006,7 @@ function ContactPage() {
                   </div>
                   <div>
                     <p className='font-semibold'>Phone</p>
-                    <a
-                      href='tel:+61391249824'
-                      className='text-primary hover:underline'
-                    >
-                      +61 3 9124&#8209;9824 (AU &amp; NZ)
-                    </a>
+                    <p className='text-gray-600'>Please use the contact form and the team will respond as soon as possible.</p>
                   </div>
                 </div>
                 <div className='flex items-start gap-4'>

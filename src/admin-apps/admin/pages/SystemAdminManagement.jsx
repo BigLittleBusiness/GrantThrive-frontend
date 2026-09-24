@@ -216,7 +216,7 @@ function AdminFormModal({ admin, onClose, onSaved }) {
               type="email"
               value={form.email}
               onChange={set('email')}
-              placeholder="jane@grantthrive.com"
+              placeholder="admin@example.invalid"
               className={errors.email ? 'border-red-500' : ''}
             />
             {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email}</p>}
