@@ -17,8 +17,9 @@ function loadTurnstile() {
     const script = document.createElement('script');
     script.id = TURNSTILE_SCRIPT_ID;
     script.src = TURNSTILE_SCRIPT_URL;
-    script.async = true;
-    script.defer = true;
+    // Explicit rendering is invoked after this script's load event. Do not
+    // combine async/defer with turnstile.ready(), which Cloudflare rejects.
+    script.async = false;
     script.onload = () => resolve(window.turnstile);
     script.onerror = () => reject(new Error('Turnstile failed to load.'));
     document.head.appendChild(script);
@@ -58,41 +59,34 @@ export default function TurnstileWidget({
       .then((turnstile) => {
         if (!isActive || !turnstile || !containerRef.current) return;
 
-        turnstile.ready(() => {
-          if (!isActive || !containerRef.current) return;
-          widgetIdRef.current = turnstile.render(containerRef.current, {
-            sitekey: siteKey,
-            action,
-            theme,
-            size,
-            callback: (token) => {
-              if (!isActive) return;
-              setError('');
-              onToken(token);
-            },
-            'expired-callback': () => {
-              if (!isActive) return;
-              onToken('');
-              setError('Verification expired. Please complete it again.');
-            },
-            'error-callback': (errorCode) => {
-              if (!isActive) return;
-              // Keep the provider code available to authorised diagnostics
-              // without disclosing implementation details to visitors.
-              console.warn('[GrantThrive] Turnstile error', errorCode);
-              window.__grantthriveTurnstileDiagnostic = { errorCode };
-              onToken('');
-              setError('Verification could not load. Please refresh and try again.');
-              return true;
-            },
-          });
+        widgetIdRef.current = turnstile.render(containerRef.current, {
+          sitekey: siteKey,
+          action,
+          theme,
+          size,
+          callback: (token) => {
+            if (!isActive) return;
+            setError('');
+            onToken(token);
+          },
+          'expired-callback': () => {
+            if (!isActive) return;
+            onToken('');
+            setError('Verification expired. Please complete it again.');
+          },
+          'error-callback': (errorCode) => {
+            if (!isActive) return;
+            // Keep the provider code available to authorised diagnostics
+            // without disclosing implementation details to visitors.
+            console.warn('[GrantThrive] Turnstile error', errorCode);
+            onToken('');
+            setError('Verification could not load. Please refresh and try again.');
+            return true;
+          },
         });
       })
-      .catch((error) => {
+      .catch(() => {
         if (!isActive) return;
-        window.__grantthriveTurnstileDiagnostic = {
-          bootstrapError: error instanceof Error ? error.message : String(error),
-        };
         onToken('');
         setError('Verification could not load. Please refresh and try again.');
       });
