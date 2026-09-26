@@ -75,10 +75,14 @@ export default function TurnstileWidget({
               onToken('');
               setError('Verification expired. Please complete it again.');
             },
-            'error-callback': () => {
+            'error-callback': (errorCode) => {
               if (!isActive) return;
+              // Keep the provider code available to authorised diagnostics
+              // without disclosing implementation details to visitors.
+              console.warn('[GrantThrive] Turnstile error', errorCode);
               onToken('');
               setError('Verification could not load. Please refresh and try again.');
+              return true;
             },
           });
         });
