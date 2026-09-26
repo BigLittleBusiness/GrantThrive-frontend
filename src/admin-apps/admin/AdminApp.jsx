@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import CouncilManagement from './pages/CouncilManagement.jsx';
 import AdminApprovalDashboard from '../portal/pages/council-admin/AdminApprovalDashboard.jsx';
 import SystemAdminManagement from './pages/SystemAdminManagement.jsx';
 import PricingManagement from './pages/PricingManagement.jsx';
 import TwilioConfig from './pages/TwilioConfig.jsx';
 import PlatformSettings from './pages/PlatformSettings.jsx';
+import PublicSubmissions from './pages/PublicSubmissions.jsx';
 import { useAdminAuth } from './hooks/useAdminAuth.js';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card';
 import { Badge } from '@shared/components/ui/badge';
@@ -52,6 +53,7 @@ import {
   CreditCard,
   UserCheck,
   UserCog,
+  ClipboardList,
   AlertCircle,
   Info,
   LogOut,
@@ -59,7 +61,11 @@ import {
 import './AdminApp.css';
 
 const AdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState(() => (
+    typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('tab') === 'form-submissions'
+      ? 'form-submissions'
+      : 'overview'
+  ));
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { user: adminUser, logout } = useAdminAuth();
   const adminDisplayName = adminUser?.full_name || adminUser?.first_name || adminUser?.email || 'System administrator';
@@ -110,6 +116,7 @@ const AdminDashboard = () => {
 
     { id: 'data',      label: 'Data Pipeline',       icon: Database },
     { id: 'analytics', label: 'Analytics',           icon: BarChart3 },
+    { id: 'form-submissions', label: 'Form Submissions', icon: ClipboardList },
     { id: 'support',   label: 'Support',             icon: MessageSquare },
     { id: 'security',  label: 'Security',            icon: Shield },
     { id: 'pricing',  label: 'Pricing Management',  icon: CreditCard },
@@ -135,6 +142,14 @@ const AdminDashboard = () => {
     };
     return variants[status] || variants['Inactive'];
   };
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const url = new URL(window.location.href);
+    if (activeTab === 'form-submissions') url.searchParams.set('tab', 'form-submissions');
+    else url.searchParams.delete('tab');
+    window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+  }, [activeTab]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -508,11 +523,14 @@ const AdminDashboard = () => {
           {/* Twilio / SMS Configuration */}
           {activeTab === 'sms' && <TwilioConfig />}
 
+          {/* Database-first contact and waitlist submissions */}
+          {activeTab === 'form-submissions' && <PublicSubmissions />}
+
           {/* Platform settings and control map */}
           {activeTab === 'settings' && <PlatformSettings onNavigate={setActiveTab} />}
 
           {/* Placeholder for tabs still under development */}
-          {activeTab !== 'overview' && activeTab !== 'councils' && activeTab !== 'approvals' && activeTab !== 'staff' && activeTab !== 'pricing' && activeTab !== 'sms' && activeTab !== 'settings' && (
+          {activeTab !== 'overview' && activeTab !== 'councils' && activeTab !== 'approvals' && activeTab !== 'staff' && activeTab !== 'pricing' && activeTab !== 'sms' && activeTab !== 'form-submissions' && activeTab !== 'settings' && (
             <div className="text-center py-12">
               <div className="text-gray-400 mb-4">
                 <Settings className="w-16 h-16 mx-auto" />
