@@ -85,8 +85,11 @@ export default function TurnstileWidget({
           },
         });
       })
-      .catch(() => {
+      .catch((error) => {
         if (!isActive) return;
+        window.__grantthriveTurnstileDiagnostic = {
+          renderError: error instanceof Error ? error.message : String(error),
+        };
         onToken('');
         setError('Verification could not load. Please refresh and try again.');
       });
