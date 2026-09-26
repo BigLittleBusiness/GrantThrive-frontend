@@ -6,14 +6,12 @@ const TURNSTILE_SCRIPT_URL = 'https://challenges.cloudflare.com/turnstile/v0/api
 function loadTurnstile() {
   if (window.turnstile) return Promise.resolve(window.turnstile);
 
-  return new Promise((resolve, reject) => {
-    const existing = document.getElementById(TURNSTILE_SCRIPT_ID);
-    if (existing) {
-      existing.addEventListener('load', () => resolve(window.turnstile), { once: true });
-      existing.addEventListener('error', () => reject(new Error('Turnstile failed to load.')), { once: true });
-      return;
-    }
+  // The static pre-renderer serialises the page HTML. A script injected during
+  // that pass cannot be reused by a visitor's browser, so replace it with a
+  // fresh runtime script if the Turnstile API has not actually initialised.
+  document.getElementById(TURNSTILE_SCRIPT_ID)?.remove();
 
+  return new Promise((resolve, reject) => {
     const script = document.createElement('script');
     script.id = TURNSTILE_SCRIPT_ID;
     script.src = TURNSTILE_SCRIPT_URL;
@@ -42,6 +40,7 @@ export default function TurnstileWidget({
   className = '',
 }) {
   const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
+  const isStaticPrerender = /HeadlessChrome/i.test(navigator.userAgent);
   const containerRef = useRef(null);
   const widgetIdRef = useRef(null);
   const onTokenRef = useRef(onToken);
@@ -53,6 +52,8 @@ export default function TurnstileWidget({
 
   useEffect(() => {
     let isActive = true;
+
+    if (isStaticPrerender) return undefined;
 
     if (!siteKey) {
       setError('Verification is being configured. Please try again shortly.');
@@ -81,10 +82,7 @@ export default function TurnstileWidget({
           },
           'error-callback': (errorCode) => {
             if (!isActive) return;
-            // Keep the provider code available to authorised diagnostics
-            // without disclosing implementation details to visitors.
             console.warn('[GrantThrive] Turnstile error', errorCode);
-            window.__grantthriveTurnstileDiagnostic = { errorCode };
             onTokenRef.current('');
             setError('Verification could not load. Please refresh and try again.');
             return true;
@@ -93,9 +91,7 @@ export default function TurnstileWidget({
       })
       .catch((error) => {
         if (!isActive) return;
-        window.__grantthriveTurnstileDiagnostic = {
-          renderError: error instanceof Error ? error.message : String(error),
-        };
+        console.warn('[GrantThrive] Turnstile failed to initialise', error);
         onTokenRef.current('');
         setError('Verification could not load. Please refresh and try again.');
       });
@@ -107,7 +103,7 @@ export default function TurnstileWidget({
       }
       widgetIdRef.current = null;
     };
-  }, [action, siteKey, size, theme]);
+  }, [action, isStaticPrerender, siteKey, size, theme]);
 
   useEffect(() => {
     if (widgetIdRef.current !== null && window.turnstile?.reset) {
