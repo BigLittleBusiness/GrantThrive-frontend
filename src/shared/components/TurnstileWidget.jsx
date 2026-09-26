@@ -44,14 +44,19 @@ export default function TurnstileWidget({
   const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
   const containerRef = useRef(null);
   const widgetIdRef = useRef(null);
+  const onTokenRef = useRef(onToken);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    onTokenRef.current = onToken;
+  }, [onToken]);
 
   useEffect(() => {
     let isActive = true;
 
     if (!siteKey) {
       setError('Verification is being configured. Please try again shortly.');
-      onToken('');
+      onTokenRef.current('');
       return undefined;
     }
 
@@ -67,11 +72,11 @@ export default function TurnstileWidget({
           callback: (token) => {
             if (!isActive) return;
             setError('');
-            onToken(token);
+            onTokenRef.current(token);
           },
           'expired-callback': () => {
             if (!isActive) return;
-            onToken('');
+            onTokenRef.current('');
             setError('Verification expired. Please complete it again.');
           },
           'error-callback': (errorCode) => {
@@ -80,7 +85,7 @@ export default function TurnstileWidget({
             // without disclosing implementation details to visitors.
             console.warn('[GrantThrive] Turnstile error', errorCode);
             window.__grantthriveTurnstileDiagnostic = { errorCode };
-            onToken('');
+            onTokenRef.current('');
             setError('Verification could not load. Please refresh and try again.');
             return true;
           },
@@ -91,7 +96,7 @@ export default function TurnstileWidget({
         window.__grantthriveTurnstileDiagnostic = {
           renderError: error instanceof Error ? error.message : String(error),
         };
-        onToken('');
+        onTokenRef.current('');
         setError('Verification could not load. Please refresh and try again.');
       });
 
@@ -102,7 +107,7 @@ export default function TurnstileWidget({
       }
       widgetIdRef.current = null;
     };
-  }, [action, onToken, siteKey, size, theme]);
+  }, [action, siteKey, size, theme]);
 
   useEffect(() => {
     if (widgetIdRef.current !== null && window.turnstile?.reset) {
