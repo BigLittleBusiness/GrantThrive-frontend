@@ -6,6 +6,7 @@ import CouncilStaffProfile from '../pages/council-staff/Profile.jsx';
 import PendingApprovals from '../pages/council-staff/PendingApprovals.jsx';
 
 import AdminApprovalDashboard from '../pages/council-admin/AdminApprovalDashboard.jsx';
+import CommunicationSettings from '../pages/council-admin/CommunicationSettings.jsx';
 
 import GrantsListing from '../pages/community/GrantsListing.jsx';
 import GrantDetails from '../pages/community/GrantDetails.jsx';
@@ -149,6 +150,19 @@ export default function CouncilStaffRoutes({
             onLogout={handleLogout}
           >
             <CommunityForum {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="staff/communication-settings"
+        element={
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COUNCIL_STAFF]}
+            onLogout={handleLogout}
+          >
+            <CommunicationSettings {...pageProps} />
           </ProtectedRoute>
         }
       />

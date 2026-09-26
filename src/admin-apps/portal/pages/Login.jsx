@@ -59,16 +59,27 @@ const handleLogin = async (e) => {
 
     onLogin?.(data.user);
   } catch (error) {
-    console.error('Login error:', error);
+    // Classify the error type without leaking backend detail to the user.
+    // Security best practice: credential errors use a single generic message
+    // so that attackers cannot enumerate valid email addresses.
     const isPending =
       error.message?.toLowerCase().includes('pending') ||
       error.message?.toLowerCase().includes('approval');
+    const isNetwork =
+      error.message?.toLowerCase().includes('network') ||
+      error.message?.toLowerCase().includes('connect') ||
+      error.message?.toLowerCase().includes('fetch') ||
+      error.message?.toLowerCase().includes('500') ||
+      error.message?.toLowerCase().includes('502') ||
+      error.message?.toLowerCase().includes('503');
     setLoginAttempt({
       success: false,
       isPending,
       message: isPending
-        ? 'Your account is awaiting admin approval. You will be notified by email.'
-        : error.message || 'Unable to connect to the server. Please try again.',
+        ? 'Your account is awaiting admin approval. You will be notified by email once it has been reviewed.'
+        : isNetwork
+        ? 'We could not reach the server. Please check your connection and try again.'
+        : 'The email address or password you entered is incorrect. Please try again.',
     });
   } finally {
     setIsLoading(false);
@@ -76,7 +87,7 @@ const handleLogin = async (e) => {
 };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-8">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center py-8">
       <div className="max-w-md w-full px-4">
         <Card className="bg-white shadow-xl">
           <CardHeader className="text-center pb-6">
@@ -128,6 +139,7 @@ const handleLogin = async (e) => {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -141,11 +153,11 @@ const handleLogin = async (e) => {
                     type="checkbox"
                     checked={formData.rememberMe}
                     onChange={(e) => handleInputChange('rememberMe', e.target.checked)}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="rounded border-gray-300 text-green-700 focus:ring-green-500"
                   />
                   <span className="ml-2 text-sm text-gray-600">Remember me</span>
                 </label>
-                <a href="mailto:support@grantthrive.com" className="text-sm text-blue-600 hover:text-blue-500">
+                <a href="/portal/forgot-password" className="text-sm text-green-700 hover:text-green-800 font-medium">
                   Forgot password?
                 </a>
               </div>
@@ -199,7 +211,7 @@ const handleLogin = async (e) => {
             <div className="text-center pt-4 border-t">
               <p className="text-sm text-gray-600">
                 Don't have an account?{' '}
-                <a href="/portal/register" className="text-blue-600 hover:text-blue-500 font-medium">
+                <a href="/portal/register" className="text-green-700 hover:text-green-800 font-medium">
                   Register here
                 </a>
               </p>

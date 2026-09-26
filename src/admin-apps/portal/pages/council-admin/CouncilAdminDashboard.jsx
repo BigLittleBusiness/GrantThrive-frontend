@@ -246,7 +246,21 @@ const CouncilAdminDashboard = ({ user, onNavigate, onLogout }) => {
       </div>
 
       {/* Secondary Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <Button variant="outline" className="h-12" onClick={() => onNavigate('analytics')}>
+          <BarChart3 className="w-4 h-4 mr-2" />
+          Analytics
+        </Button>
+        <Button variant="outline" className="h-12" onClick={() => onNavigate('review-workflow')}>
+          <ClipboardList className="w-4 h-4 mr-2" />
+          Review Workflow
+        </Button>
+        <Button variant="outline" className="h-12" onClick={() => onNavigate('winners-showcase')}>
+          <CheckCircle className="w-4 h-4 mr-2" />
+          Winners Showcase
+        </Button>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <Button variant="outline" className="h-12" onClick={() => onNavigate('community-voting')}>
           <Vote className="w-4 h-4 mr-2" />
           Community Voting
@@ -258,10 +272,6 @@ const CouncilAdminDashboard = ({ user, onNavigate, onLogout }) => {
         <Button variant="outline" className="h-12" onClick={() => onNavigate('grant-map')}>
           <Map className="w-4 h-4 mr-2" />
           Grant Map
-        </Button>
-        <Button variant="outline" className="h-12" onClick={() => onNavigate('winners-showcase')}>
-          <CheckCircle className="w-4 h-4 mr-2" />
-          Winners Showcase
         </Button>
       </div>
 
@@ -376,7 +386,7 @@ const CouncilAdminDashboard = ({ user, onNavigate, onLogout }) => {
                     </span>
                   </div>
                   <div className="flex gap-2 mt-3">
-                    <Button size="sm" className="flex-1" onClick={() => onNavigate('grant-details')}>
+                    <Button size="sm" className="flex-1" onClick={() => onNavigate('review-workflow', { applicationId: app.id })}>
                       <Eye className="w-4 h-4 mr-1" />
                       Review
                     </Button>
@@ -434,7 +444,7 @@ const CouncilAdminDashboard = ({ user, onNavigate, onLogout }) => {
                   
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-600">Deadline: {program.deadline}</span>
-                    <Button size="sm" variant="outline" onClick={() => onNavigate('grant-details')}>
+                    <Button size="sm" variant="outline" onClick={() => onNavigate('grants', { grantId: program.id })}>
                       <Settings className="w-4 h-4 mr-1" />
                       Manage
                     </Button>

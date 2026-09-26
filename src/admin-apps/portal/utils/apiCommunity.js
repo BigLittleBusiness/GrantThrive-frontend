@@ -76,6 +76,37 @@ export function mixInto(proto) {
     return this.put(`/api/community/applications/${id}`, data)
   }
 
+  // ── Application Documents (S3-backed) ─────────────────────────────────────
+
+  /** List document metadata for an application. */
+  proto.communityListApplicationDocuments = function (applicationId) {
+    return this.get(`/api/applications/${applicationId}/documents`)
+  }
+
+  /**
+   * Upload a supporting document for an application.
+   * @param {string|number} applicationId
+   * @param {File} file
+   */
+  proto.communityUploadApplicationDocument = function (applicationId, file) {
+    const form = new FormData()
+    form.append('file', file)
+    return this.request(`/api/applications/${applicationId}/documents`, {
+      method: 'POST',
+      body: form,
+    })
+  }
+
+  /** Get a pre-signed S3 download URL for a document. */
+  proto.communityGetApplicationDocumentDownloadUrl = function (applicationId, documentId) {
+    return this.get(`/api/applications/${applicationId}/documents/${documentId}`)
+  }
+
+  /** Delete an application document. */
+  proto.communityDeleteApplicationDocument = function (applicationId, documentId) {
+    return this.delete(`/api/applications/${applicationId}/documents/${documentId}`)
+  }
+
   // ── Notifications ─────────────────────────────────────────────────────────────
 
   /** Fetch the community member's notifications. */

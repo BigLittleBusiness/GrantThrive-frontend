@@ -1,0 +1,8 @@
+aws_region                 = "ap-southeast-2"
+project_name               = "granthrive"
+environment                = "prod"
+domain_name                = "grantthrive.com"
+uat_domain_name            = "app.uat.grantthrive.com"
+route53_zone_id            = "Z123456EXAMPLE"
+cloudfront_certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate/00000000-0000-0000-0000-000000000000"
+force_destroy              = false

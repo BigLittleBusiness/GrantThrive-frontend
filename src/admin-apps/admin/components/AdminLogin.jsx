@@ -387,7 +387,7 @@ export default function AdminLogin({ onAuthenticated }) {
                     autoComplete="username"
                     value={email}
                     onChange={e => setEmail(e.target.value)}
-                    placeholder="admin@grantthrive.com"
+                    placeholder="admin@example.invalid"
                     required
                     disabled={isDisabled}
                     aria-required="true"

@@ -92,7 +92,7 @@ export default function CompetitiveComparison({ councilSize, features = {} }) {
                   <CardTitle className="text-green-800">GrantThrive</CardTitle>
                   <Badge className="bg-green-600">Recommended</Badge>
                 </div>
-                <CardDescription>Revolutionary community-centric platform</CardDescription>
+                <CardDescription>Purpose-built grant management for local government</CardDescription>
               </CardHeader>
               <CardContent className="pt-6">
                 <div className="space-y-4">
@@ -133,11 +133,11 @@ export default function CompetitiveComparison({ councilSize, features = {} }) {
               </CardContent>
             </Card>
 
-            {/* SmartyGrants Card */}
+            {/* The Old Way Card */}
             <Card className="border-2 border-gray-200">
               <CardHeader className="bg-gray-50">
-                <CardTitle className="text-gray-800">SmartyGrants</CardTitle>
-                <CardDescription>Traditional grant management system</CardDescription>
+                <CardTitle className="text-gray-800">The Old Way</CardTitle>
+                <CardDescription>Legacy grant management — clunky, costly, and desktop-only</CardDescription>
               </CardHeader>
               <CardContent className="pt-6">
                 <div className="space-y-4">
@@ -204,7 +204,7 @@ export default function CompetitiveComparison({ councilSize, features = {} }) {
                   <YAxis tickFormatter={(value) => formatCurrency(value)} />
                   <Tooltip formatter={(value) => formatCurrency(value)} />
                   <Bar dataKey="GrantThrive" fill="#10b981" name="GrantThrive" />
-                  <Bar dataKey="SmartyGrants" fill="#6b7280" name="SmartyGrants" />
+                  <Bar dataKey="SmartyGrants" fill="#6b7280" name="The Old Way" />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -225,7 +225,7 @@ export default function CompetitiveComparison({ councilSize, features = {} }) {
                 </CardTitle>
                 {categoryKey === 'community' && (
                   <CardDescription className="text-blue-600 font-medium">
-                    Revolutionary features exclusive to GrantThrive
+                    Features exclusive to GrantThrive
                   </CardDescription>
                 )}
               </CardHeader>
@@ -236,7 +236,7 @@ export default function CompetitiveComparison({ councilSize, features = {} }) {
                       <tr className="border-b">
                         <th className="text-left py-2 font-medium">Feature</th>
                         <th className="text-center py-2 font-medium">GrantThrive</th>
-                        <th className="text-center py-2 font-medium">SmartyGrants</th>
+                        <th className="text-center py-2 font-medium">The Old Way</th>
                       </tr>
                     </thead>
                     <tbody>

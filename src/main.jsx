@@ -84,8 +84,16 @@ function App() {
   );
 }
 
-createRoot(document.getElementById('root')).render(
+// Dispatch 'render-event' after React mounts so vite-plugin-prerender
+// (Puppeteer renderer) knows the page is ready to snapshot.
+const root = createRoot(document.getElementById('root'));
+root.render(
   <StrictMode>
     <App />
   </StrictMode>
 );
+
+// Fire after the first paint so all route-level useEffect SEO hooks have run.
+requestAnimationFrame(() => {
+  document.dispatchEvent(new Event('render-event'));
+});

@@ -18,7 +18,8 @@ import {
   Edit,
   Download,
   LogOut,
-  ClipboardList
+  ClipboardList,
+  MapPin
 } from 'lucide-react';
 
 const CouncilStaffDashboard = ({ user, onNavigate, onLogout }) => {
@@ -199,9 +200,9 @@ const CouncilStaffDashboard = ({ user, onNavigate, onLogout }) => {
           <User className="w-4 h-4 mr-2" />
           My Profile
         </Button>
-        <Button variant="outline" className="h-12" onClick={() => onNavigate('community-forum')}>
-          <Calendar className="w-4 h-4 mr-2" />
-          Community Events
+        <Button variant="outline" className="h-12" onClick={() => onNavigate('grant-map')}>
+          <MapPin className="w-4 h-4 mr-2" />
+          Grant Map
         </Button>
       </div>
 
@@ -321,7 +322,7 @@ const CouncilStaffDashboard = ({ user, onNavigate, onLogout }) => {
                     </div>
 
                     <div className="flex gap-2">
-                      <Button size="sm" className="flex-1" onClick={() => onNavigate('grant-details')}>
+                      <Button size="sm" className="flex-1" onClick={() => onNavigate('review-workflow', { applicationId: app.id })}>
                         <Eye className="w-4 h-4 mr-1" />
                         Review
                       </Button>
@@ -329,7 +330,7 @@ const CouncilStaffDashboard = ({ user, onNavigate, onLogout }) => {
                         <MessageSquare className="w-4 h-4 mr-1" />
                         Contact
                       </Button>
-                      <Button size="sm" variant="outline" onClick={() => onNavigate('grant-details')}>
+                      <Button size="sm" variant="outline" onClick={() => onNavigate('review-workflow', { applicationId: app.id })}>
                         <Edit className="w-4 h-4 mr-1" />
                         Update
                       </Button>

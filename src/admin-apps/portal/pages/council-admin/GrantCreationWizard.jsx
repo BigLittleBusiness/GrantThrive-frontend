@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, ArrowRight, Save, Eye, CheckCircle, FileText, Calendar, Settings, Lightbulb, DollarSign, Users, Clock, UserCheck, UserX, Plus, Minus, Loader2, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Save, Eye, CheckCircle, FileText, Calendar, Settings, DollarSign, Users, Clock, UserCheck, UserX, Plus, Minus, Loader2, X } from 'lucide-react';
+import GrantSuggestionsPanel from '../../components/grant/GrantSuggestionsPanel.jsx';
 import apiClient from '../../utils/api.js';
 
 const GrantCreationWizard = ({ onNavigate, council }) => {
@@ -31,6 +32,7 @@ const GrantCreationWizard = ({ onNavigate, council }) => {
   const [draftSaving, setDraftSaving] = useState(false);
   const [draftSaved, setDraftSaved] = useState(false);
   const [grantId, setGrantId] = useState(null); // set after first save
+  const [stepError, setStepError] = useState('');
 
   const steps = [
     { id: 1, title: 'Basic Details',    icon: FileText,     description: 'Grant program information' },
@@ -95,6 +97,17 @@ const GrantCreationWizard = ({ onNavigate, council }) => {
   };
 
   const nextStep = () => {
+    setStepError('');
+    if (currentStep === 1) {
+      if (!formData.title.trim()) { setStepError('Grant title is required.'); return; }
+      if (!formData.category) { setStepError('Please select a category.'); return; }
+      if (!formData.description.trim()) { setStepError('A description is required.'); return; }
+      if (!formData.eligibility.trim()) { setStepError('Eligibility criteria are required.'); return; }
+    }
+    if (currentStep === 2) {
+      if (!formData.fundingAmount || parseFloat(formData.fundingAmount) <= 0) { setStepError('A valid funding amount is required.'); return; }
+      if (!formData.applicationDeadline) { setStepError('An application deadline is required.'); return; }
+    }
     if (currentStep < 5) setCurrentStep(currentStep + 1);
   };
 
@@ -266,33 +279,20 @@ const GrantCreationWizard = ({ onNavigate, council }) => {
               </div>
             </div>
 
-            {/* AI Assistant Sidebar */}
+            {/* AI Assistant Sidebar — suggestions are advisory-only and never applied automatically. */}
             <div className="xl:col-span-1">
-              <div className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 rounded-xl p-8 shadow-lg sticky top-8">
-                <div className="flex items-center mb-6">
-                  <div className="bg-green-700 p-3 rounded-lg mr-4">
-                    <Lightbulb className="h-6 w-6 text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold text-blue-900">AI Assistant</h3>
-                </div>
-                <div className="space-y-4">
-                  <div className="bg-white p-4 rounded-lg border border-blue-200 shadow-sm">
-                    <p className="text-sm font-medium text-blue-800">💡 Consider adding community impact criteria to attract high-quality applications</p>
-                  </div>
-                  <div className="bg-white p-4 rounded-lg border border-blue-200 shadow-sm">
-                    <p className="text-sm font-medium text-blue-800">💰 Suggested funding range: $5,000-$50,000 for community development grants</p>
-                  </div>
-                  <div className="bg-white p-4 rounded-lg border border-blue-200 shadow-sm">
-                    <p className="text-sm font-medium text-blue-800">🌱 Include sustainability requirements to ensure long-term project success</p>
-                  </div>
-                  <div className="bg-white p-4 rounded-lg border border-blue-200 shadow-sm">
-                    <p className="text-sm font-medium text-blue-800">🤝 Add partnership opportunities to encourage collaboration</p>
-                  </div>
-                  <div className="bg-white p-4 rounded-lg border border-blue-200 shadow-sm">
-                    <p className="text-sm font-medium text-blue-800">📅 Consider multi-year project support for larger initiatives</p>
-                  </div>
-                </div>
-              </div>
+              <GrantSuggestionsPanel
+                grantDraft={{
+                  title: formData.title,
+                  category: formData.category,
+                  description: formData.description,
+                  eligibility_criteria: formData.eligibility ? [formData.eligibility] : [],
+                  required_documents: formData.requiredDocs,
+                  ...(formData.fundingAmount ? { total_budget: formData.fundingAmount } : {}),
+                  ...(formData.applicationDeadline ? { closes_at: formData.applicationDeadline } : {}),
+                  ...(formData.reviewProcess ? { assessment_criteria: [formData.reviewProcess] } : {}),
+                }}
+              />
             </div>
           </div>
         );
@@ -767,6 +767,13 @@ const GrantCreationWizard = ({ onNavigate, council }) => {
         <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-12 mb-12">
           {renderStepContent()}
         </div>
+
+        {/* Step validation error */}
+        {stepError && (
+          <div className="max-w-4xl mx-auto mb-4 p-3 bg-red-50 border border-red-300 rounded-lg text-red-700 text-sm font-medium">
+            {stepError}
+          </div>
+        )}
 
         {/* Professional Navigation */}
         <div className="flex items-center justify-between max-w-4xl mx-auto">

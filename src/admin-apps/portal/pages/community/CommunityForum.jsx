@@ -240,15 +240,15 @@ function PostCard({ post, user, isAdmin, editingId, editBody, setEditingId, setE
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
           {canPin && (
-            <button onClick={() => onPin(post)} title={post.is_pinned ? 'Unpin' : 'Pin'}
+            <button onClick={() => onPin(post)} title={post.is_pinned ? 'Unpin' : 'Pin'} aria-label={post.is_pinned ? 'Unpin post' : 'Pin post'}
               className="p-1 text-gray-400 hover:text-yellow-600 rounded"><Pin size={14} /></button>
           )}
           {canEdit && !isEditing && (
-            <button onClick={() => { setEditingId(post.id); setEditBody(post.body); }}
+            <button onClick={() => { setEditingId(post.id); setEditBody(post.body); }} aria-label="Edit post"
               className="p-1 text-gray-400 hover:text-blue-600 rounded"><Edit2 size={14} /></button>
           )}
           {canDel && !isDeleting && (
-            <button onClick={() => setDeleteId(post.id)}
+            <button onClick={() => setDeleteId(post.id)} aria-label="Delete post"
               className="p-1 text-gray-400 hover:text-red-600 rounded"><Trash2 size={14} /></button>
           )}
         </div>
@@ -290,7 +290,7 @@ function ForumThread({ user, forum: initialForum, onBack }) {
   const [editBody, setEditBody]   = useState('');
   const [deleteId, setDeleteId]   = useState(null);
   const bottomRef = useRef(null);
-  const isAdmin = user?.role === 'council_admin';
+  const isAdmin = user?.role === 'council_admin' || user?.role === 'council_staff';
 
   const load = useCallback(async () => {
     setLoading(true); setError('');

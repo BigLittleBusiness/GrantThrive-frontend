@@ -4,6 +4,8 @@ import AdminApprovalDashboard from '../portal/pages/council-admin/AdminApprovalD
 import SystemAdminManagement from './pages/SystemAdminManagement.jsx';
 import PricingManagement from './pages/PricingManagement.jsx';
 import TwilioConfig from './pages/TwilioConfig.jsx';
+import PlatformSettings from './pages/PlatformSettings.jsx';
+import { useAdminAuth } from './hooks/useAdminAuth.js';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/components/ui/card';
 import { Badge } from '@shared/components/ui/badge';
 import { Button } from '@shared/components/ui/button';
@@ -51,13 +53,22 @@ import {
   UserCheck,
   UserCog,
   AlertCircle,
-  Info
+  Info,
+  LogOut,
 } from 'lucide-react';
 import './AdminApp.css';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { user: adminUser, logout } = useAdminAuth();
+  const adminDisplayName = adminUser?.full_name || adminUser?.first_name || adminUser?.email || 'System administrator';
+  const adminInitials = adminDisplayName
+    .split(/[\s@._-]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('') || 'AD';
 
   // Sample data for the dashboard
   const dashboardStats = {
@@ -196,10 +207,26 @@ const AdminDashboard = () => {
                 <Badge variant="destructive" className="ml-2">3</Badge>
               </Button>
               
-              <Avatar>
-                <AvatarImage src="/api/placeholder/32/32" />
-                <AvatarFallback>AD</AvatarFallback>
-              </Avatar>
+              <div className="hidden items-center gap-2 lg:flex">
+                <Avatar>
+                  <AvatarFallback>{adminInitials}</AvatarFallback>
+                </Avatar>
+                <div className="max-w-36">
+                  <p className="truncate text-sm font-medium text-gray-900">{adminDisplayName}</p>
+                  <p className="text-xs text-gray-500">System admin</p>
+                </div>
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => { void logout(); }}
+                aria-label="Log out of GrantThrive system administration"
+                title="Log out"
+              >
+                <LogOut className="w-4 h-4 sm:mr-2" aria-hidden="true" />
+                <span className="hidden sm:inline">Log out</span>
+              </Button>
             </div>
           </div>
         </header>
@@ -481,8 +508,11 @@ const AdminDashboard = () => {
           {/* Twilio / SMS Configuration */}
           {activeTab === 'sms' && <TwilioConfig />}
 
+          {/* Platform settings and control map */}
+          {activeTab === 'settings' && <PlatformSettings onNavigate={setActiveTab} />}
+
           {/* Placeholder for tabs still under development */}
-          {activeTab !== 'overview' && activeTab !== 'councils' && activeTab !== 'approvals' && activeTab !== 'staff' && activeTab !== 'pricing' && activeTab !== 'sms' && (
+          {activeTab !== 'overview' && activeTab !== 'councils' && activeTab !== 'approvals' && activeTab !== 'staff' && activeTab !== 'pricing' && activeTab !== 'sms' && activeTab !== 'settings' && (
             <div className="text-center py-12">
               <div className="text-gray-400 mb-4">
                 <Settings className="w-16 h-16 mx-auto" />

@@ -11,6 +11,9 @@ import AccountBilling from '../pages/council-admin/AccountBilling.jsx';
 import CouncilAdminProfile from '../pages/council-admin/Profile.jsx';
 import PricingPage from '../pages/council-admin/PricingPage.jsx';
 import PendingApprovals from '../pages/council-staff/PendingApprovals.jsx';
+import Analytics from '../pages/council-admin/Analytics.jsx';
+import ApplicationReviewWorkflow from '../pages/council-admin/ApplicationReviewWorkflow.jsx';
+import WinnersShowcase from '../pages/community/WinnersShowcase.jsx';
 import GrantsListing from '../pages/community/GrantsListing.jsx';
 import GrantDetails from '../pages/community/GrantDetails.jsx';
 import CommunityForum from '../pages/community/CommunityForum.jsx';
@@ -231,6 +234,45 @@ export default function CouncilAdminRoutes({
             onLogout={handleLogout}
           >
             <PendingApprovals {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="council/analytics"
+        element={
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COUNCIL_ADMIN]}
+            onLogout={handleLogout}
+          >
+            <Analytics {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="council/review-workflow"
+        element={
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COUNCIL_ADMIN]}
+            onLogout={handleLogout}
+          >
+            <ApplicationReviewWorkflow {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="council/winners-showcase"
+        element={
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COUNCIL_ADMIN]}
+            onLogout={handleLogout}
+          >
+            <WinnersShowcase {...pageProps} />
           </ProtectedRoute>
         }
       />

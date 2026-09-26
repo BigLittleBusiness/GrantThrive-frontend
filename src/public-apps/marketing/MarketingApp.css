@@ -39,42 +39,64 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  /* GrantThrive Brand Tokens — derived from logo gradient */
+  --gt-navy:   #001A6A;  /* gradient start — darkest */
+  --gt-blue:   #064F85;  /* gradient mid-blue */
+  --gt-teal:   #06898A;  /* gradient midpoint */
+  --gt-green:  #0D8C66;  /* gradient mid-green */
+  --gt-lime:   #04B802;  /* gradient end — brightest */
+  --gt-charcoal: #151A23; /* body text */
+  --gt-navy-wordmark: #0F1B2E; /* Variant B wordmark */
+  --gt-dark-bg: #0D1B3E; /* unified dark section background */
+  /* WCAG 2.1 AA accessible text variants (4.5:1+ on white) */
+  --gt-teal-text: #057070;   /* darkened from #06898A — use for body text only */
+  --gt-green-text: #0A7055;  /* darkened from #0D8C66 — use for body text only */
+  /* Note: #06898A and #0D8C66 pass AA for large text (14px bold+) and UI components */
 }
 
 :root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --foreground: oklch(0.118 0.025 255); /* #151A23 charcoal */
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.118 0.025 255);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  /* GrantThrive Brand Colors */
-  --primary: oklch(0.45 0.15 145); /* GrantThrive Green — #15803d */
+  --popover-foreground: oklch(0.118 0.025 255);
+
+  /* Primary = logo teal/green midpoint #06898A */
+  --primary: oklch(0.52 0.10 192);
   --primary-foreground: oklch(0.985 0 0);
+
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.6 0.15 160); /* GrantThrive Green */
+
+  /* Accent = logo green #0D8C66 */
+  --accent: oklch(0.55 0.12 162);
   --accent-foreground: oklch(0.985 0 0);
+
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.45 0.15 145); /* GrantThrive Green */
-  --chart-2: oklch(0.35 0.12 145); /* GrantThrive Dark Green */
-  --chart-3: oklch(0.7 0.18 280); /* GrantThrive Purple */
-  --chart-4: oklch(0.65 0.2 40); /* GrantThrive Orange */
-  --chart-5: oklch(0.55 0.15 320); /* GrantThrive Pink */
+  --ring: oklch(0.52 0.10 192);
+
+  /* Charts — all from logo gradient */
+  --chart-1: oklch(0.52 0.10 192);  /* teal */
+  --chart-2: oklch(0.55 0.12 162);  /* green */
+  --chart-3: oklch(0.35 0.14 255);  /* navy */
+  --chart-4: oklch(0.42 0.12 220);  /* mid-blue */
+  --chart-5: oklch(0.65 0.14 145);  /* lime */
+
   --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.45 0.15 145); /* GrantThrive Green */
+  --sidebar-foreground: oklch(0.118 0.025 255);
+  --sidebar-primary: oklch(0.52 0.10 192);
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.97 0 0);
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar-ring: oklch(0.52 0.10 192);
 }
 
 .dark {
@@ -84,26 +106,26 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.55 0.15 145); /* GrantThrive Green — lighter for dark mode */
+  --primary: oklch(0.62 0.10 192);
   --primary-foreground: oklch(0.145 0 0);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
   --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.7 0.15 160); /* Lighter green for dark mode */
+  --accent: oklch(0.65 0.12 162);
   --accent-foreground: oklch(0.145 0 0);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.55 0.15 145); /* GrantThrive Green dark mode */
-  --chart-2: oklch(0.65 0.15 160);
-  --chart-3: oklch(0.8 0.18 280);
-  --chart-4: oklch(0.75 0.2 40);
-  --chart-5: oklch(0.65 0.15 320);
+  --chart-1: oklch(0.62 0.10 192);
+  --chart-2: oklch(0.65 0.12 162);
+  --chart-3: oklch(0.55 0.14 255);
+  --chart-4: oklch(0.55 0.12 220);
+  --chart-5: oklch(0.75 0.14 145);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.55 0.15 145); /* GrantThrive Green dark mode */
+  --sidebar-primary: oklch(0.62 0.10 192);
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
@@ -120,11 +142,47 @@
   }
 }
 
-/* GrantThrive Custom Styles */
+/* ─── GrantThrive Brand Colour System ──────────────────────────────────────
+   All values derived from the logo gradient:
+   Navy #001A6A → Mid-blue #064F85 → Teal #06898A → Green #0D8C66 → Lime #04B802
+   Wordmark: Dark navy #0F1B2E (Variant B)
+   Dark backgrounds: #0D1B3E (unified across hero, ROI section, footer)
+   ──────────────────────────────────────────────────────────────────────── */
+
+/* Hero gradient — navy to teal, matching logo gradient direction */
 .hero-gradient {
-  background: linear-gradient(135deg, 
-    oklch(0.45 0.15 145) 0%, 
-    oklch(0.35 0.12 145) 100%);
+  background: linear-gradient(135deg,
+    #001A6A 0%,
+    #064F85 40%,
+    #06898A 70%,
+    #0D8C66 100%);
+}
+
+/* Unified dark section background — replaces bg-gray-900 and bg-gradient-to-r from-blue-600 to-green-600 */
+.gt-dark-section {
+  background-color: #0D1B3E;
+}
+
+/* Brand gradient for text highlights */
+.text-gradient {
+  background: linear-gradient(135deg,
+    #06898A,
+    #04B802);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Brand gradient for icon backgrounds — replaces per-card colour classes */
+.gt-icon-gradient {
+  background: linear-gradient(135deg, #001A6A, #06898A);
+}
+
+/* Subtle brand tint for light section backgrounds */
+.gt-tint-bg {
+  background: linear-gradient(135deg,
+    rgba(6, 137, 138, 0.06) 0%,
+    rgba(4, 184, 2, 0.04) 100%);
 }
 
 .feature-card-hover {
@@ -134,15 +192,6 @@
 .feature-card-hover:hover {
   transform: translateY(-4px);
   box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 10px 10px -5px rgb(0 0 0 / 0.04);
-}
-
-.text-gradient {
-  background: linear-gradient(135deg, 
-    oklch(0.45 0.15 145), 
-    oklch(0.55 0.15 160));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
 
 .animate-float {

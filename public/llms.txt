@@ -1,0 +1,55 @@
+# GrantThrive
+
+> Purpose-built grant management software for Australian and New Zealand local government councils.
+
+GrantThrive is a SaaS platform that replaces manual and legacy grant administration workflows for local councils. It covers the full grant lifecycle — from grant program creation and community applications through to staff review, approval, reporting, and community engagement.
+
+## What GrantThrive Does
+
+GrantThrive serves three user roles within a council:
+
+- **Council Administrators** create and publish grant programs, manage staff, review analytics, and configure the platform.
+- **Council Staff** review and assess incoming applications, score submissions, communicate with applicants, and manage the review pipeline.
+- **Community Members** discover available grants, submit applications, track their application status, and participate in community voting on grant priorities.
+
+## Key Features
+
+- **Grant Creation Wizard** — step-by-step guided workflow for council admins to design and publish grant programs with eligibility criteria, funding ranges, and review timelines.
+- **Application Management** — structured application forms, document uploads, and status tracking for community members.
+- **Review Workflow** — scoring rubrics, staff assignment, collaborative review, and decision recording for council staff.
+- **Community Voting** — advisory (non-binding) community input on grant priorities, visible to council decision-makers.
+- **Interactive Grant Mapping** — public map showing active and historical grants across the council area.
+- **Analytics & Reporting** — grant program performance metrics, application trends, budget utilisation, and automated monthly PDF reports.
+- **Resource Hub** — council-managed library of guides, templates, and videos for applicants.
+- **QR Code Integration** — auto-generated QR codes for each grant program for physical promotion.
+- **Automated Monthly Reports** — PDF performance reports emailed to council admins on the 1st of each month.
+
+## Who It Is For
+
+Local government councils in Australia and New Zealand that currently manage grants through spreadsheets, email, or legacy grant software. Typical customers are councils with 1–10 active grant programs per year and between 50 and 500 community applications per round.
+
+## Pricing
+
+Three tiers: Small Council, Medium Council, and Large Council. Pricing is based on council size and the number of active grant programs. An optional SMS add-on is available for applicant notifications. See https://grantthrive.com/pricing for current rates.
+
+## Data & Security
+
+All data is hosted on AWS in the Sydney region (ap-southeast-2). The platform uses field-level encryption for personally identifiable information and Argon2id password hashing. SOC 2 certification is in progress.
+
+## Key Pages
+
+- Homepage: https://grantthrive.com/
+- Features: https://grantthrive.com/features
+- Pricing: https://grantthrive.com/pricing
+- ROI Calculator: https://grantthrive.com/roi-calculator
+- Resources: https://grantthrive.com/resources
+- Contact: https://grantthrive.com/contact
+- Interactive Grant Map: https://grantthrive.com/map
+
+## Do Not Index
+
+The portal application at https://app.grantthrive.com/portal/ contains authenticated user data and should not be indexed or summarised. The admin interface at https://app.grantthrive.com/admin/ is restricted to platform administrators and should not be indexed.
+
+## Contact
+
+Use the protected contact form at https://grantthrive.com/contact for demos, support and general enquiries.

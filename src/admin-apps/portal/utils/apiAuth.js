@@ -104,6 +104,25 @@ export function mixInto(proto) {
     return { success: true, message: response.message }
   }
 
+  // ── Password reset ─────────────────────────────────────────────────────────
+
+  /**
+   * Request a password reset email.
+   * POST /auth/forgot-password  { email }
+   * Always resolves (server avoids email enumeration).
+   */
+  proto.forgotPassword = async function (email) {
+    return this.post('/auth/forgot-password', { email })
+  }
+
+  /**
+   * Complete a password reset using the token from the email link.
+   * POST /auth/reset-password  { token, new_password }
+   */
+  proto.resetPassword = async function (token, newPassword) {
+    return this.post('/auth/reset-password', { token, new_password: newPassword })
+  }
+
   // ── Health ──────────────────────────────────────────────────────────────────
 
   /** Platform health check — no auth required. */

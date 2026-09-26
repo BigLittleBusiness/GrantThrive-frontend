@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import apiClient from './utils/api.js';
 import { TenantProvider, useTenant } from '@shared/tenancy/TenantContext';
 import {
   Routes,
@@ -10,6 +11,8 @@ import {
 
 import Login from './pages/Login.jsx';
 import Registration from './pages/Registration.jsx';
+import ForgotPassword from './pages/ForgotPassword.jsx';
+import ResetPassword from './pages/ResetPassword.jsx';
 
 import CouncilAdminRoutes from './routes/CouncilAdminRoutes.jsx';
 import CouncilStaffRoutes from './routes/CouncilStaffRoutes.jsx';
@@ -75,6 +78,10 @@ function ProtectedRoute({ user, allowedRoles, onLogout, children }) {
 function PortalInner() {
   const { council, isLoading: tenantLoading } = useTenant();
   const [currentUser, setCurrentUser] = useState(null);
+  // authInitialised prevents the auth guards from firing before localStorage
+  // has been read — avoids a race condition where currentUser is briefly null
+  // on first render even when a valid session exists.
+  const [authInitialised, setAuthInitialised] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -84,12 +91,38 @@ function PortalInner() {
     const storedToken = localStorage.getItem('gt_auth_token');
 
     if (storedUser && storedToken) {
-      try {
-        setCurrentUser(JSON.parse(storedUser));
-      } catch {
-        localStorage.removeItem('gt_auth_user');
-        localStorage.removeItem('gt_auth_token');
-      }
+      // Validate the stored token against the backend before trusting it.
+      // This prevents a stale/expired session from auto-redirecting to the dashboard.
+      apiClient.setToken(storedToken);
+      apiClient.verifyToken()
+        .then((verifiedUser) => {
+          if (verifiedUser) {
+            // Token is valid — restore the session
+            try {
+              setCurrentUser(JSON.parse(storedUser));
+            } catch {
+              localStorage.removeItem('gt_auth_user');
+              localStorage.removeItem('gt_auth_token');
+            }
+          } else {
+            // Token is invalid or expired — clear the stale session
+            localStorage.removeItem('gt_auth_user');
+            localStorage.removeItem('gt_auth_token');
+            apiClient.setToken(null);
+          }
+        })
+        .catch(() => {
+          // Network error during verification — clear session to be safe
+          localStorage.removeItem('gt_auth_user');
+          localStorage.removeItem('gt_auth_token');
+          apiClient.setToken(null);
+        })
+        .finally(() => {
+          setAuthInitialised(true);
+        });
+    } else {
+      // No stored session — mark as initialised immediately
+      setAuthInitialised(true);
     }
   }, []);
 
@@ -130,7 +163,9 @@ function PortalInner() {
   const isAuthRoute = useMemo(
     () =>
       location.pathname === '/portal/login' ||
-      location.pathname === '/portal/register',
+      location.pathname === '/portal/register' ||
+      location.pathname === '/portal/forgot-password' ||
+      location.pathname === '/portal/reset-password',
     [location.pathname]
   );
 
@@ -172,7 +207,9 @@ function PortalInner() {
     [currentUser, council, handleLogout, handleNavigate]
   );
 
-  if (tenantLoading) {
+  // Do not render auth guards until both the tenant and the auth session
+  // have been fully resolved. This prevents the login-redirect race condition.
+  if (tenantLoading || !authInitialised) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -206,6 +243,14 @@ function PortalInner() {
       <Route
         path="register"
         element={<Registration council={council} onLogin={handleLogin} />}
+      />
+      <Route
+        path="forgot-password"
+        element={<ForgotPassword council={council} />}
+      />
+      <Route
+        path="reset-password"
+        element={<ResetPassword council={council} />}
       />
 
       {/* Generic /portal entry */}

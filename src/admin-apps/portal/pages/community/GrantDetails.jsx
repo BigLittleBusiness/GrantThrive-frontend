@@ -154,9 +154,6 @@ const GrantDetails = ({ user, council, onNavigate, onLogout }) => {
       case 'twitter':
         window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`);
         break;
-      case 'email':
-        window.location.href = `mailto:?subject=${encodeURIComponent(grant.title)}&body=${encodeURIComponent(text + ' ' + url)}`;
-        break;
       default:
         navigator.clipboard.writeText(url);
         alert('Link copied to clipboard!');
@@ -447,9 +444,7 @@ const GrantDetails = ({ user, council, onNavigate, onLogout }) => {
               <CardContent className="space-y-3">
                 <div className="flex items-center gap-3">
                   <Mail className="w-4 h-4 text-gray-500" />
-                  <a href={`mailto:${grant.contact.email}`} className="text-blue-600 hover:underline">
-                    {grant.contact.email}
-                  </a>
+                  <span className="text-gray-700">Contact details are available through the grant application process.</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <Phone className="w-4 h-4 text-gray-500" />
@@ -524,10 +519,6 @@ const GrantDetails = ({ user, council, onNavigate, onLogout }) => {
                 <Twitter className="w-4 h-4 mr-2" />
                 Twitter
               </Button>
-              <Button onClick={() => shareGrant('email')} variant="outline">
-                <Mail className="w-4 h-4 mr-2" />
-                Email
-              </Button>
               <Button onClick={() => shareGrant('copy')} variant="outline">
                 <ExternalLink className="w-4 h-4 mr-2" />
                 Copy Link
@@ -548,4 +539,3 @@ const GrantDetails = ({ user, council, onNavigate, onLogout }) => {
 };
 
 export default GrantDetails;
-

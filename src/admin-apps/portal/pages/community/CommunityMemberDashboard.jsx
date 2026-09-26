@@ -197,7 +197,7 @@ const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
           <div className="flex flex-wrap gap-3">
             <Button
               className="rounded-xl bg-emerald-700 hover:bg-emerald-800"
-              onClick={() => onNavigate('community/grants')}
+              onClick={() => onNavigate('grants')}
             >
               Browse grants
             </Button>
@@ -310,7 +310,7 @@ const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
                     <p className="mt-1 text-sm">Browse available grants to get started.</p>
                     <Button
                       className="mt-4 rounded-xl bg-emerald-700 hover:bg-emerald-800"
-                      onClick={() => onNavigate('community/grants')}
+                      onClick={() => onNavigate('grants')}
                     >
                       Browse grants
                     </Button>
@@ -379,7 +379,7 @@ const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
                               <Button
                                 size="sm"
                                 className="flex-1 rounded-xl"
-                                onClick={() => onNavigate('community/grant-details')}
+                                onClick={() => onNavigate('grant-details', { grantId: app.grant_id || app.id })}
                               >
                                 <Eye className="mr-1 h-4 w-4" />
                                 View
@@ -390,7 +390,7 @@ const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
                                   size="sm"
                                   variant="outline"
                                   className="rounded-xl"
-                                  onClick={() => onNavigate('community/application-form')}
+                                  onClick={() => onNavigate('application-form', { grantId: app.grant_id || app.id, applicationId: app.id })}
                                 >
                                   Update
                                 </Button>
@@ -407,7 +407,7 @@ const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
                   <Button
                     variant="outline"
                     className="w-full rounded-xl"
-                    onClick={() => onNavigate('community/grants')}
+                    onClick={() => onNavigate('grants')}
                   >
                     Browse more grants
                     <ArrowRight className="ml-2 h-4 w-4" />
@@ -429,7 +429,7 @@ const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
                   variant="outline"
                   size="sm"
                   className="rounded-xl"
-                  onClick={() => onNavigate('community/grants')}
+                  onClick={() => onNavigate('grants')}
                 >
                   View all
                 </Button>
@@ -482,14 +482,14 @@ const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
                       <div className="mt-5 flex gap-2">
                         <Button
                           className="flex-1 rounded-xl bg-emerald-700 hover:bg-emerald-800"
-                          onClick={() => onNavigate('community/application-form')}
+                          onClick={() => onNavigate('application-form', { grantId: grant.id })}
                         >
                           Apply now
                         </Button>
                         <Button
                           variant="outline"
                           className="rounded-xl"
-                          onClick={() => onNavigate('community/grant-details')}
+                          onClick={() => onNavigate('grant-details', { grantId: grant.id })}
                         >
                           Details
                         </Button>
@@ -552,7 +552,7 @@ const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
                   <Button
                     variant="outline"
                     className="rounded-xl"
-                    onClick={() => onNavigate('community/resource-hub')}
+                    onClick={() => onNavigate('resource-hub')}
                   >
                     <BookOpen className="mr-2 h-4 w-4" />
                     Resources
@@ -560,7 +560,7 @@ const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
                   <Button
                     variant="outline"
                     className="rounded-xl"
-                    onClick={() => onNavigate('community/community-forum')}
+                    onClick={() => onNavigate('community-forum')}
                   >
                     <MessageSquare className="mr-2 h-4 w-4" />
                     Forum
@@ -577,7 +577,7 @@ const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
                 <Button
                   variant="outline"
                   className="justify-start rounded-xl"
-                  onClick={() => onNavigate('community/community-voting')}
+                  onClick={() => onNavigate('community-voting')}
                 >
                   <Vote className="mr-2 h-4 w-4" />
                   Community voting
@@ -585,7 +585,7 @@ const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
                 <Button
                   variant="outline"
                   className="justify-start rounded-xl"
-                  onClick={() => onNavigate('community/grant-map')}
+                  onClick={() => onNavigate('grant-map')}
                 >
                   <Map className="mr-2 h-4 w-4" />
                   Grant map
@@ -593,7 +593,7 @@ const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
                 <Button
                   variant="outline"
                   className="justify-start rounded-xl"
-                  onClick={() => onNavigate('community/winners-showcase')}
+                  onClick={() => onNavigate('winners-showcase')}
                 >
                   <Trophy className="mr-2 h-4 w-4" />
                   Winners showcase
@@ -601,7 +601,7 @@ const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
                 <Button
                   variant="outline"
                   className="justify-start rounded-xl"
-                  onClick={() => onNavigate('community/transparency')}
+                  onClick={() => onNavigate('transparency')}
                 >
                   <Eye className="mr-2 h-4 w-4" />
                   Transparency dashboard
@@ -609,7 +609,7 @@ const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
                 <Button
                   variant="outline"
                   className="justify-start rounded-xl"
-                  onClick={() => onNavigate('community/public-results')}
+                  onClick={() => onNavigate('public-results')}
                 >
                   <FileText className="mr-2 h-4 w-4" />
                   Public results

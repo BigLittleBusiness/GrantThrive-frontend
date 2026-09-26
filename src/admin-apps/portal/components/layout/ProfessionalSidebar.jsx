@@ -35,6 +35,7 @@ import {
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import { useAuth } from '../../contexts/AuthContext';
+import grantThriveLogo from '../../assets/grantthrive_logo_growth_concept.png';
 
 const drawerWidth = 280;
 
@@ -275,13 +276,10 @@ const ProfessionalSidebar = ({ open, onClose, selectedItem, onItemSelect }) => {
       <SidebarHeader>
         <Box
           component="img"
-          src="/logo-icon.png"
+          src={grantThriveLogo}
           alt="GrantThrive"
-          sx={{ height: 32, width: 32 }}
+          sx={{ height: 36, width: 'auto' }}
         />
-        <Typography variant="h6" sx={{ fontWeight: 600, color: 'primary.main' }}>
-          GrantThrive
-        </Typography>
       </SidebarHeader>
 
       {/* Quick Action */}

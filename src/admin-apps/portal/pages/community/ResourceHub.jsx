@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import CommunityNavbar from '../../components/layout/CommunityNavbar.jsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card.jsx';
 import { Badge } from '@shared/components/ui/badge.jsx';
@@ -32,7 +32,8 @@ import {
   Lightbulb
 } from 'lucide-react';
 
-const ResourceHub = ({ user, onNavigate, onLogout }) => {
+const ResourceHub = ({ user, council, onNavigate, onLogout }) => {
+  const councilName = council?.name || 'Your Council';
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
@@ -59,152 +60,37 @@ const ResourceHub = ({ user, onNavigate, onLogout }) => {
     { id: 'tool', name: 'Tool', icon: Lightbulb, color: 'bg-yellow-100 text-yellow-800' }
   ];
 
-  // Enhanced resources data
-  const resources = [
-    {
-      id: 1,
-      title: 'Getting Started with Grant Applications',
-      description: 'Learn the basics of grant applications and get up and running quickly with our comprehensive starter guide.',
-      type: 'guide',
-      category: 'guides',
-      readTime: '8 min read',
-      downloads: 221,
-      views: 1456,
-      rating: 4.8,
-      reviews: 34,
-      author: 'Mount Isa Council',
-      publishDate: '2024-03-15',
-      tags: ['beginner', 'applications', 'getting-started'],
-      isFeatured: true,
-      fileSize: '2.3 MB',
-      format: 'PDF'
-    },
-    {
-      id: 2,
-      title: 'How to Use the Admin Panel',
-      description: 'Complete walkthrough of the administrative features and how to manage your grant programs effectively.',
-      type: 'video',
-      category: 'videos',
-      duration: '4:30',
-      downloads: 95,
-      views: 892,
-      rating: 4.6,
-      reviews: 18,
-      author: 'Sarah Johnson',
-      publishDate: '2024-03-10',
-      tags: ['admin', 'tutorial', 'management'],
-      isFeatured: true,
-      fileSize: '45 MB',
-      format: 'MP4'
-    },
-    {
-      id: 3,
-      title: 'Grant Application Checklist Template',
-      description: 'Comprehensive checklist template to ensure you don\'t miss any important steps in your application process.',
-      type: 'template',
-      category: 'templates',
-      readTime: '2 min read',
-      downloads: 178,
-      views: 567,
-      rating: 4.9,
-      reviews: 22,
-      author: 'Community Team',
-      publishDate: '2024-03-08',
-      tags: ['checklist', 'template', 'organization'],
-      isFeatured: false,
-      fileSize: '1.1 MB',
-      format: 'DOCX'
-    },
-    {
-      id: 4,
-      title: 'Best Practices for Project Management',
-      description: 'Discover effective strategies for managing community projects from planning to completion.',
-      type: 'guide',
-      category: 'guides',
-      readTime: '8 min read',
-      downloads: 340,
-      views: 1234,
-      rating: 4.7,
-      reviews: 45,
-      author: 'Project Management Team',
-      publishDate: '2024-03-05',
-      tags: ['project-management', 'best-practices', 'planning'],
-      isFeatured: true,
-      fileSize: '3.2 MB',
-      format: 'PDF'
-    },
-    {
-      id: 5,
-      title: 'Budget Planning Spreadsheet',
-      description: 'Professional budget template with formulas and categories specifically designed for grant applications.',
-      type: 'template',
-      category: 'templates',
-      readTime: '5 min setup',
-      downloads: 267,
-      views: 789,
-      rating: 4.8,
-      reviews: 31,
-      author: 'Finance Team',
-      publishDate: '2024-03-01',
-      tags: ['budget', 'spreadsheet', 'financial-planning'],
-      isFeatured: false,
-      fileSize: '2.8 MB',
-      format: 'XLSX'
-    },
-    {
-      id: 6,
-      title: 'Community Engagement Strategies',
-      description: 'Learn how to effectively engage your community and build support for your grant projects.',
-      type: 'video',
-      category: 'videos',
-      duration: '6:15',
-      downloads: 156,
-      views: 678,
-      rating: 4.5,
-      reviews: 28,
-      author: 'Community Outreach',
-      publishDate: '2024-02-28',
-      tags: ['community', 'engagement', 'outreach'],
-      isFeatured: false,
-      fileSize: '67 MB',
-      format: 'MP4'
-    },
-    {
-      id: 7,
-      title: 'Frequently Asked Questions',
-      description: 'Common questions and answers about the grant application process, eligibility, and requirements.',
-      type: 'faq',
-      category: 'faqs',
-      readTime: '10 min read',
-      downloads: 445,
-      views: 2134,
-      rating: 4.6,
-      reviews: 67,
-      author: 'Support Team',
-      publishDate: '2024-02-25',
-      tags: ['faq', 'support', 'common-questions'],
-      isFeatured: false,
-      fileSize: '1.5 MB',
-      format: 'PDF'
-    },
-    {
-      id: 8,
-      title: 'Grant Writing Workshop Recording',
-      description: 'Full recording of our popular grant writing workshop with expert tips and Q&A session.',
-      type: 'video',
-      category: 'videos',
-      duration: '45:30',
-      downloads: 89,
-      views: 456,
-      rating: 4.9,
-      reviews: 15,
-      author: 'Workshop Team',
-      publishDate: '2024-02-20',
-      tags: ['workshop', 'grant-writing', 'expert-tips'],
-      isFeatured: true,
-      fileSize: '234 MB',
-      format: 'MP4'
-    }
+  // Resources will be loaded from the backend API once connected.
+  // Empty array until council admin adds content via the admin portal.
+  const resources = [];
+
+  // Derived stats from live resources array
+  const totalDownloads = resources.reduce((sum, r) => sum + (r.downloads || 0), 0);
+  const avgRating = resources.length
+    ? (resources.reduce((sum, r) => sum + (r.rating || 0), 0) / resources.length).toFixed(1)
+    : '—';
+  const thisMonth = new Date();
+  const newThisMonth = resources.filter(r => {
+    if (!r.publishDate) return false;
+    const d = new Date(r.publishDate);
+    return d.getMonth() === thisMonth.getMonth() && d.getFullYear() === thisMonth.getFullYear();
+  }).length;
+
+  // Popular tags derived from resources
+  const popularTags = useMemo(() => {
+    const tagCounts = {};
+    resources.forEach(r => r.tags.forEach(t => { tagCounts[t] = (tagCounts[t] || 0) + 1; }));
+    return Object.entries(tagCounts).sort((a, b) => b[1] - a[1]).slice(0, 7).map(([t]) => t);
+  }, [resources]);
+
+  // Category counts derived from resources
+  const categoriesWithCounts = [
+    { id: 'all',       name: 'All Resources', count: resources.length },
+    { id: 'guides',    name: 'Guides',     count: resources.filter(r => r.category === 'guides').length,    icon: BookOpen },
+    { id: 'templates', name: 'Templates',  count: resources.filter(r => r.category === 'templates').length, icon: FileText },
+    { id: 'videos',    name: 'Videos',     count: resources.filter(r => r.category === 'videos').length,    icon: Video },
+    { id: 'faqs',      name: 'FAQs',       count: resources.filter(r => r.category === 'faqs').length,      icon: HelpCircle },
+    { id: 'tools',     name: 'Tools',      count: resources.filter(r => r.category === 'tools').length,     icon: Lightbulb },
   ];
 
   // Featured resources
@@ -291,7 +177,7 @@ const ResourceHub = ({ user, onNavigate, onLogout }) => {
 
           {/* Category Tabs */}
           <div className="flex flex-wrap gap-2 mb-6">
-            {categories.map(category => (
+            {categoriesWithCounts.map(category => (
               <button
                 key={category.id}
                 onClick={() => setSelectedCategory(category.id)}
@@ -324,7 +210,7 @@ const ResourceHub = ({ user, onNavigate, onLogout }) => {
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Featured Resources */}
-        {selectedCategory === 'all' && !searchTerm && (
+        {selectedCategory === 'all' && !searchTerm && featuredResources.length > 0 && (
           <div className="mb-8">
             <h2 className="text-2xl font-bold mb-6">Featured Resources</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -431,48 +317,52 @@ const ResourceHub = ({ user, onNavigate, onLogout }) => {
               </CardContent>
             </Card>
 
-            {/* Quick Stats */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Resource Statistics</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Total Resources</span>
-                    <span className="font-semibold">156</span>
+            {/* Quick Stats — only shown when resources exist */}
+            {resources.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Resource Statistics</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Total Resources</span>
+                      <span className="font-semibold">{resources.length}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Total Downloads</span>
+                      <span className="font-semibold">{totalDownloads.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Average Rating</span>
+                      <span className="font-semibold">{avgRating}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">New This Month</span>
+                      <span className="font-semibold text-green-600">{newThisMonth}</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Total Downloads</span>
-                    <span className="font-semibold">12,450</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Average Rating</span>
-                    <span className="font-semibold">4.7 ⭐</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">New This Month</span>
-                    <span className="font-semibold text-green-600">8</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
 
-            {/* Popular Tags */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Popular Tags</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {['beginner', 'template', 'guide', 'video', 'planning', 'budget', 'community'].map(tag => (
-                    <Badge key={tag} variant="outline" className="cursor-pointer hover:bg-gray-100">
-                      #{tag}
-                    </Badge>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            {/* Popular Tags — only shown when tags exist */}
+            {popularTags.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Popular Tags</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    {popularTags.map(tag => (
+                      <Badge key={tag} variant="outline" className="cursor-pointer hover:bg-gray-100">
+                        #{tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Main Content */}
@@ -492,6 +382,26 @@ const ResourceHub = ({ user, onNavigate, onLogout }) => {
 
             {/* Resources Grid */}
             <div className="space-y-4">
+              {sortedResources.length === 0 && (
+                <div className="text-center py-16 px-4">
+                  <BookOpen className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-700 mb-2">No resources yet</h3>
+                  <p className="text-gray-500 max-w-md mx-auto">
+                    {searchTerm || selectedCategory !== 'all' || selectedType !== 'all'
+                      ? 'No resources match your current filters. Try adjusting your search or clearing the filters.'
+                      : 'Resources, guides, and templates will appear here once your council adds them. Check back soon, or contact your council for assistance.'}
+                  </p>
+                  {(searchTerm || selectedCategory !== 'all' || selectedType !== 'all') && (
+                    <Button
+                      variant="outline"
+                      className="mt-4"
+                      onClick={() => { setSearchTerm(''); setSelectedCategory('all'); setSelectedType('all'); }}
+                    >
+                      Clear filters
+                    </Button>
+                  )}
+                </div>
+              )}
               {sortedResources.map(resource => {
                 const TypeIcon = getTypeIcon(resource.type);
                 return (

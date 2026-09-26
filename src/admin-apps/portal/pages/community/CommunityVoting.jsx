@@ -216,6 +216,10 @@ const CommunityVoting = ({ user, onNavigate, onLogout }) => {
           <p className="text-slate-600">
             Have your say in shaping your community's future. Vote for the projects that matter most to you.
           </p>
+          <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+            <span><strong>Advisory voting only.</strong> Community votes inform the council's decision-making process. Final funding decisions are made by the council in accordance with the Local Government Act.</span>
+          </div>
         </div>
 
         {/* Session selector (if multiple) */}
