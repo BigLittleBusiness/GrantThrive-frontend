@@ -1,12 +1,12 @@
-// Competitive Analysis Data for GrantThrive vs SmartyGrants
+// Competitive Analysis Data for GrantThrive vs LegacyPlatform
 // Based on market research and feature comparison
 
 export const COMPETITORS = {
-  SMARTYGRANTS: 'smartygrants',
+  LEGACY_PLATFORM: 'legacy-platform',
   MANUAL_PROCESS: 'manual'
 };
 
-export const SMARTYGRANTS_PRICING = {
+export const LEGACY_PLATFORM_PRICING = {
   small: {
     basePrice: 8000,      // Estimated annual cost for small councils
     setupFee: 3000,       // One-time setup fee
@@ -31,113 +31,113 @@ export const FEATURE_COMPARISON = {
   // Core Platform Features
   grantCreationWizard: {
     grantThrive: true,
-    smartyGrants: false,
+    legacyPlatform: false,
     description: "AI-powered step-by-step grant creation with templates"
   },
   applicationReviewWorkflow: {
     grantThrive: true,
-    smartyGrants: true,
+    legacyPlatform: true,
     description: "Structured review and scoring workflow"
   },
   automatedCommunications: {
     grantThrive: true,
-    smartyGrants: false,
+    legacyPlatform: false,
     description: "Automated emails, SMS, and notifications"
   },
   digitalDocumentManagement: {
     grantThrive: true,
-    smartyGrants: true,
+    legacyPlatform: true,
     description: "Cloud-based document storage and management"
   },
   realTimeAnalytics: {
     grantThrive: true,
-    smartyGrants: false,
+    legacyPlatform: false,
     description: "Live dashboards and performance metrics"
   },
   apiIntegrations: {
     grantThrive: true,
-    smartyGrants: false,
+    legacyPlatform: false,
     description: "15+ integrations with council systems"
   },
   mobileResponsiveDesign: {
     grantThrive: true,
-    smartyGrants: true,
+    legacyPlatform: true,
     description: "Fully responsive mobile interface"
   },
   cloudBasedSecurity: {
     grantThrive: true,
-    smartyGrants: true,
+    legacyPlatform: true,
     description: "Enterprise-grade security and compliance"
   },
 
   // Community Engagement Features (GrantThrive Unique)
   communityVoting: {
     grantThrive: true,
-    smartyGrants: false,
-    description: "Public voting on grant priorities and applications"
+    legacyPlatform: false,
+    description: "Advisory community input on grant priorities"
   },
   interactiveGrantMapping: {
     grantThrive: true,
-    smartyGrants: false,
+    legacyPlatform: false,
     description: "Visual map showing grant locations and outcomes"
   },
   publicTransparencyPortal: {
     grantThrive: true,
-    smartyGrants: false,
+    legacyPlatform: false,
     description: "Public portal showing grant outcomes and impact"
   },
   communityFeedbackSystem: {
     grantThrive: true,
-    smartyGrants: false,
+    legacyPlatform: false,
     description: "Collect and manage community feedback on grants"
   },
 
   // Advanced Features
   aiPoweredRecommendations: {
     grantThrive: true,
-    smartyGrants: false,
-    description: "AI suggests optimal grant allocations"
+    legacyPlatform: false,
+    description: "AI provides advisory drafting suggestions; people retain all decisions"
   },
   predictiveAnalytics: {
     grantThrive: true,
-    smartyGrants: false,
-    description: "Predict application success and community impact"
+    legacyPlatform: false,
+    description: "Aggregate application trends and community-impact indicators"
   },
   automatedReporting: {
     grantThrive: true,
-    smartyGrants: false,
+    legacyPlatform: false,
     description: "Auto-generate compliance and performance reports"
   },
   customWorkflows: {
     grantThrive: true,
-    smartyGrants: true,
+    legacyPlatform: true,
     description: "Configurable approval and review workflows"
   },
 
   // Integration Capabilities
   salesforceIntegration: {
     grantThrive: true,
-    smartyGrants: false,
+    legacyPlatform: false,
     description: "Native Salesforce CRM integration"
   },
   quickbooksIntegration: {
     grantThrive: true,
-    smartyGrants: false,
+    legacyPlatform: false,
     description: "Direct QuickBooks financial integration"
   },
   xeroIntegration: {
     grantThrive: true,
-    smartyGrants: false,
+    legacyPlatform: false,
     description: "Seamless Xero accounting integration"
   },
   myobIntegration: {
     grantThrive: true,
-    smartyGrants: false,
+    legacyPlatform: false,
     description: "MYOB financial system integration"
   },
   technologyOneIntegration: {
     grantThrive: true,
-    smartyGrants: false,
+    legacyPlatform: false,
     description: "TechnologyOne council system integration"
   }
 };
@@ -147,28 +147,28 @@ export function calculateCompetitiveAdvantage(councilSize, features = {}) {
     feature => FEATURE_COMPARISON[feature].grantThrive
   ).length;
 
-  const smartyGrantsFeatures = Object.keys(FEATURE_COMPARISON).filter(
-    feature => FEATURE_COMPARISON[feature].smartyGrants
+  const legacyPlatformFeatures = Object.keys(FEATURE_COMPARISON).filter(
+    feature => FEATURE_COMPARISON[feature].legacyPlatform
   ).length;
 
   const uniqueFeatures = Object.keys(FEATURE_COMPARISON).filter(
-    feature => FEATURE_COMPARISON[feature].grantThrive && !FEATURE_COMPARISON[feature].smartyGrants
+    feature => FEATURE_COMPARISON[feature].grantThrive && !FEATURE_COMPARISON[feature].legacyPlatform
   ).length;
 
-  const featureAdvantage = ((grantThriveFeatures - smartyGrantsFeatures) / smartyGrantsFeatures) * 100;
+  const featureAdvantage = ((grantThriveFeatures - legacyPlatformFeatures) / legacyPlatformFeatures) * 100;
 
   return {
     grantThriveFeatures,
-    smartyGrantsFeatures,
+    legacyPlatformFeatures,
     uniqueFeatures,
     featureAdvantage: Math.round(featureAdvantage),
-    competitiveGap: grantThriveFeatures - smartyGrantsFeatures
+    competitiveGap: grantThriveFeatures - legacyPlatformFeatures
   };
 }
 
-export function calculateSmartyGrantsTotalCost(councilSize, includeOneTimeFees = true) {
-  const pricing = SMARTYGRANTS_PRICING[councilSize];
-  if (!pricing) throw new Error('Invalid council size for SmartyGrants pricing');
+export function calculateLegacyPlatformTotalCost(councilSize, includeOneTimeFees = true) {
+  const pricing = LEGACY_PLATFORM_PRICING[councilSize];
+  if (!pricing) throw new Error('Invalid council size for LegacyPlatform pricing');
 
   const annualCost = pricing.basePrice + pricing.supportFee;
   const oneTimeCosts = includeOneTimeFees ? (pricing.setupFee + pricing.trainingFee) : 0;
@@ -186,7 +186,7 @@ export function calculateSmartyGrantsTotalCost(councilSize, includeOneTimeFees =
 }
 
 export function generateCompetitiveComparison(councilSize, grantThriveFeatures = {}) {
-  const smartyGrantsCosts = calculateSmartyGrantsTotalCost(councilSize);
+  const legacyPlatformCosts = calculateLegacyPlatformTotalCost(councilSize);
   const competitiveAdvantage = calculateCompetitiveAdvantage(councilSize, grantThriveFeatures);
 
   // Get GrantThrive costs from our pricing model
@@ -207,9 +207,9 @@ export function generateCompetitiveComparison(councilSize, grantThriveFeatures =
     if (grantThriveFeatures.grantMapping) grantThriveTotal += pricing.grantMapping;
   }
 
-  const annualSavings = smartyGrantsCosts.totalAnnualCost - grantThriveTotal;
-  const firstYearSavings = smartyGrantsCosts.firstYearTotal - grantThriveTotal;
-  const threeYearSavings = smartyGrantsCosts.threeYearTotal - (grantThriveTotal * 3);
+  const annualSavings = legacyPlatformCosts.totalAnnualCost - grantThriveTotal;
+  const firstYearSavings = legacyPlatformCosts.firstYearTotal - grantThriveTotal;
+  const threeYearSavings = legacyPlatformCosts.threeYearTotal - (grantThriveTotal * 3);
 
   return {
     grantThrive: {
@@ -219,12 +219,12 @@ export function generateCompetitiveComparison(councilSize, grantThriveFeatures =
       supportIncluded: true,
       features: competitiveAdvantage.grantThriveFeatures
     },
-    smartyGrants: {
-      annualCost: smartyGrantsCosts.totalAnnualCost,
-      setupFee: smartyGrantsCosts.setupFee,
-      trainingFee: smartyGrantsCosts.trainingFee,
-      firstYearTotal: smartyGrantsCosts.firstYearTotal,
-      features: competitiveAdvantage.smartyGrantsFeatures
+    legacyPlatform: {
+      annualCost: legacyPlatformCosts.totalAnnualCost,
+      setupFee: legacyPlatformCosts.setupFee,
+      trainingFee: legacyPlatformCosts.trainingFee,
+      firstYearTotal: legacyPlatformCosts.firstYearTotal,
+      features: competitiveAdvantage.legacyPlatformFeatures
     },
     comparison: {
       annualSavings: Math.round(annualSavings),
@@ -232,7 +232,7 @@ export function generateCompetitiveComparison(councilSize, grantThriveFeatures =
       threeYearSavings: Math.round(threeYearSavings),
       featureAdvantage: competitiveAdvantage.featureAdvantage,
       uniqueFeatures: competitiveAdvantage.uniqueFeatures,
-      savingsPercentage: Math.round((annualSavings / smartyGrantsCosts.totalAnnualCost) * 100)
+      savingsPercentage: Math.round((annualSavings / legacyPlatformCosts.totalAnnualCost) * 100)
     }
   };
 }
@@ -296,7 +296,7 @@ export function generateCompetitiveSummary(councilSize) {
       `~$${comparison.comparison.annualSavings.toLocaleString()} modelled annual savings`,
       `~$${comparison.comparison.firstYearSavings.toLocaleString()} modelled first-year savings (including setup costs)`,
       `${comparison.comparison.uniqueFeatures} exclusive community engagement features`,
-      `${comparison.grantThrive.features} total features vs ${comparison.smartyGrants.features} in legacy systems`,
+      `${comparison.grantThrive.features} total features vs ${comparison.legacyPlatform.features} in legacy systems`,
       'Setup, training, and support included at no extra cost'
     ],
     callToAction: "See how GrantThrive can transform grant management for your council"
