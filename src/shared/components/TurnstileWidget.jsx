@@ -80,6 +80,7 @@ export default function TurnstileWidget({
               // Keep the provider code available to authorised diagnostics
               // without disclosing implementation details to visitors.
               console.warn('[GrantThrive] Turnstile error', errorCode);
+              window.__grantthriveTurnstileDiagnostic = { errorCode };
               onToken('');
               setError('Verification could not load. Please refresh and try again.');
               return true;
@@ -87,8 +88,11 @@ export default function TurnstileWidget({
           });
         });
       })
-      .catch(() => {
+      .catch((error) => {
         if (!isActive) return;
+        window.__grantthriveTurnstileDiagnostic = {
+          bootstrapError: error instanceof Error ? error.message : String(error),
+        };
         onToken('');
         setError('Verification could not load. Please refresh and try again.');
       });
