@@ -28,6 +28,16 @@ jobs:
             git checkout main
             git reset --hard origin/main
 
+            CHROMIUM_PATH="$(command -v chromium || command -v chromium-browser || true)"
+            if [ -z "$CHROMIUM_PATH" ]; then
+              sudo apt-get update -qq
+              sudo apt-get install -y --no-install-recommends chromium || \
+                sudo apt-get install -y --no-install-recommends chromium-browser
+              CHROMIUM_PATH="$(command -v chromium || command -v chromium-browser || true)"
+            fi
+            test -n "$CHROMIUM_PATH"
+            export CHROMIUM_PATH
+
             pnpm install --frozen-lockfile
             pnpm build
 
