@@ -468,45 +468,45 @@ function ComparisonSection() {
     {
       feature: 'Community Voting System',
       grantThrive: true,
-      smartyGrants: false,
+      legacyPlatform: false,
     },
     {
       feature: 'Interactive Grant Mapping',
       grantThrive: true,
-      smartyGrants: false,
+      legacyPlatform: false,
     },
     {
       feature: 'AI-Powered Grant Creation',
       grantThrive: true,
-      smartyGrants: false,
+      legacyPlatform: false,
     },
     {
       feature: 'Real-time Analytics Dashboard',
       grantThrive: true,
-      smartyGrants: false,
+      legacyPlatform: false,
     },
     {
       feature: '15+ System Integrations',
       grantThrive: true,
-      smartyGrants: false,
+      legacyPlatform: false,
     },
     {
       feature: 'Mobile-Responsive Design',
       grantThrive: true,
-      smartyGrants: true,
+      legacyPlatform: true,
     },
     {
       feature: 'Basic Application Management',
       grantThrive: true,
-      smartyGrants: true,
+      legacyPlatform: true,
     },
-    { feature: 'Document Storage', grantThrive: true, smartyGrants: true },
+    { feature: 'Document Storage', grantThrive: true, legacyPlatform: true },
     {
       feature: 'Setup & Training Included',
       grantThrive: true,
-      smartyGrants: false,
+      legacyPlatform: false,
     },
-    { feature: 'Transparent Pricing', grantThrive: true, smartyGrants: false },
+    { feature: 'Transparent Pricing', grantThrive: true, legacyPlatform: false },
   ]
 
   return (
@@ -545,7 +545,7 @@ function ComparisonSection() {
                   </div>
                   <h3 className='font-bold text-gray-600'>The Old Way</h3>
                   <Badge variant='secondary' className='mt-1'>
-                    Outdated
+                    Legacy
                   </Badge>
                 </div>
               </div>
@@ -567,7 +567,7 @@ function ComparisonSection() {
                     )}
                   </div>
                   <div className='text-center'>
-                    {item.smartyGrants ? (
+                    {item.legacyPlatform ? (
                       <CheckCircle className='h-6 w-6 text-green-600 mx-auto' />
                     ) : (
                       <X className='h-6 w-6 text-red-400 mx-auto' />

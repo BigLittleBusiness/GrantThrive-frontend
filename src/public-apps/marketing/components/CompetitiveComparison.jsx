@@ -32,12 +32,12 @@ export default function CompetitiveComparison({ councilSize, features = {} }) {
     {
       name: 'Annual Subscription',
       GrantThrive: comparison.grantThrive.annualCost,
-      SmartyGrants: comparison.smartyGrants.annualCost
+      LegacyPlatform: comparison.legacyPlatform.annualCost
     },
     {
       name: 'First Year Total',
       GrantThrive: comparison.grantThrive.annualCost,
-      SmartyGrants: comparison.smartyGrants.firstYearTotal
+      LegacyPlatform: comparison.legacyPlatform.firstYearTotal
     }
   ];
 
@@ -137,13 +137,13 @@ export default function CompetitiveComparison({ councilSize, features = {} }) {
             <Card className="border-2 border-gray-200">
               <CardHeader className="bg-gray-50">
                 <CardTitle className="text-gray-800">The Old Way</CardTitle>
-                <CardDescription>Legacy grant management — clunky, costly, and desktop-only</CardDescription>
+                <CardDescription>A legacy grant management approach</CardDescription>
               </CardHeader>
               <CardContent className="pt-6">
                 <div className="space-y-4">
                   <div className="text-center">
                     <div className="text-3xl font-bold text-gray-600">
-                      {formatCurrency(comparison.smartyGrants.annualCost)}
+                      {formatCurrency(comparison.legacyPlatform.annualCost)}
                     </div>
                     <div className="text-sm text-gray-600">per year subscription</div>
                   </div>
@@ -152,25 +152,25 @@ export default function CompetitiveComparison({ councilSize, features = {} }) {
                     <div className="flex items-center justify-between">
                       <span>Setup Fee</span>
                       <span className="font-medium text-red-600">
-                        +{formatCurrency(comparison.smartyGrants.setupFee)}
+                        +{formatCurrency(comparison.legacyPlatform.setupFee)}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span>Training Fee</span>
                       <span className="font-medium text-red-600">
-                        +{formatCurrency(comparison.smartyGrants.trainingFee)}
+                        +{formatCurrency(comparison.legacyPlatform.trainingFee)}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span>Community Features</span>
+                      <span>Community Engagement Options</span>
                       <Badge variant="secondary" className="bg-red-100 text-red-800">
-                        Not Available
+                        Varies by provider
                       </Badge>
                     </div>
                     <div className="flex items-center justify-between">
                       <span>Total Features</span>
                       <Badge variant="secondary" className="bg-gray-100 text-gray-800">
-                        {comparison.smartyGrants.features}
+                        {comparison.legacyPlatform.features}
                       </Badge>
                     </div>
                   </div>
@@ -179,7 +179,7 @@ export default function CompetitiveComparison({ councilSize, features = {} }) {
                     <div className="flex items-center justify-between font-bold">
                       <span>First Year Total</span>
                       <span className="text-red-600">
-                        {formatCurrency(comparison.smartyGrants.firstYearTotal)}
+                        {formatCurrency(comparison.legacyPlatform.firstYearTotal)}
                       </span>
                     </div>
                   </div>
@@ -204,7 +204,7 @@ export default function CompetitiveComparison({ councilSize, features = {} }) {
                   <YAxis tickFormatter={(value) => formatCurrency(value)} />
                   <Tooltip formatter={(value) => formatCurrency(value)} />
                   <Bar dataKey="GrantThrive" fill="#10b981" name="GrantThrive" />
-                  <Bar dataKey="SmartyGrants" fill="#6b7280" name="The Old Way" />
+                  <Bar dataKey="LegacyPlatform" fill="#6b7280" name="The Old Way" />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -255,7 +255,7 @@ export default function CompetitiveComparison({ councilSize, features = {} }) {
                               <FeatureIcon available={feature.grantThrive} />
                             </td>
                             <td className="text-center py-3">
-                              <FeatureIcon available={feature.smartyGrants} />
+                              <FeatureIcon available={feature.legacyPlatform} />
                             </td>
                           </tr>
                         );
@@ -318,7 +318,7 @@ export default function CompetitiveComparison({ councilSize, features = {} }) {
           <Card className="border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50">
             <CardHeader>
               <CardTitle className="text-center text-blue-900">
-                Why GrantThrive is the Clear Choice
+                Why councils evaluate GrantThrive
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -328,7 +328,7 @@ export default function CompetitiveComparison({ councilSize, features = {} }) {
                   <ul className="space-y-2 text-sm">
                     <li className="flex items-center gap-2">
                       <CheckCircle className="h-4 w-4 text-green-600" />
-                      <span>{Math.abs(comparison.comparison.savingsPercentage)}% lower annual costs</span>
+                      <span>Modelled annual cost comparison</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <CheckCircle className="h-4 w-4 text-green-600" />
@@ -349,7 +349,7 @@ export default function CompetitiveComparison({ councilSize, features = {} }) {
                   <ul className="space-y-2 text-sm">
                     <li className="flex items-center gap-2">
                       <CheckCircle className="h-4 w-4 text-blue-600" />
-                      <span>{comparison.comparison.uniqueFeatures} exclusive community features</span>
+                      <span>Community engagement options designed for local government</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <CheckCircle className="h-4 w-4 text-blue-600" />
@@ -387,4 +387,3 @@ export default function CompetitiveComparison({ councilSize, features = {} }) {
     </div>
   );
 }
-
