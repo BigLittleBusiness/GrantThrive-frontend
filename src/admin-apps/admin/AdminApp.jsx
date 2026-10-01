@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import CouncilManagement from './pages/CouncilManagement.jsx';
-import AdminApprovalDashboard from '../portal/pages/council-admin/AdminApprovalDashboard.jsx';
+import CouncilRegistrations from './pages/CouncilRegistrations.jsx';
 import SystemAdminManagement from './pages/SystemAdminManagement.jsx';
 import PricingManagement from './pages/PricingManagement.jsx';
 import TwilioConfig from './pages/TwilioConfig.jsx';
@@ -512,7 +512,7 @@ const AdminDashboard = () => {
           {activeTab === 'councils' && <CouncilManagement />}
 
           {/* Council Registrations - pending approval */}
-          {activeTab === 'approvals' && <AdminApprovalDashboard />}
+          {activeTab === 'approvals' && <CouncilRegistrations />}
 
           {/* System Admin Management */}
           {activeTab === 'staff' && <SystemAdminManagement />}
