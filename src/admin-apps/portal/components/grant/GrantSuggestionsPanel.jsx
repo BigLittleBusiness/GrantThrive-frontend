@@ -7,7 +7,7 @@ import {
   RefreshCw,
   ShieldAlert,
 } from 'lucide-react'
-import apiClient from '../../utils/api.js'
+import { getGrantSuggestions } from '../../utils/api.js'
 
 const areaLabels = {
   eligibility: 'Eligibility',
@@ -87,7 +87,7 @@ export default function GrantSuggestionsPanel({ grantDraft }) {
     setLoading(true)
     setError(null)
     try {
-      const response = await apiClient.councilGetGrantSuggestions({ grant_draft: grantDraft })
+      const response = await getGrantSuggestions({ grant_draft: grantDraft })
       setResult(response)
     } catch (requestError) {
       setResult(null)

@@ -12,8 +12,7 @@ import {
   Building2,
   Tag,
 } from 'lucide-react';
-
-const API_BASE = import.meta.env.VITE_API_URL || '';
+import { getPublicResults } from '../../utils/api.js';
 
 const PublicResults = ({ user, onNavigate, onLogout }) => {
   const [data, setData] = useState(null);
@@ -25,9 +24,7 @@ const PublicResults = ({ user, onNavigate, onLogout }) => {
     const load = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`${API_BASE}/public/api/results`);
-        if (!res.ok) throw new Error(`Server error ${res.status}`);
-        const json = await res.json();
+        const json = await getPublicResults();
         setData(json);
       } catch (err) {
         setError(err.message || 'Failed to load results.');

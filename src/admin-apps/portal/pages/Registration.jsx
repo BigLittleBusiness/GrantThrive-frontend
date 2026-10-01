@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
-import apiClient from '../utils/api.js';
+import { register, checkSubdomain, validateAbn } from '../utils/api.js';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@shared/components/ui/card.jsx';
 import { Button } from '@shared/components/ui/button.jsx';
 import { Input } from '@shared/components/ui/input.jsx';
@@ -141,8 +141,7 @@ export default function Registration({ onLogin }) {
     abnDebounceRef.current = setTimeout(async () => {
       setAbnStatus('checking');
       try {
-        const res = await apiClient.get(`/api/abn/validate?abn=${encodeURIComponent(stripped)}`);
-        const data = res.data;
+        const data = await validateAbn(stripped);
         setAbnResult(data);
         if (!data.valid_format) {
           setAbnStatus('invalid');
@@ -155,7 +154,7 @@ export default function Registration({ onLogin }) {
           setAbnStatus('format_only');
         }
       } catch (err) {
-        const errMsg = err?.response?.data?.error;
+        const errMsg = err?.data?.error;
         if (errMsg) {
           setAbnResult({ error: errMsg, valid_format: false });
           setAbnStatus('invalid');
@@ -192,7 +191,7 @@ export default function Registration({ onLogin }) {
     setSubdomainMessage('');
     setSubdomainSuggestion('');
     try {
-      const result = await apiClient.checkSubdomain(value);
+      const result = await checkSubdomain(value);
       if (result.available) {
         setSubdomainStatus('available');
         setSubdomainMessage('This subdomain is available.');
@@ -355,13 +354,7 @@ export default function Registration({ onLogin }) {
         department: formData.department.trim() || undefined,
       };
 
-      const data = await apiClient.register(payload);
-
-      // Persist token for instantly-approved accounts (community_member)
-      if (data.token && data.user) {
-        localStorage.setItem('gt_auth_token', data.token);
-        localStorage.setItem('gt_auth_user', JSON.stringify(data.user));
-      }
+      const data = await register(payload);
 
       setSubmitted(true);
       setStep(5);

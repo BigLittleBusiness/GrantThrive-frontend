@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import apiClient from '../../utils/api.js';
+import { getGrant } from '../../utils/api.js';
 import CommunityNavbar from '../../components/layout/CommunityNavbar.jsx';
 import { useParams, useNavigate } from 'react-router-dom';
 import AuthGateModal from '../../components/common/AuthGateModal.jsx';
@@ -49,7 +49,7 @@ const GrantDetails = ({ user, council, onNavigate, onLogout }) => {
     setIsLoading(true);
     setLoadError(null);
     try {
-      const data = await apiClient.communityGetGrant(id);
+      const data = await getGrant(id);
       const g = data?.grant || data;
       // Normalise API response into the shape the UI expects
       const closes = g.closes_at || g.deadline || g.close_date || '';
@@ -97,7 +97,7 @@ const GrantDetails = ({ user, council, onNavigate, onLogout }) => {
         councilArea: g.council_area || council?.name || '',
       });
     } catch (err) {
-      setLoadError(err?.response?.data?.error || err.message || 'Unable to load grant details. Please try again.');
+      setLoadError(err.message || 'Unable to load grant details. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -354,15 +354,15 @@ const GrantDetails = ({ user, council, onNavigate, onLogout }) => {
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-600">{grant.statistics.successRate}%</div>
+                    <div className="text-2xl font-bold text-blue-600">{grant.statistics.successRate != null ? `${grant.statistics.successRate}%` : '—'}</div>
                     <div className="text-sm text-gray-600">Success Rate</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">${grant.statistics.averageAward.toLocaleString()}</div>
+                    <div className="text-2xl font-bold text-green-600">{grant.statistics.averageAward != null ? `$${grant.statistics.averageAward.toLocaleString()}` : '—'}</div>
                     <div className="text-sm text-gray-600">Average Award</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-purple-600">{grant.statistics.totalFunded}</div>
+                    <div className="text-2xl font-bold text-purple-600">{grant.statistics.totalFunded ?? '—'}</div>
                     <div className="text-sm text-gray-600">Projects Funded</div>
                   </div>
                   <div className="text-center">

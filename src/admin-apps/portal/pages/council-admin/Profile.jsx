@@ -13,7 +13,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import apiClient from '../../utils/api';
+import { getProfile, updateProfile, changePassword } from '../../utils/api';
 
 const Profile = ({ user, onNavigate, onLogout, onUpdateUser }) => {
   const [profile, setProfile]   = useState(null);
@@ -46,7 +46,7 @@ const Profile = ({ user, onNavigate, onLogout, onUpdateUser }) => {
     setLoading(true);
     setFetchError('');
     try {
-      const data = await apiClient.get('/auth/me');
+      const data = await getProfile();
       const u = data.user || data;
       setProfile(u);
       setFormData({
@@ -85,7 +85,7 @@ const Profile = ({ user, onNavigate, onLogout, onUpdateUser }) => {
     setError('');
     setMessage('');
     try {
-      const response = await apiClient.updateProfile({
+      const response = await updateProfile({
         first_name: formData.firstName.trim(),
         last_name:  formData.lastName.trim(),
         phone:      formData.phone.trim(),
@@ -129,7 +129,7 @@ const Profile = ({ user, onNavigate, onLogout, onUpdateUser }) => {
     }
 
     try {
-      const response = await apiClient.changePassword({
+      const response = await changePassword({
         current_password: passwordData.currentPassword,
         new_password:     passwordData.newPassword,
       });

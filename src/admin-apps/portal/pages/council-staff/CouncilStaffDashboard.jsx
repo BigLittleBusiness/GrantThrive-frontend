@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import NotificationBell from '../../components/common/NotificationBell';
 import StaffNavbar from '../../components/layout/StaffNavbar.jsx';
-import apiClient from '../../utils/api.js';
+import { getApplications } from '../../utils/api.js';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card.jsx';
 import { Badge } from '@shared/components/ui/badge.jsx';
 import { Button } from '@shared/components/ui/button.jsx';
@@ -23,7 +23,6 @@ import {
 } from 'lucide-react';
 
 const CouncilStaffDashboard = ({ user, onNavigate, onLogout }) => {
-  const [dashboardData, setDashboardData] = useState(null);
   const [myApplications, setMyApplications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
@@ -32,14 +31,8 @@ const CouncilStaffDashboard = ({ user, onNavigate, onLogout }) => {
     setIsLoading(true);
     setLoadError(null);
     try {
-      // Load dashboard summary and assigned applications in parallel
-      const [dashRes, appsRes] = await Promise.all([
-        apiClient.councilGetDashboard().catch(() => null),
-        apiClient.councilGetApplications({ assigned_to_me: true }).catch(() => ({ applications: [] })),
-      ]);
-      setDashboardData(dashRes);
-      const apps = appsRes?.applications || appsRes || [];
-      setMyApplications(apps.map(app => ({
+      const { applications } = await getApplications({ assigned_to_me: true });
+      setMyApplications(applications.map(app => ({
         id: app.id,
         applicant: app.organization_name || app.applicant_name || '—',
         contact: app.primary_contact_name || '—',
@@ -55,7 +48,7 @@ const CouncilStaffDashboard = ({ user, onNavigate, onLogout }) => {
         lastAction: app.last_action || app.latest_note || '',
       })));
     } catch (err) {
-      setLoadError(err?.response?.data?.error || err.message || 'Failed to load dashboard.');
+      setLoadError(err.message || 'Failed to load dashboard.');
     } finally {
       setIsLoading(false);
     }
@@ -63,14 +56,15 @@ const CouncilStaffDashboard = ({ user, onNavigate, onLogout }) => {
 
   useEffect(() => { loadDashboard(); }, [loadDashboard]);
 
-  // Derive metrics from live data
+  // Derive metrics from live data. Daily throughput, review-time and contact
+  // figures have no backend source yet.
   const staffMetrics = {
     assignedApplications: myApplications.length,
     pendingReview: myApplications.filter(a => a.status === 'submitted' || a.status === 'under_review').length,
     awaitingDocuments: myApplications.filter(a => a.status === 'awaiting_documents').length,
-    completedToday: dashboardData?.completed_today ?? 0,
-    averageReviewTime: dashboardData?.average_review_time_days ?? '—',
-    communityContacts: dashboardData?.community_contacts ?? '—',
+    completedToday: 0,
+    averageReviewTime: '—',
+    communityContacts: '—',
   };
 
   // Tasks are derived from high-priority applications needing action

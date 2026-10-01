@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import StaffNavbar from '../../components/layout/StaffNavbar.jsx';
-import apiClient from '../../utils/api';
+import { getProfile, updateProfile, changePassword } from '../../utils/api';
 
 const Profile = ({ user, onNavigate, onLogout, onUpdateUser }) => {
   const [formData, setFormData] = useState({
@@ -30,7 +30,7 @@ const Profile = ({ user, onNavigate, onLogout, onUpdateUser }) => {
   const fetchProfile = useCallback(async () => {
     try {
       setProfileLoading(true);
-      const response = await apiClient.get('/auth/me');
+      const response = await getProfile();
       const data = response.data || response;
       setFormData({
         firstName: data.first_name || '',
@@ -98,7 +98,7 @@ const Profile = ({ user, onNavigate, onLogout, onUpdateUser }) => {
         abn: formData.abn,
       };
 
-      const response = await apiClient.updateProfile(updateData);
+      const response = await updateProfile(updateData);
       if (response.success) {
         if (onUpdateUser && response.data) {
           onUpdateUser(response.data);
@@ -133,7 +133,7 @@ const Profile = ({ user, onNavigate, onLogout, onUpdateUser }) => {
     }
 
     try {
-      const response = await apiClient.changePassword({
+      const response = await changePassword({
         current_password: passwordData.currentPassword,
         new_password: passwordData.newPassword,
       });

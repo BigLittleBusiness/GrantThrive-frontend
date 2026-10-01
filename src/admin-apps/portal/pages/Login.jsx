@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import apiClient from '../utils/api.js';
+import { login } from '@shared/api/session';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card.jsx';
 import { Button } from '@shared/components/ui/button.jsx';
 import { Input } from '@shared/components/ui/input.jsx';
@@ -40,24 +40,15 @@ const handleLogin = async (e) => {
   setLoginAttempt(null);
 
   try {
-    // Use the shared apiClient — routes through Vite proxy to /api/auth/login
-    const data = await apiClient.login(formData.email.trim(), formData.password);
-
-    // Persist to the keys PortalApp.jsx reads on session restore
-    if (data.token) {
-      localStorage.setItem('gt_auth_token', data.token);
-    }
-    if (data.user) {
-      localStorage.setItem('gt_auth_user', JSON.stringify(data.user));
-    }
+    const user = await login(formData.email.trim(), formData.password);
 
     setLoginAttempt({
       success: true,
-      message: `Welcome back, ${data.user.full_name || data.user.first_name || 'User'}!`,
-      account: data.user,
+      message: `Welcome back, ${user.full_name || user.first_name || 'User'}!`,
+      account: user,
     });
 
-    onLogin?.(data.user);
+    onLogin?.(user);
   } catch (error) {
     // Classify the error type without leaking backend detail to the user.
     // Security best practice: credential errors use a single generic message

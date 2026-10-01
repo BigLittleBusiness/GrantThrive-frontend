@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import apiClient from './utils/api.js';
+import { ROLES, setAuth } from '@shared/auth';
+import { verifyToken, logout } from '@shared/api/session';
 import { TenantProvider, useTenant } from '@shared/tenancy/TenantContext';
 import {
   Routes,
@@ -19,12 +20,6 @@ import CouncilStaffRoutes from './routes/CouncilStaffRoutes.jsx';
 import CommunityRoutes from './routes/CommunityRoutes.jsx';
 
 // ── RBAC constants ────────────────────────────────────────────────────────────
-const ROLES = {
-  COUNCIL_ADMIN: 'council_admin',
-  COUNCIL_STAFF: 'council_staff',
-  COMMUNITY_MEMBER: 'community_member',
-};
-
 const ROLE_HOME = {
   [ROLES.COUNCIL_ADMIN]: '/portal/council/dashboard',
   [ROLES.COUNCIL_STAFF]: '/portal/staff/dashboard',
@@ -87,60 +82,27 @@ function PortalInner() {
   const location = useLocation();
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('gt_auth_user');
-    const storedToken = localStorage.getItem('gt_auth_token');
-
-    if (storedUser && storedToken) {
-      // Validate the stored token against the backend before trusting it.
-      // This prevents a stale/expired session from auto-redirecting to the dashboard.
-      apiClient.setToken(storedToken);
-      apiClient.verifyToken()
-        .then((verifiedUser) => {
-          if (verifiedUser) {
-            // Token is valid — restore the session
-            try {
-              setCurrentUser(JSON.parse(storedUser));
-            } catch {
-              localStorage.removeItem('gt_auth_user');
-              localStorage.removeItem('gt_auth_token');
-            }
-          } else {
-            // Token is invalid or expired — clear the stale session
-            localStorage.removeItem('gt_auth_user');
-            localStorage.removeItem('gt_auth_token');
-            apiClient.setToken(null);
-          }
-        })
-        .catch(() => {
-          // Network error during verification — clear session to be safe
-          localStorage.removeItem('gt_auth_user');
-          localStorage.removeItem('gt_auth_token');
-          apiClient.setToken(null);
-        })
-        .finally(() => {
-          setAuthInitialised(true);
-        });
-    } else {
-      // No stored session — mark as initialised immediately
-      setAuthInitialised(true);
-    }
+    // Validate any stored session with the backend before trusting it, so a
+    // stale/expired token never auto-redirects to a dashboard.
+    verifyToken()
+      .then(setCurrentUser)
+      .finally(() => setAuthInitialised(true));
   }, []);
 
   useEffect(() => {
-    const handleGlobalLogout = () => {
-      localStorage.removeItem('gt_auth_token');
-      localStorage.removeItem('gt_auth_user');
+    // Fired by the API client when the backend rejects the session (401).
+    const handleSessionExpired = () => {
       setCurrentUser(null);
       navigate('/portal/login', { replace: true });
     };
 
-    window.addEventListener('gt:logout', handleGlobalLogout);
-    return () => window.removeEventListener('gt:logout', handleGlobalLogout);
+    window.addEventListener('gt:logout', handleSessionExpired);
+    return () => window.removeEventListener('gt:logout', handleSessionExpired);
   }, [navigate]);
 
+  // The session (token + user) is already stored by the login/registration call.
   const handleLogin = useCallback(
     (userData) => {
-      localStorage.setItem('gt_auth_user', JSON.stringify(userData));
       setCurrentUser(userData);
 
       const nextRole = getUserRole(userData);
@@ -152,8 +114,7 @@ function PortalInner() {
   );
 
   const handleLogout = useCallback(() => {
-    localStorage.removeItem('gt_auth_token');
-    localStorage.removeItem('gt_auth_user');
+    logout();
     setCurrentUser(null);
     navigate('/portal/login', { replace: true });
   }, [navigate]);
@@ -201,7 +162,7 @@ function PortalInner() {
       onNavigate: handleNavigate,
       onUpdateUser: (updatedUser) => {
         setCurrentUser(updatedUser);
-        localStorage.setItem('gt_auth_user', JSON.stringify(updatedUser));
+        setAuth(null, updatedUser);
       },
     }),
     [currentUser, council, handleLogout, handleNavigate]

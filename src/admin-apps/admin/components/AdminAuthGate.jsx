@@ -2,7 +2,7 @@
  * AdminAuthGate — GrantThrive Admin Dashboard
  * =============================================
  * Wraps the entire admin dashboard. On mount it verifies the shared SSO token
- * (stored in localStorage under key `gt_auth_token` by @grantthrive/auth).
+ * (stored in localStorage by @shared/auth).
  *
  * Auth flow:
  *   1. On mount, verify any existing token with the backend.
@@ -17,11 +17,8 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import {
-  verifyToken,
-  clearAuth,
-  ROLES,
-} from '@grantthrive/auth';
+import { ROLES, clearAuth } from '@shared/auth';
+import { verifyToken } from '@shared/api/session';
 
 import { Loader2, AlertTriangle, LogOut } from 'lucide-react';
 import AdminLogin from './AdminLogin.jsx';
@@ -154,7 +151,7 @@ export default function AdminAuthGate({ children }) {
 
   /**
    * Called by AdminLogin after a successful system_admin login.
-   * The shared-auth library has already stored the token; we just update state.
+   * The session has already been stored by login(); we just update state.
    */
   function handleAuthenticated(verifiedUser) {
     setUser(verifiedUser);

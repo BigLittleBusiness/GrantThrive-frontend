@@ -92,9 +92,9 @@ if [[ "$SKIP_BUILD" != "true" ]]; then
   # CHROMIUM_PATH can be overridden in CI; defaults to system Chromium.
   export CHROMIUM_PATH="${CHROMIUM_PATH:-/usr/bin/chromium}"
   if [[ -x ./node_modules/.bin/vite ]]; then
-    ./node_modules/.bin/vite build --mode "$VITE_MODE" --config vite.config.cjs
+    ./node_modules/.bin/vite build --mode "$VITE_MODE"
   else
-    pnpm exec vite build --mode "$VITE_MODE" --config vite.config.cjs
+    pnpm exec vite build --mode "$VITE_MODE"
   fi
   node scripts/prerender.mjs
 fi

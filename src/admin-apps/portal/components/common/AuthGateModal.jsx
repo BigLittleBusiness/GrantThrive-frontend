@@ -17,18 +17,8 @@
 import React, { useState } from 'react';
 import { X, LogIn, UserPlus, Eye, EyeOff, Loader, CheckCircle } from 'lucide-react';
 
-const API = '';
-
-async function apiPost(path, body) {
-  const res = await fetch(`${API}${path}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.message || json.error || `HTTP ${res.status}`);
-  return json;
-}
+import { login } from '@shared/api/session';
+import { register } from '../../utils/api';
 
 function LoginForm({ onSuccess, onSwitch }) {
   const [email, setEmail]       = useState('');
@@ -41,11 +31,7 @@ function LoginForm({ onSuccess, onSwitch }) {
     e.preventDefault();
     setLoading(true); setError('');
     try {
-      const data = await apiPost('/auth/login', { email: email.trim().toLowerCase(), password });
-      if (data.token) {
-        localStorage.setItem('grantthrive_token', data.token);
-      }
-      onSuccess(data.user || data);
+      onSuccess(await login(email.trim().toLowerCase(), password));
     } catch (err) { setError(err.message); }
     finally { setLoading(false); }
   }
@@ -117,11 +103,8 @@ function RegisterForm({ onSuccess, onSwitch, council }) {
         role:       'community_member',
         council_id: council?.id || undefined,
       };
-      const data = await apiPost('/auth/register', payload);
-      if (data.token) {
-        localStorage.setItem('grantthrive_token', data.token);
-      }
-      onSuccess(data.user || data);
+      const data = await register(payload);
+      onSuccess(data.user);
     } catch (err) { setError(err.message); }
     finally { setLoading(false); }
   }

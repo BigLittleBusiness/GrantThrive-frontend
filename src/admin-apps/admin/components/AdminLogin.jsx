@@ -4,7 +4,7 @@
  * Dedicated login screen for system_admin users only.
  *
  * Features:
- *  - Calls the real backend via @grantthrive/auth login()
+ *  - Calls the real backend via the shared session login()
  *  - Role guard: only system_admin tokens are accepted after login
  *  - Client-side rate limiting (5 attempts → 15-minute lockout)
  *  - Countdown timer displayed during lockout
@@ -34,7 +34,8 @@ import {
   Clock,
   LogIn,
 } from 'lucide-react';
-import { login, ROLES, setAuth } from '@grantthrive/auth';
+import { ROLES, clearAuth } from '@shared/auth';
+import { login } from '@shared/api/session';
 import logoSrc from '../assets/grantthrive_logo_growth_concept.png';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -168,44 +169,17 @@ export default function AdminLogin({ onAuthenticated }) {
     setErrorMessage('');
 
     try {
-      const result = await login(email.trim(), password);
-
-      if (!result.success) {
-        // Increment failed attempt counter
-        const newCount = recordFailedAttempt();
-        const remaining = MAX_ATTEMPTS - newCount;
-
-        if (remaining <= 0) {
-          startCountdown(LOCKOUT_SECONDS);
-          setAttemptsLeft(0);
-          setErrorMessage(
-            `Too many failed attempts. Your access has been locked for 15 minutes.`
-          );
-          setStatus('locked');
-        } else {
-          setAttemptsLeft(remaining);
-          setErrorMessage(
-            result.error || 'Invalid email or password. Please try again.'
-          );
-          setStatus('error');
-          passwordRef.current?.focus();
-        }
-        return;
-      }
+      const user = await login(email.trim(), password);
 
       // ── Role guard ────────────────────────────────────────────────────────────
-      if (result.user?.role !== ROLES.SYSTEM_ADMIN) {
-        // Clear the token — this user has no business here
-        setAuth(null, null);
-        try {
-          localStorage.removeItem('gt_auth_token');
-          localStorage.removeItem('gt_auth_user');
-        } catch { /* ignore */ }
+      if (user.role !== ROLES.SYSTEM_ADMIN) {
+        // Clear the session — this user has no business here
+        clearAuth();
 
         setStatus('wrong_role');
         setErrorMessage(
           `Access denied. The GrantThrive Admin Dashboard is restricted to ` +
-          `System Administrators. Your account role is "${result.user?.role || 'unknown'}".`
+          `System Administrators. Your account role is "${user.role || 'unknown'}".`
         );
         passwordRef.current?.focus();
         return;
@@ -224,7 +198,7 @@ export default function AdminLogin({ onAuthenticated }) {
 
       // Brief success flash before handing off
       setTimeout(() => {
-        onAuthenticated(result.user);
+        onAuthenticated(user);
       }, 800);
 
     } catch (err) {

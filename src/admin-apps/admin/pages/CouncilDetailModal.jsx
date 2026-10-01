@@ -16,43 +16,7 @@ import {
   Edit, Save, RefreshCw,
 } from 'lucide-react';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://api.grantthrive.com';
-
-function getAuthHeader() {
-  const token = localStorage.getItem('gt_auth_token');
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
-async function apiGet(path) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || `Failed (${res.status})`);
-  return data;
-}
-
-async function apiPatch(path, body) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-    body: JSON.stringify(body),
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || `Failed (${res.status})`);
-  return data;
-}
-
-async function apiPost(path, body) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-    body: JSON.stringify(body),
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || `Failed (${res.status})`);
-  return data;
-}
+import api from '@shared/api/client';
 
 const ROLE_LABELS = {
   council_admin:           { label: 'Council Admin',    colour: 'bg-purple-100 text-purple-700' },
@@ -86,7 +50,7 @@ function OverviewTab({ council, onUpdated }) {
     setIsSubmitting(true);
     setError(null);
     try {
-      await apiPatch(`/api/councils/${council.id}`, form);
+      await api.patch(`/councils/${council.id}`, form);
       setSuccess('Council profile updated.');
       setEditing(false);
       setTimeout(() => { setSuccess(null); onUpdated(); }, 1500);
@@ -237,7 +201,7 @@ function UsersTab({ council }) {
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
-      const data = await apiGet(`/api/councils/${council.id}/users`);
+      const data = await api.get(`/councils/${council.id}/users`);
       setUsers(data.users || []);
     } catch (err) {
       setError(err.message);
@@ -253,7 +217,7 @@ function UsersTab({ council }) {
     setIsSubmitting(true);
     setFormError(null);
     try {
-      await apiPost(`/api/councils/${council.id}/users`, form);
+      await api.post(`/councils/${council.id}/users`, form);
       setFormSuccess(`User "${form.email}" provisioned.`);
       setForm({ email: '', first_name: '', last_name: '', password: '', role: 'council_admin' });
       setShowForm(false);

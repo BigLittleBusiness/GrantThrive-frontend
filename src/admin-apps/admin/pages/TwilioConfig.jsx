@@ -19,28 +19,7 @@ import {
   AlertCircle, Eye, EyeOff, RefreshCw, ExternalLink, Info,
   Shield, Zap, Phone, Settings,
 } from 'lucide-react';
-
-const API_BASE = import.meta.env.VITE_API_URL || 'https://api.grantthrive.com';
-
-const getToken = () =>
-  localStorage.getItem('gt_auth_token') ||
-  localStorage.getItem('admin_token') ||
-  localStorage.getItem('token') ||
-  '';
-
-const apiFetch = async (path, options = {}) => {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${getToken()}`,
-      ...(options.headers || {}),
-    },
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || data.message || `HTTP ${res.status}`);
-  return data;
-};
+import api from '@shared/api/client';
 
 // ── Field definitions ─────────────────────────────────────────────────────────
 const FIELDS = [
@@ -167,7 +146,7 @@ const TwilioConfig = () => {
   const loadConfig = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await apiFetch('/system/twilio-config');
+      const data = await api.get('/system/twilio-config');
       setConfig(data.config);
       setEnabled(data.config.is_enabled || false);
       // Pre-fill form with current (masked) values so user sees what's set
@@ -198,10 +177,7 @@ const TwilioConfig = () => {
         if (val && val.includes('•')) return;
         payload[f.key] = val;
       });
-      await apiFetch('/system/twilio-config', {
-        method: 'PUT',
-        body: JSON.stringify(payload),
-      });
+      await api.put('/system/twilio-config', payload);
       showMsg('success', 'Twilio configuration saved successfully.');
       await loadConfig();
     } catch (err) {
@@ -218,10 +194,7 @@ const TwilioConfig = () => {
     }
     setTesting(true);
     try {
-      const data = await apiFetch('/system/twilio-config/test', {
-        method: 'POST',
-        body: JSON.stringify({ to: testPhone }),
-      });
+      const data = await api.post('/system/twilio-config/test', { to: testPhone });
       showMsg('success', data.message);
     } catch (err) {
       showMsg('error', `Test failed: ${err.message}`);
@@ -233,7 +206,7 @@ const TwilioConfig = () => {
   const handleClear = async () => {
     setClearing(true);
     try {
-      await apiFetch('/system/twilio-config', { method: 'DELETE' });
+      await api.delete('/system/twilio-config');
       showMsg('success', 'All Twilio credentials have been cleared.');
       setShowClearConfirm(false);
       await loadConfig();

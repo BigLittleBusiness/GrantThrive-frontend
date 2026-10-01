@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import apiClient from '../utils/api.js';
+import { resetPassword } from '../utils/api.js';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card.jsx';
 import { Button } from '@shared/components/ui/button.jsx';
 import { Input } from '@shared/components/ui/input.jsx';
@@ -30,15 +30,11 @@ const ResetPassword = ({ council }) => {
     setStatus('loading');
     setErrorMsg('');
     try {
-      await apiClient.post('/auth/reset-password', {
-        token,
-        new_password: formData.password,
-      });
+      await resetPassword(token, formData.password);
       setStatus('success');
     } catch (err) {
       const msg =
-        err?.data?.message ||
-        err?.message ||
+        err.message ||
         'The reset link may have expired. Please request a new one.';
       setErrorMsg(msg);
       setStatus('error');

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import apiClient from '../../utils/api.js';
+import { getGrants } from '../../utils/api.js';
 import CommunityNavbar from '../../components/layout/CommunityNavbar.jsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card';
 import { Button } from '@shared/components/ui/button';
@@ -150,9 +150,9 @@ const PublicGrantMap = ({ user, onNavigate, onLogout, council }) => {
 
   const loadGrantData = async () => {
     try {
-      // Fetch approved/active grant projects from the API
-      const data = await apiClient.communityGetGrants({ status: 'active' });
-      const grants = (data.results || data || []).map((g, i) => ({
+      // Fetch open grants from the API
+      const data = await getGrants({ status: 'open' });
+      const grants = (data.grants || []).map((g, i) => ({
         id: g.id,
         grant_id: g.reference_number || `GRANT-${g.id}`,
         coordinates: g.latitude && g.longitude
@@ -336,12 +336,12 @@ const PublicGrantMap = ({ user, onNavigate, onLogout, council }) => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Project Status
                 </label>
-                <Select value={filters.project_status} onValueChange={(value) => setFilters({...filters, project_status: value})}>
+                <Select value={filters.project_status || 'all'} onValueChange={(value) => setFilters({...filters, project_status: value === 'all' ? '' : value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="All statuses" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All statuses</SelectItem>
+                    <SelectItem value="all">All statuses</SelectItem>
                     <SelectItem value="Planning">Planning</SelectItem>
                     <SelectItem value="In Progress">In Progress</SelectItem>
                     <SelectItem value="Completed">Completed</SelectItem>
@@ -354,12 +354,12 @@ const PublicGrantMap = ({ user, onNavigate, onLogout, council }) => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Category
                 </label>
-                <Select value={filters.category} onValueChange={(value) => setFilters({...filters, category: value})}>
+                <Select value={filters.category || 'all'} onValueChange={(value) => setFilters({...filters, category: value === 'all' ? '' : value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="All categories" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All categories</SelectItem>
+                    <SelectItem value="all">All categories</SelectItem>
                     <SelectItem value="Environment">Environment</SelectItem>
                     <SelectItem value="Arts & Culture">Arts & Culture</SelectItem>
                     <SelectItem value="Recreation & Sports">Recreation & Sports</SelectItem>

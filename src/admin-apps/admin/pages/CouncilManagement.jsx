@@ -18,8 +18,7 @@ import {
 } from 'lucide-react';
 import CreateCouncilModal from './CreateCouncilModal.jsx';
 import CouncilDetailModal from './CouncilDetailModal.jsx';
-
-const API_BASE = import.meta.env.VITE_API_URL || 'https://api.grantthrive.com';
+import api from '@shared/api/client';
 
 const PLAN_LABELS = {
   starter:      { label: 'Starter',      colour: 'bg-gray-100 text-gray-700' },
@@ -28,36 +27,6 @@ const PLAN_LABELS = {
 };
 
 const STATES = ['ACT', 'NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA'];
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-function getAuthHeader() {
-  const token = localStorage.getItem('gt_auth_token');
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
-async function apiGet(path) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-  });
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error(data.error || `Request failed (${res.status})`);
-  }
-  return res.json();
-}
-
-async function apiDelete(path) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    method: 'DELETE',
-    headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-  });
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error(data.error || `Request failed (${res.status})`);
-  }
-  return res.json();
-}
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
@@ -108,7 +77,7 @@ export default function CouncilManagement() {
       if (planFilter)   params.set('plan',   planFilter);
       if (activeFilter) params.set('active', activeFilter);
 
-      const data = await apiGet(`/api/councils?${params}`);
+      const data = await api.get(`/councils?${params}`);
       setCouncils(data.councils || []);
       setPagination({ total: data.total || 0, pages: data.pages || 1 });
     } catch (err) {
@@ -127,7 +96,7 @@ export default function CouncilManagement() {
     if (!window.confirm(`Deactivate "${council.name}"? Their portal will become inaccessible.`)) return;
     setDeactivating(council.id);
     try {
-      await apiDelete(`/api/councils/${council.id}`);
+      await api.delete(`/councils/${council.id}`);
       fetchCouncils();
     } catch (err) {
       alert(`Failed to deactivate: ${err.message}`);

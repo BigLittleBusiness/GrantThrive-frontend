@@ -38,8 +38,7 @@ import React, {
   useState,
   useCallback,
 } from 'react';
-
-const API_BASE = import.meta.env.VITE_API_URL || 'https://api.grantthrive.com';
+import api, { ApiError } from '@shared/api/client';
 
 const RESERVED_SUBDOMAINS = new Set([
   'www', 'app', 'admin', 'api', 'map', 'roi',
@@ -114,23 +113,16 @@ export function TenantProvider({ children }) {
     }
 
     try {
-      const res = await fetch(
-        `${API_BASE}/api/councils/resolve?subdomain=${encodeURIComponent(sub)}`,
-        { headers: { 'Content-Type': 'application/json' } },
-      );
-
-      if (res.ok) {
-        const data = await res.json();
-        setCouncil(data.council);
-        applyBrandColours(data.council.primary_colour, data.council.secondary_colour);
-      } else if (res.status === 404) {
+      const data = await api.get(`/councils/resolve?subdomain=${encodeURIComponent(sub)}`);
+      setCouncil(data.council);
+      applyBrandColours(data.council.primary_colour, data.council.secondary_colour);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 404) {
         // Unknown subdomain — treat as no tenant (fall back to GT branding)
         setCouncil(null);
         applyBrandColours(GT_DEFAULT_PRIMARY, GT_DEFAULT_SECONDARY);
-      } else {
-        throw new Error(`Unexpected response: ${res.status}`);
+        return;
       }
-    } catch (err) {
       console.error('[TenantContext] Failed to resolve council:', err);
       setError(err.message);
       applyBrandColours(GT_DEFAULT_PRIMARY, GT_DEFAULT_SECONDARY);

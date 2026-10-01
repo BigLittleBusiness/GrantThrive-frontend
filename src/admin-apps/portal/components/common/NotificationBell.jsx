@@ -28,7 +28,7 @@ import {
   User,
   Settings,
 } from 'lucide-react'
-import apiClient from '../../utils/api'
+import { getNotifications, getUnreadCount, markNotificationRead, markAllNotificationsRead } from '../../utils/api'
 
 // ─── Icon map ─────────────────────────────────────────────────────────────────
 
@@ -87,7 +87,7 @@ export default function NotificationBell({ onNavigate }) {
   // ── Poll unread count ───────────────────────────────────────────────────────
   const fetchCount = useCallback(async () => {
     try {
-      const data = await apiClient.getUnreadCount()
+      const data = await getUnreadCount()
       setUnreadCount(data.unread_count ?? 0)
     } catch { /* silent */ }
   }, [])
@@ -102,7 +102,7 @@ export default function NotificationBell({ onNavigate }) {
   const fetchList = useCallback(async () => {
     setLoading(true)
     try {
-      const data = await apiClient.getNotifications({ limit: 20 })
+      const data = await getNotifications({ limit: 20 })
       setNotifications(data.notifications ?? [])
       setUnreadCount(data.unread_count ?? 0)
     } catch { /* silent */ } finally {
@@ -117,7 +117,7 @@ export default function NotificationBell({ onNavigate }) {
   // ── Actions ─────────────────────────────────────────────────────────────────
   const markRead = async (id) => {
     try {
-      await apiClient.markNotificationRead(id)
+      await markNotificationRead(id)
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n))
       setUnreadCount(prev => Math.max(0, prev - 1))
     } catch { /* silent */ }
@@ -125,7 +125,7 @@ export default function NotificationBell({ onNavigate }) {
 
   const markAllRead = async () => {
     try {
-      await apiClient.markAllNotificationsRead()
+      await markAllNotificationsRead()
       setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
       setUnreadCount(0)
     } catch { /* silent */ }

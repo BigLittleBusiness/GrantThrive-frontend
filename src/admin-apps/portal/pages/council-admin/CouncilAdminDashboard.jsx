@@ -3,7 +3,7 @@ import NotificationBell from '../../components/common/NotificationBell';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card.jsx';
 import { Badge } from '@shared/components/ui/badge.jsx';
 import { Button } from '@shared/components/ui/button.jsx';
-import apiClient from '../../utils/api.js';
+import apiClient, { getApplications, getGrants } from '../../utils/api.js';
 import { 
   Users, 
   FileText, 
@@ -38,7 +38,6 @@ const CouncilAdminDashboard = ({ user, onNavigate, onLogout }) => {
   );
 
   // ── Dashboard live data ───────────────────────────────────────────────────
-  const [dashboardData, setDashboardData] = useState(null);
   const [pendingApplications, setPendingApplications] = useState([]);
   const [grantPrograms, setGrantPrograms] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -48,13 +47,11 @@ const CouncilAdminDashboard = ({ user, onNavigate, onLogout }) => {
     setIsLoading(true);
     setLoadError(null);
     try {
-      const [dashRes, appsRes, grantsRes] = await Promise.all([
-        apiClient.councilGetDashboard().catch(() => null),
-        apiClient.councilGetApplications({ status: 'submitted,under_review,pending_documents,committee_review' }).catch(() => ({ applications: [] })),
-        apiClient.councilGetGrants().catch(() => ({ grants: [] })),
+      const [appsRes, grantsRes] = await Promise.all([
+        getApplications({ status: 'submitted,under_review,pending_documents,committee_review' }).catch(() => ({ applications: [] })),
+        getGrants().catch(() => ({ grants: [] })),
       ]);
-      setDashboardData(dashRes);
-      const apps = appsRes?.applications || appsRes || [];
+      const apps = appsRes.applications;
       setPendingApplications(apps.slice(0, 10).map(app => ({
         id: app.id,
         applicant: app.organization_name || app.applicant_name || '—',
@@ -67,7 +64,7 @@ const CouncilAdminDashboard = ({ user, onNavigate, onLogout }) => {
         priority: app.priority || 'medium',
         status: app.status || 'submitted',
       })));
-      const grants = grantsRes?.grants || grantsRes || [];
+      const grants = grantsRes.grants;
       setGrantPrograms(grants.map(g => ({
         id: g.id,
         name: g.title || g.name || '—',
@@ -79,7 +76,7 @@ const CouncilAdminDashboard = ({ user, onNavigate, onLogout }) => {
         deadline: g.closes_at || g.deadline || '',
       })));
     } catch (err) {
-      setLoadError(err?.response?.data?.error || err.message || 'Failed to load dashboard.');
+      setLoadError(err.message || 'Failed to load dashboard.');
     } finally {
       setIsLoading(false);
     }
@@ -87,25 +84,25 @@ const CouncilAdminDashboard = ({ user, onNavigate, onLogout }) => {
 
   useEffect(() => { loadDashboard(); }, [loadDashboard]);
 
-  // Derive admin metrics from live data
+  // Derive admin metrics from live data. Monthly outcome, membership and
+  // processing-time figures have no backend source yet.
   const adminMetrics = {
-    totalPrograms: grantPrograms.length || dashboardData?.total_grants || 0,
-    activeApplications: pendingApplications.length || dashboardData?.active_applications || 0,
-    pendingReviews: pendingApplications.filter(a => a.status === 'under_review' || a.status === 'committee_review').length || dashboardData?.pending_reviews || 0,
-    totalBudget: grantPrograms.reduce((s, g) => s + g.budget, 0) || dashboardData?.total_budget || 0,
-    approvedThisMonth: dashboardData?.approved_this_month || 0,
-    rejectedThisMonth: dashboardData?.rejected_this_month || 0,
-    communityMembers: dashboardData?.community_members || 0,
-    averageProcessingTime: dashboardData?.average_processing_time_days || '—',
+    totalPrograms: grantPrograms.length,
+    activeApplications: pendingApplications.length,
+    pendingReviews: pendingApplications.filter(a => a.status === 'under_review' || a.status === 'committee_review').length,
+    totalBudget: grantPrograms.reduce((s, g) => s + g.budget, 0),
+    approvedThisMonth: 0,
+    rejectedThisMonth: 0,
+    communityMembers: 0,
+    averageProcessingTime: '—',
   };
 
   useEffect(() => {
     if (user?.role !== 'council_admin' || smsBannerDismissed) return;
     const councilId = user?.council_id;
     if (!councilId) return;
-    apiClient.get(`/api/councils/${councilId}/sms-tiers`)
-      .then(res => {
-        const data = res.data || res;
+    apiClient.get(`/councils/${councilId}/sms-tiers`)
+      .then(data => {
         if (!data.current_tier && data.council_plan !== 'trial') {
           setShowSmsBanner(true);
         }

@@ -17,14 +17,9 @@ import {
   X, Building2, Globe, Mail, Phone, Palette, User, Lock,
   CheckCircle, AlertCircle, Loader2, ChevronDown, ChevronUp,
 } from 'lucide-react';
+import api from '@shared/api/client';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://api.grantthrive.com';
-const STATES   = ['ACT', 'NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA'];
-
-function getAuthHeader() {
-  const token = localStorage.getItem('gt_auth_token');
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
+const STATES = ['ACT', 'NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA'];
 
 function deriveSubdomain(name) {
   return name
@@ -102,13 +97,7 @@ export default function CreateCouncilModal({ onClose, onCreated }) {
     }
 
     try {
-      const res = await fetch(`${API_BASE}/api/councils`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-        body:    JSON.stringify(body),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || `Failed (${res.status})`);
+      const data = await api.post('/councils', body);
       setSuccess(`Council "${data.council.name}" provisioned at ${data.council.portal_url}`);
       setTimeout(() => onCreated(data.council), 1500);
     } catch (err) {

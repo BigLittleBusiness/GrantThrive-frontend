@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import apiClient from '../utils/api.js';
+import { forgotPassword } from '../utils/api.js';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card.jsx';
 import { Button } from '@shared/components/ui/button.jsx';
 import { Input } from '@shared/components/ui/input.jsx';
@@ -17,7 +17,7 @@ const ForgotPassword = ({ council }) => {
     setStatus('loading');
     setErrorMsg('');
     try {
-      await apiClient.post('/auth/forgot-password', { email: email.trim() });
+      await forgotPassword(email.trim());
       setStatus('success');
     } catch (err) {
       // Always show success to avoid email enumeration — only show a real error

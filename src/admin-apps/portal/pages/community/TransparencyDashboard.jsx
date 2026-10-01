@@ -13,8 +13,7 @@ import {
   AlertCircle,
   Calendar,
 } from 'lucide-react';
-
-const API_BASE = import.meta.env.VITE_API_URL || '';
+import { getTransparencyData } from '../../utils/api.js';
 
 const TransparencyDashboard = ({ user, onNavigate, onLogout }) => {
   const [data, setData] = useState(null);
@@ -25,9 +24,7 @@ const TransparencyDashboard = ({ user, onNavigate, onLogout }) => {
     const load = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`${API_BASE}/public/api/transparency`);
-        if (!res.ok) throw new Error(`Server error ${res.status}`);
-        const json = await res.json();
+        const json = await getTransparencyData();
         setData(json);
       } catch (err) {
         setError(err.message || 'Failed to load transparency data.');

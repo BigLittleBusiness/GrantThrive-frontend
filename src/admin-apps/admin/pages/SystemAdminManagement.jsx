@@ -25,35 +25,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/
 import { Badge }   from '@shared/components/ui/badge';
 import { Button }  from '@shared/components/ui/button';
 import { Input }   from '@shared/components/ui/input';
-
-const API_BASE = import.meta.env.VITE_API_URL || 'https://api.grantthrive.com';
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-function getAuthHeader() {
-  const token = localStorage.getItem('gt_auth_token');
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
-async function apiFetch(path, options = {}) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-    ...options,
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw Object.assign(new Error(data.error || `Request failed (${res.status})`), { fields: data.fields });
-  return data;
-}
-
-function getCurrentUserId() {
-  try {
-    const token = localStorage.getItem('gt_auth_token');
-    if (!token) return null;
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    return parseInt(payload.sub, 10);
-  } catch {
-    return null;
-  }
-}
+import api from '@shared/api/client';
+import { getStoredUser } from '@shared/auth';
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
@@ -134,19 +107,13 @@ function AdminFormModal({ admin, onClose, onSaved }) {
 
       let result;
       if (isEdit) {
-        result = await apiFetch(`/api/system-admins/${admin.id}`, {
-          method: 'PATCH',
-          body: JSON.stringify(body),
-        });
+        result = await api.patch(`/system-admins/${admin.id}`, body);
       } else {
-        result = await apiFetch('/api/system-admins', {
-          method: 'POST',
-          body: JSON.stringify(body),
-        });
+        result = await api.post('/system-admins', body);
       }
       onSaved(result.admin);
     } catch (err) {
-      if (err.fields) setErrors(err.fields);
+      if (err.data?.fields) setErrors(err.data.fields);
       else setApiError(err.message);
     } finally {
       setSaving(false);
@@ -301,7 +268,7 @@ function ConfirmDeactivateModal({ admin, onClose, onConfirm, loading }) {
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function SystemAdminManagement() {
-  const currentUserId = getCurrentUserId();
+  const currentUserId = getStoredUser()?.id;
 
   const [admins,     setAdmins]     = useState([]);
   const [isLoading,  setIsLoading]  = useState(true);
@@ -326,7 +293,7 @@ export default function SystemAdminManagement() {
       if (search)      params.set('search', search);
       if (activeFilter) params.set('active', activeFilter);
 
-      const data = await apiFetch(`/api/system-admins?${params}`);
+      const data = await api.get(`/system-admins?${params}`);
       setAdmins(data.admins);
       setPagination(data.pagination);
     } catch (err) {
@@ -360,7 +327,7 @@ export default function SystemAdminManagement() {
     if (!confirmDeact) return;
     setActionLoading(confirmDeact.id);
     try {
-      await apiFetch(`/api/system-admins/${confirmDeact.id}`, { method: 'DELETE' });
+      await api.delete(`/system-admins/${confirmDeact.id}`);
       setToast({ type: 'success', message: `${confirmDeact.first_name} ${confirmDeact.last_name}'s account has been deactivated.` });
       setConfirmDeact(null);
       fetchAdmins();
@@ -375,7 +342,7 @@ export default function SystemAdminManagement() {
   async function handleRestore(admin) {
     setActionLoading(admin.id);
     try {
-      await apiFetch(`/api/system-admins/${admin.id}/restore`, { method: 'POST' });
+      await api.post(`/system-admins/${admin.id}/restore`);
       setToast({ type: 'success', message: `${admin.first_name} ${admin.last_name}'s account has been reactivated.` });
       fetchAdmins();
     } catch (err) {

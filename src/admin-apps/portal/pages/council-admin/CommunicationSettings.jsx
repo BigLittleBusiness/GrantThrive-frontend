@@ -4,8 +4,7 @@ import {
   Info, Loader2, Save, Send, BarChart2,
   Lock, ArrowUpRight, RefreshCw, Zap
 } from 'lucide-react';
-
-const API_BASE = import.meta.env.VITE_API_URL || '';
+import api from '@shared/api/client';
 
 const EVENT_TYPES = [
   { key: 'application_received', label: 'Application Received',  desc: 'When a new grant application is submitted' },
@@ -34,11 +33,6 @@ const TIMEZONES = [
   'UTC',
 ];
 
-function authHeaders() {
-  const token = localStorage.getItem('token') || sessionStorage.getItem('token') || '';
-  return { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
-}
-
 // ── SMS Tier Selector (inline upgrade flow) ──────────────────────────────────
 
 const PLAN_RANK = { trial: 0, small: 1, medium: 2, large: 3 };
@@ -59,11 +53,7 @@ function SmsTierSelector({ councilId, plan, onActivated, onNavigate }) {
 
   useEffect(() => {
     if (!councilId) return;
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token') || '';
-    fetch(`${API_BASE}/api/councils/${councilId}/sms-tiers`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then(r => r.json())
+    api.get(`/councils/${councilId}/sms-tiers`)
       .then(d => setTiers(d.tiers || []))
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -72,15 +62,8 @@ function SmsTierSelector({ councilId, plan, onActivated, onNavigate }) {
   async function activate(tierKey) {
     setActivating(tierKey);
     setMsg('');
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token') || '';
     try {
-      const res = await fetch(`${API_BASE}/api/councils/${councilId}/sms-tiers`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ tier: tierKey }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Activation failed');
+      const data = await api.post(`/councils/${councilId}/sms-tiers`, { tier: tierKey });
       setMsg(data.message || 'SMS add-on activated.');
       setMsgType('success');
       onActivated && onActivated();
@@ -249,11 +232,7 @@ const CommunicationSettings = ({ user, onNavigate, onLogout }) => {
     if (!councilId) return;
     setSmsLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/councils/${councilId}/sms-settings`, {
-        headers: authHeaders(),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
+      const data = await api.get(`/councils/${councilId}/sms-settings`);
       setSmsData(data);
       setEventPrefs(data.sms_event_prefs || {});
       setBusinessHoursOnly(data.sms_business_hours_only ?? true);
@@ -268,11 +247,10 @@ const CommunicationSettings = ({ user, onNavigate, onLogout }) => {
   const fetchSmsUsage = useCallback(async () => {
     if (!councilId) return;
     try {
-      const res = await fetch(`${API_BASE}/api/councils/${councilId}/sms-usage`, {
-        headers: authHeaders(),
-      });
-      if (res.ok) setSmsUsage(await res.json());
-    } catch (_) {}
+      setSmsUsage(await api.get(`/councils/${councilId}/sms-usage`));
+    } catch {
+      // Usage is optional; the settings page still works without it.
+    }
   }, [councilId]);
 
   useEffect(() => {
@@ -284,19 +262,11 @@ const CommunicationSettings = ({ user, onNavigate, onLogout }) => {
     if (!councilId) return;
     setSmsSaving(true);
     try {
-      const res = await fetch(`${API_BASE}/api/councils/${councilId}/sms-settings`, {
-        method: 'PATCH',
-        headers: authHeaders(),
-        body: JSON.stringify({
-          sms_event_prefs:         eventPrefs,
-          sms_business_hours_only: businessHoursOnly,
-          sms_timezone:            timezone,
-        }),
+      await api.patch(`/councils/${councilId}/sms-settings`, {
+        sms_event_prefs:         eventPrefs,
+        sms_business_hours_only: businessHoursOnly,
+        sms_timezone:            timezone,
       });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Save failed');
-      }
       showToast('SMS preferences saved successfully.');
     } catch (err) {
       showToast(err.message, 'error');
@@ -309,12 +279,7 @@ const CommunicationSettings = ({ user, onNavigate, onLogout }) => {
     if (!councilId) return;
     setSmsTesting(true);
     try {
-      const res = await fetch(`${API_BASE}/api/councils/${councilId}/sms-settings/test`, {
-        method: 'POST',
-        headers: authHeaders(),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Test failed');
+      await api.post(`/councils/${councilId}/sms-settings/test`);
       showToast('Test SMS sent to your registered phone number.');
     } catch (err) {
       showToast(err.message, 'error');

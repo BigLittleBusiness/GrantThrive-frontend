@@ -18,7 +18,7 @@ import { Button } from '@shared/components/ui/button.jsx';
 import {
   Download, RefreshCw, Copy, Share2, CheckCircle, AlertCircle,
 } from 'lucide-react';
-import apiClient from '../utils/api.js';
+import { getGrantQR, regenerateGrantQR } from '../utils/api.js';
 
 // ─── Style definitions ────────────────────────────────────────────────────────
 const STYLES = {
@@ -91,9 +91,9 @@ const QRCodeGenerator = ({ grant, onQRCodeGenerated }) => {
     try {
       let data;
       if (forceRegenerate) {
-        data = await apiClient.regenerateGrantQR(grant.id);
+        data = await regenerateGrantQR(grant.id);
       } else {
-        data = await apiClient.getGrantQR(grant.id);
+        data = await getGrantQR(grant.id);
       }
 
       const targetUrl = buildTargetUrl(data.target_url);

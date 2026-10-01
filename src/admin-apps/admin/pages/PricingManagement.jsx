@@ -24,25 +24,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/
 import { Badge }  from '@shared/components/ui/badge';
 import { Button } from '@shared/components/ui/button';
 import { Input }  from '@shared/components/ui/input';
-
-// ── API helpers ───────────────────────────────────────────────────────────────
-
-const API_BASE = import.meta.env.VITE_API_URL || 'https://api.grantthrive.com';
-
-function getAuthHeader() {
-  const token = localStorage.getItem('gt_auth_token');
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
-async function apiFetch(path, options = {}) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-    ...options,
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw Object.assign(new Error(data.error || `Request failed (${res.status})`), { errors: data.errors });
-  return data;
-}
+import api from '@shared/api/client';
 
 // ── Utility helpers ───────────────────────────────────────────────────────────
 
@@ -327,10 +309,7 @@ function PlanCard({ planKey, serverData, onSaved, onToast }) {
         body.addon_community_voting_cents = parseDollarsToCents(form.addon_community_voting_aud);
         body.addon_grant_mapping_cents    = parseDollarsToCents(form.addon_grant_mapping_aud);
       }
-      const result = await apiFetch(`/pricing/admin/plans/${planKey}`, {
-        method: 'PUT',
-        body: JSON.stringify(body),
-      });
+      const result = await api.put(`/pricing/admin/plans/${planKey}`, body);
       setConfirmModal(false);
       setDirty(false);
       onSaved(planKey, result.plan);
@@ -555,7 +534,7 @@ export default function PricingManagement() {
     setLoading(true);
     setLoadError(null);
     try {
-      const data = await apiFetch('/pricing/admin/plans');
+      const data = await api.get('/pricing/admin/plans');
       const byKey = {};
       (data.plans || []).forEach(p => { byKey[p.plan_key] = p; });
       setServerPlans(byKey);
@@ -582,10 +561,7 @@ export default function PricingManagement() {
   const handleReset = async () => {
     setResetting(true);
     try {
-      await apiFetch('/pricing/admin/plans/reset', {
-        method: 'POST',
-        body: JSON.stringify({ confirm: true }),
-      });
+      await api.post('/pricing/admin/plans/reset', { confirm: true });
       setShowResetModal(false);
       await loadPricing();
       showToast('All plan prices reset to defaults.', 'success');
@@ -602,7 +578,7 @@ export default function PricingManagement() {
     if (historyLoading) return;
     setHistoryLoading(true);
     try {
-      const data = await apiFetch('/pricing/admin/history');
+      const data = await api.get('/pricing/admin/history');
       setHistory(data.history || []);
       setShowHistory(true);
     } catch {

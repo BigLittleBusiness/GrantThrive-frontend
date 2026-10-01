@@ -7,17 +7,7 @@ import {
   Search, Eye, Check, X, Clock, Mail, Phone, Briefcase, User,
   AlertCircle, CheckCircle, XCircle, RefreshCw, Building,
 } from 'lucide-react';
-
-const API_BASE = import.meta.env.VITE_API_URL || '';
-const TOKEN_KEY = 'gt_auth_token';
-
-function authHeaders() {
-  const token = localStorage.getItem(TOKEN_KEY);
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-}
+import api from '@shared/api/client';
 
 const AdminApprovalDashboard = ({ user, onNavigate, onLogout }) => {
   const councilId = user?.council_id;
@@ -47,15 +37,7 @@ const AdminApprovalDashboard = ({ user, onNavigate, onLogout }) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(
-        `${API_BASE}/api/councils/${councilId}/staff/pending`,
-        { headers: authHeaders() },
-      );
-      if (!res.ok) {
-        const b = await res.json().catch(() => ({}));
-        throw new Error(b.error || `Server returned ${res.status}`);
-      }
-      const data = await res.json();
+      const data = await api.get(`/councils/${councilId}/staff/pending`);
       setPendingStaff(data.pending_staff || []);
     } catch (err) {
       setError(err.message || 'Failed to load pending staff registrations.');
@@ -69,14 +51,7 @@ const AdminApprovalDashboard = ({ user, onNavigate, onLogout }) => {
   const handleApprove = async (staffId) => {
     setActionLoading(staffId);
     try {
-      const res = await fetch(
-        `${API_BASE}/api/councils/${councilId}/staff/${staffId}/approve`,
-        { method: 'POST', headers: authHeaders() },
-      );
-      if (!res.ok) {
-        const b = await res.json().catch(() => ({}));
-        throw new Error(b.error || `Server returned ${res.status}`);
-      }
+      await api.post(`/councils/${councilId}/staff/${staffId}/approve`);
       setPendingStaff(prev => prev.filter(s => s.id !== staffId));
       if (selectedStaff?.id === staffId) setSelectedStaff(null);
       showToast('Staff member approved and notified by email.');
@@ -98,18 +73,7 @@ const AdminApprovalDashboard = ({ user, onNavigate, onLogout }) => {
     setActionLoading(rejectTarget.id);
     setShowRejectModal(false);
     try {
-      const res = await fetch(
-        `${API_BASE}/api/councils/${councilId}/staff/${rejectTarget.id}/reject`,
-        {
-          method: 'POST',
-          headers: authHeaders(),
-          body: JSON.stringify({ reason: rejectReason }),
-        },
-      );
-      if (!res.ok) {
-        const b = await res.json().catch(() => ({}));
-        throw new Error(b.error || `Server returned ${res.status}`);
-      }
+      await api.post(`/councils/${councilId}/staff/${rejectTarget.id}/reject`, { reason: rejectReason });
       setPendingStaff(prev => prev.filter(s => s.id !== rejectTarget.id));
       if (selectedStaff?.id === rejectTarget.id) setSelectedStaff(null);
       showToast('Staff request rejected and applicant notified.');

@@ -15,18 +15,7 @@ import {
   Search, RefreshCw, AlertCircle, QrCode, Calendar, DollarSign,
 } from 'lucide-react';
 import QRCodeGenerator from '../../components/QRCodeGenerator.jsx';
-import apiClient from '../../utils/api.js';
-
-const TOKEN_KEY = 'gt_auth_token';
-const API_BASE  = import.meta.env.VITE_API_URL || '';
-
-function authHeaders() {
-  const token = localStorage.getItem(TOKEN_KEY);
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-}
+import { getGrants } from '../../utils/api.js';
 
 const STATUS_BADGE = {
   open:     'bg-emerald-100 text-emerald-800',
@@ -46,13 +35,8 @@ const QRCodeManagement = ({ user, onNavigate, onLogout }) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/api/grants`, { headers: authHeaders() });
-      if (!res.ok) {
-        const b = await res.json().catch(() => ({}));
-        throw new Error(b.error || `Server returned ${res.status}`);
-      }
-      const data = await res.json();
-      setGrants(data.grants || []);
+      const { grants } = await getGrants();
+      setGrants(grants);
     } catch (err) {
       setError(err.message || 'Failed to load grants.');
     } finally {

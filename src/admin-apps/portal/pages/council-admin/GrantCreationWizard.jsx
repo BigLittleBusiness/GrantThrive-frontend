@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, ArrowRight, Save, Eye, CheckCircle, FileText, Calendar, Settings, DollarSign, Users, Clock, UserCheck, UserX, Plus, Minus, Loader2, X } from 'lucide-react';
 import GrantSuggestionsPanel from '../../components/grant/GrantSuggestionsPanel.jsx';
-import apiClient from '../../utils/api.js';
+import { getCouncilUsers, createGrant, updateGrant, publishGrant } from '../../utils/api.js';
 
-const GrantCreationWizard = ({ onNavigate, council }) => {
+const REVIEWER_ROLES = ['council_admin', 'council_staff'];
+
+const GrantCreationWizard = ({ onNavigate, council, user }) => {
   const [showPreview, setShowPreview] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -46,14 +48,14 @@ const GrantCreationWizard = ({ onNavigate, council }) => {
   const loadStaff = useCallback(async () => {
     setStaffLoading(true);
     try {
-      const data = await apiClient.councilGetStaff();
-      setStaffList(data.staff || data || []);
+      const { users } = await getCouncilUsers(user.council_id);
+      setStaffList(users.filter(u => u.is_active && REVIEWER_ROLES.includes(u.role)));
     } catch (err) {
       console.error('Failed to load staff list', err);
     } finally {
       setStaffLoading(false);
     }
-  }, []);
+  }, [user.council_id]);
 
   useEffect(() => {
     if (currentStep === 4) loadStaff();
@@ -132,7 +134,7 @@ const GrantCreationWizard = ({ onNavigate, council }) => {
   };
 
   // Build API payload
-  const buildPayload = (status = 'open') => ({
+  const buildPayload = () => ({
     title:                 formData.title,
     description:           formData.description,
     category:              formData.category,
@@ -148,27 +150,30 @@ const GrantCreationWizard = ({ onNavigate, council }) => {
                              : new Date(Date.now() + 30 * 86400000).toISOString(),
     assigned_reviewer_ids: formData.assignedReviewerIds,
     required_approvals:    formData.requiredApprovals,
-    status,
   });
+
+  // Create the grant as a draft on first save, update it afterwards. Resolves with its id.
+  const saveDraft = async () => {
+    const payload = buildPayload();
+    if (grantId) {
+      await updateGrant(grantId, payload);
+      return grantId;
+    }
+    const created = await createGrant(payload);
+    setGrantId(created.id);
+    return created.id;
+  };
 
   // Save Draft handler
   const handleSaveDraft = async () => {
     setDraftSaving(true);
     setSaveError(null);
     try {
-      const payload = buildPayload('draft');
-      let result;
-      if (grantId) {
-        result = await apiClient.councilUpdateGrant(grantId, payload);
-      } else {
-        result = await apiClient.councilCreateGrant(payload);
-        const newId = result?.grant?.id || result?.id;
-        if (newId) setGrantId(newId);
-      }
+      await saveDraft();
       setDraftSaved(true);
       setTimeout(() => setDraftSaved(false), 3000);
     } catch (err) {
-      setSaveError(err?.response?.data?.error || err.message || 'Failed to save draft.');
+      setSaveError(err.message || 'Failed to save draft.');
     } finally {
       setDraftSaving(false);
     }
@@ -179,15 +184,10 @@ const GrantCreationWizard = ({ onNavigate, council }) => {
     setSaving(true);
     setSaveError(null);
     try {
-      const payload = buildPayload('open');
-      if (grantId) {
-        await apiClient.councilUpdateGrant(grantId, payload);
-      } else {
-        await apiClient.councilCreateGrant(payload);
-      }
+      await publishGrant(await saveDraft());
       if (onNavigate) onNavigate('grants');
     } catch (err) {
-      setSaveError(err?.response?.data?.error || err.message || 'Failed to publish grant.');
+      setSaveError(err.message || 'Failed to publish grant.');
     } finally {
       setSaving(false);
     }

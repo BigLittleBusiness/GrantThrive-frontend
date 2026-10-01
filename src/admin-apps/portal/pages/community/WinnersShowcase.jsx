@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import CommunityNavbar from '../../components/layout/CommunityNavbar.jsx';
-import apiClient from '../../utils/api.js';
+import { getApplications } from '../../utils/api.js';
 import { Card, CardContent } from '@shared/components/ui/card.jsx';
 import { Badge } from '@shared/components/ui/badge.jsx';
 import { Button } from '@shared/components/ui/button.jsx';
@@ -86,9 +86,9 @@ const WinnersShowcase = ({ user, council, onNavigate, onLogout }) => {
       setError(null);
       try {
         // Fetch approved applications — the backend supports ?status= filtering
-        const data = await apiClient.communityGetApplications({ status: 'approved' });
+        const data = await getApplications({ status: 'approved' });
         if (!cancelled) {
-          const list = Array.isArray(data) ? data : (data?.applications || data?.results || []);
+          const list = data.applications || [];
           setStories(list.map(normaliseStory));
         }
       } catch (err) {

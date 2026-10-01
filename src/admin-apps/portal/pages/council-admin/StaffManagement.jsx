@@ -9,25 +9,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { getToken } from '@grantthrive/auth';
-
-const API = '/api';
-
-function apiFetch(path, opts = {}) {
-  const token = getToken();
-  return fetch(`${API}${path}`, {
-    ...opts,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(opts.headers || {}),
-    },
-  }).then(async (r) => {
-    const json = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(json.error || `HTTP ${r.status}`);
-    return json;
-  });
-}
+import api from '@shared/api/client';
 
 const ROLE_LABELS = {
   council_admin: 'Admin',
@@ -66,7 +48,7 @@ export default function StaffManagement({ user, onNavigate, onLogout }) {
     setLoading(true);
     setError('');
     try {
-      const data = await apiFetch(`/councils/${councilId}/users`);
+      const data = await api.get(`/councils/${councilId}/users`);
       setStaff(data.users || []);
     } catch (e) {
       setError(e.message);
@@ -86,10 +68,7 @@ export default function StaffManagement({ user, onNavigate, onLogout }) {
     try {
       const payload = { ...addForm };
       if (!payload.password) delete payload.password; // let backend auto-generate
-      const data = await apiFetch(`/councils/${councilId}/staff`, {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      });
+      const data = await api.post(`/councils/${councilId}/staff`, payload);
       if (data.temporary_password) setTempPassword(data.temporary_password);
       setAddForm({ first_name: '', last_name: '', email: '', role: 'council_staff', password: '' });
       setSuccess(`${data.user.full_name} added successfully.`);
@@ -112,10 +91,7 @@ export default function StaffManagement({ user, onNavigate, onLogout }) {
     e.preventDefault();
     setEditLoading(true);
     try {
-      await apiFetch(`/councils/${councilId}/staff/${editTarget.id}`, {
-        method: 'PATCH',
-        body: JSON.stringify(editForm),
-      });
+      await api.patch(`/councils/${councilId}/staff/${editTarget.id}`, editForm);
       setSuccess('Staff member updated.');
       setEditTarget(null);
       loadStaff();
@@ -131,10 +107,7 @@ export default function StaffManagement({ user, onNavigate, onLogout }) {
     e.preventDefault();
     setResetLoading(true);
     try {
-      await apiFetch(`/councils/${councilId}/staff/${resetTarget.id}/reset-password`, {
-        method: 'POST',
-        body: JSON.stringify({ new_password: newPw }),
-      });
+      await api.post(`/councils/${councilId}/staff/${resetTarget.id}/reset-password`, { new_password: newPw });
       setSuccess(`Password reset for ${resetTarget.full_name}.`);
       setResetTarget(null);
       setNewPw('');

@@ -26,7 +26,16 @@ pnpm dev
 Local defaults:
 
 - Frontend: http://localhost:5173
-- Backend API: http://localhost:5000
+- Backend API: http://localhost:5000/api (`VITE_API_URL`; the backend must allow the
+  frontend origin via `CORS_ORIGINS`)
+
+## API access
+
+All HTTP calls go through the shared client in `src/shared/api/client.js`.
+`VITE_API_URL` is the full API base **including** `/api`, and endpoints are passed
+relative to it (`api.get('/grants')`). Portal endpoint functions live in
+`src/admin-apps/portal/utils/api.js`; login/logout/session verification in
+`src/shared/api/session.js`.
 
 ## Environment files
 
@@ -34,10 +43,8 @@ The build mode controls which env file Vite loads.
 
 - .env.uat
   - VITE_API_URL=https://api.uat.grantthrive.com/api
-  - VITE_LOGIN_URL=https://app.uat.grantthrive.com/login
 - .env.production
-  - VITE_API_URL=https://api.grantthrive.com/api
-  - VITE_LOGIN_URL=https://app.grantthrive.com/login
+  - VITE_API_URL=/api (frontend and backend share one domain; the proxy routes `/api/*` to the backend)
 
 ## UAT deployment
 

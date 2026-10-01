@@ -26,7 +26,7 @@ import {
   Edit,
   Eye,
 } from 'lucide-react';
-import { communityGetApplications, communityGetGrants } from '../../utils/api.js';
+import { getApplications, getGrants } from '../../utils/api.js';
 
 // ─── My Applications tab ─────────────────────────────────────────────────────
 
@@ -49,7 +49,7 @@ function MyApplicationsPanel({ onNavigate }) {
     setLoading(true);
     setError(null);
     try {
-      const data = await communityGetApplications();
+      const data = await getApplications();
       setApplications(Array.isArray(data) ? data : (data?.applications ?? []));
     } catch (err) {
       setError('Unable to load your applications. Please try again.');
@@ -247,7 +247,7 @@ function BrowseGrantsPanel({ user, council, onNavigate }) {
     setIsLoading(true);
     setLoadError(null);
     try {
-      const data = await communityGetGrants();
+      const data = await getGrants();
       const raw = Array.isArray(data) ? data : (data?.grants ?? []);
       setGrants(raw.map(normaliseGrant));
     } catch (err) {

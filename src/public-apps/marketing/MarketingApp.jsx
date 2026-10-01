@@ -44,21 +44,15 @@ import {
   Send,
   Bell,
 } from 'lucide-react'
+import api from '@shared/api/client'
 import './MarketingApp.css'
 import logoStandard from './assets/logo_standard.png'
 import logoReversed from './assets/logo_reversed.png'
 
-const PUBLIC_API_BASE = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
-
-async function submitPublicForm(path, payload) {
-  const response = await fetch(`${PUBLIC_API_BASE}${path}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+function submitPublicForm(path, payload) {
+  return api.post(path, payload).catch((err) => {
+    throw new Error(err.data?.error || 'We could not send your message. Please try again.')
   })
-  const data = await response.json().catch(() => ({}))
-  if (!response.ok) throw new Error(data.error || 'We could not send your message. Please try again.')
-  return data
 }
 
 // Navigation Component
@@ -1188,13 +1182,6 @@ function mergeLivePricing(apiPlans) {
   })
 }
 
-const PRICING_API_URL = (() => {
-  const base = (
-    import.meta.env.VITE_API_URL || 'https://api.grantthrive.com'
-  ).replace(/\/api$/, '')
-  return `${base}/api/pricing/plans`
-})()
-
 // Full Pricing Page
 function PricingPage() {
   usePageSeo(SEO_PAGES.pricing)
@@ -1206,11 +1193,8 @@ function PricingPage() {
   // Fetch live pricing from the backend on mount
   const loadPricing = useCallback(async () => {
     try {
-      const res = await fetch(PRICING_API_URL, { cache: 'no-store' })
-      if (res.ok) {
-        const data = await res.json()
-        if (data.plans) setPlans(mergeLivePricing(data.plans))
-      }
+      const data = await api.get('/pricing/plans', { cache: 'no-store' })
+      if (data.plans) setPlans(mergeLivePricing(data.plans))
     } catch {
       // Network error — keep fallback pricing silently
     }

@@ -1,28 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import CommunityNavbar from '../../components/layout/CommunityNavbar.jsx';
-import { getToken } from '@grantthrive/auth';
+import api from '@shared/api/client';
 import {
   MessageSquare, Plus, Users, ChevronLeft, Send,
   Trash2, Edit2, Pin, X, LogIn, LogOut, Lock, Globe, Loader
 } from 'lucide-react';
-
-const API = '/api';
-
-function apiFetch(path, opts = {}) {
-  const token = getToken();
-  return fetch(`${API}${path}`, {
-    ...opts,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(opts.headers || {}),
-    },
-  }).then(async (r) => {
-    const json = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(json.error || `HTTP ${r.status}`);
-    return json;
-  });
-}
 
 const STAFF_ROLES = ['council_admin', 'council_staff'];
 
@@ -68,7 +50,7 @@ function ForumList({ user, onSelect }) {
 
   const load = useCallback(async () => {
     setLoading(true); setError('');
-    try { const data = await apiFetch('/forums'); setForums(data.forums || []); }
+    try { const data = await api.get('/forums'); setForums(data.forums || []); }
     catch (e) { setError(e.message); }
     finally { setLoading(false); }
   }, []);
@@ -78,8 +60,8 @@ function ForumList({ user, onSelect }) {
   async function handleJoinLeave(e, forum) {
     e.stopPropagation();
     try {
-      if (forum.is_member) { await apiFetch(`/forums/${forum.id}/join`, { method: 'DELETE' }); }
-      else { await apiFetch(`/forums/${forum.id}/join`, { method: 'POST' }); }
+      if (forum.is_member) { await api.delete(`/forums/${forum.id}/join`); }
+      else { await api.post(`/forums/${forum.id}/join`); }
       load();
     } catch (err) { alert(err.message); }
   }
@@ -87,7 +69,7 @@ function ForumList({ user, onSelect }) {
   async function handleCreate(e) {
     e.preventDefault(); setCreating(true); setCreateError('');
     try {
-      await apiFetch('/forums', { method: 'POST', body: JSON.stringify(createForm) });
+      await api.post('/forums', createForm);
       setShowCreate(false); setCreateForm({ title: '', description: '', is_public: true }); load();
     } catch (err) { setCreateError(err.message); }
     finally { setCreating(false); }
@@ -295,7 +277,7 @@ function ForumThread({ user, forum: initialForum, onBack }) {
   const load = useCallback(async () => {
     setLoading(true); setError('');
     try {
-      const data = await apiFetch(`/forums/${initialForum.id}`);
+      const data = await api.get(`/forums/${initialForum.id}`);
       setForum(data.forum); setPosts(data.posts || []);
     } catch (e) { setError(e.message); }
     finally { setLoading(false); }
@@ -308,7 +290,7 @@ function ForumThread({ user, forum: initialForum, onBack }) {
     e.preventDefault(); if (!body.trim()) return;
     setSending(true); setSendError('');
     try {
-      await apiFetch(`/forums/${forum.id}/posts`, { method: 'POST', body: JSON.stringify({ body }) });
+      await api.post(`/forums/${forum.id}/posts`, { body });
       setBody(''); load();
     } catch (err) { setSendError(err.message); }
     finally { setSending(false); }
@@ -316,28 +298,28 @@ function ForumThread({ user, forum: initialForum, onBack }) {
 
   async function handleEditSave(postId) {
     try {
-      await apiFetch(`/forums/${forum.id}/posts/${postId}`, { method: 'PATCH', body: JSON.stringify({ body: editBody }) });
+      await api.patch(`/forums/${forum.id}/posts/${postId}`, { body: editBody });
       setEditingId(null); load();
     } catch (err) { alert(err.message); }
   }
 
   async function handleDelete(postId) {
     try {
-      await apiFetch(`/forums/${forum.id}/posts/${postId}`, { method: 'DELETE' });
+      await api.delete(`/forums/${forum.id}/posts/${postId}`);
       setDeleteId(null); load();
     } catch (err) { alert(err.message); }
   }
 
   async function handlePin(post) {
     try {
-      await apiFetch(`/forums/${forum.id}/posts/${post.id}`, { method: 'PATCH', body: JSON.stringify({ is_pinned: !post.is_pinned }) });
+      await api.patch(`/forums/${forum.id}/posts/${post.id}`, { is_pinned: !post.is_pinned });
       load();
     } catch (err) { alert(err.message); }
   }
 
   async function handleCloseForum() {
     if (!window.confirm('Close this forum? It will no longer accept new posts.')) return;
-    try { await apiFetch(`/forums/${forum.id}`, { method: 'DELETE' }); onBack(); }
+    try { await api.delete(`/forums/${forum.id}`); onBack(); }
     catch (err) { alert(err.message); }
   }
 

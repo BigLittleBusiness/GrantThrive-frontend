@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import apiClient from '../../utils/api.js';
+import apiClient, { getApplications } from '../../utils/api.js';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card';
 import { Button } from '@shared/components/ui/button';
 import { Input } from '@shared/components/ui/input';
@@ -62,13 +62,13 @@ const ApplicationReviewWorkflow = ({ grantId, user, onNavigate, onLogout }) => {
     setLoadError(null);
     try {
       const filters = grantId ? { grant_id: grantId } : {};
-      const data = await apiClient.councilGetApplications(filters);
+      const data = await getApplications(filters);
       const raw = data?.applications || data || [];
       const normalised = raw.map(normaliseApp);
       setApplications(normalised);
       setFilteredApplications(normalised);
     } catch (err) {
-      setLoadError(err?.response?.data?.error || err.message || 'Failed to load applications.');
+      setLoadError(err.message || 'Failed to load applications.');
     } finally {
       setIsLoading(false);
     }
@@ -184,7 +184,7 @@ const ApplicationReviewWorkflow = ({ grantId, user, onNavigate, onLogout }) => {
 
   const submitReview = async (applicationId, decision, finalScore, comments, recommendation) => {
     try {
-      await apiClient.post(`/api/applications/${applicationId}/review`, {
+      await apiClient.post(`/applications/${applicationId}/review`, {
         total_score:    parseFloat(finalScore) || 0,
         recommendation: recommendation || decision,
         comments:       comments || '',
@@ -198,7 +198,7 @@ const ApplicationReviewWorkflow = ({ grantId, user, onNavigate, onLogout }) => {
       ));
       setSelectedApplication(null);
     } catch (error) {
-      alert(error?.response?.data?.error || error.message || 'Error submitting review. Please try again.');
+      alert(error.message || 'Error submitting review. Please try again.');
     }
   };
 

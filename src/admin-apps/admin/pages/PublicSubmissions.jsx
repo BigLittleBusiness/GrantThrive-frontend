@@ -19,26 +19,11 @@ import { Button } from '@shared/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/components/ui/select';
 import { Textarea } from '@shared/components/ui/textarea';
+import api from '@shared/api/client';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://api.grantthrive.com';
 const STATUS_LABELS = { new: 'New', in_progress: 'In progress', resolved: 'Resolved' };
 const TYPE_LABELS = { contact: 'Contact enquiry', waitlist: 'Waitlist signup' };
 const CONTACT_LABELS = { demo: 'Demo', pricing: 'Pricing', support: 'Support', general: 'General' };
-
-function authHeaders() {
-  const token = localStorage.getItem('gt_auth_token');
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
-async function apiFetch(path, options = {}) {
-  const response = await fetch(`${API_BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...authHeaders(), ...(options.headers || {}) },
-    ...options,
-  });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || `Request failed (${response.status})`);
-  return data;
-}
 
 function statusStyle(status) {
   return {
@@ -74,10 +59,7 @@ function DetailPanel({ submission, onClose, onSaved }) {
     setSaving(true);
     setError('');
     try {
-      const result = await apiFetch(`/api/admin/form-submissions/${submission.id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ status, internal_note: note }),
-      });
+      const result = await api.patch(`/admin/form-submissions/${submission.id}`, { status, internal_note: note });
       onSaved(result.submission);
     } catch (err) {
       setError(err.message || 'Could not save the submission.');
@@ -154,7 +136,7 @@ export default function PublicSubmissions() {
       const params = new URLSearchParams({ page: String(page), per_page: '20' });
       if (status !== 'all') params.set('status', status);
       if (type !== 'all') params.set('type', type);
-      const result = await apiFetch(`/api/admin/form-submissions?${params}`);
+      const result = await api.get(`/admin/form-submissions?${params}`);
       setSubmissions(result.submissions || []);
       setPagination(result.pagination || { page: 1, pages: 1, total: 0 });
     } catch (err) {
@@ -168,7 +150,7 @@ export default function PublicSubmissions() {
 
   const openSubmission = async (id) => {
     try {
-      const result = await apiFetch(`/api/admin/form-submissions/${id}`);
+      const result = await api.get(`/admin/form-submissions/${id}`);
       setSelected(result.submission);
     } catch (err) {
       setError(err.message || 'Could not load the submission.');

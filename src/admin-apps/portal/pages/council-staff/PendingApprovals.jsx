@@ -13,31 +13,13 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { getToken } from '@grantthrive/auth';
+import api from '@shared/api/client';
 import StaffNavbar from '../../components/layout/StaffNavbar.jsx';
 import {
   ClipboardList, UserCheck, UserX, CheckCircle, XCircle,
   ChevronDown, ChevronUp, Loader, AlertCircle, RefreshCw,
   Users, MessageSquare
 } from 'lucide-react';
-
-const API = '/api';
-
-function apiFetch(path, opts = {}) {
-  const token = getToken();
-  return fetch(`${API}${path}`, {
-    ...opts,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(opts.headers || {}),
-    },
-  }).then(async (r) => {
-    const json = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(json.error || `HTTP ${r.status}`);
-    return json;
-  });
-}
 
 const STATUS_LABELS = {
   submitted:    { label: 'Submitted',    color: 'bg-blue-100 text-blue-700' },
@@ -60,10 +42,7 @@ function RecuseModal({ app, onClose, onDone }) {
     e.preventDefault();
     setSaving(true); setError('');
     try {
-      await apiFetch(`/applications/${app.id}/recuse`, {
-        method: 'POST',
-        body: JSON.stringify({ notes }),
-      });
+      await api.post(`/applications/${app.id}/recuse`, { notes });
       onDone();
     } catch (err) { setError(err.message); }
     finally { setSaving(false); }
@@ -106,10 +85,7 @@ function AssignModal({ app, staffList, onClose, onDone }) {
     if (!staffId) { setError('Please select a staff member.'); return; }
     setSaving(true); setError('');
     try {
-      await apiFetch(`/applications/${app.id}/assign`, {
-        method: 'POST',
-        body: JSON.stringify({ staff_id: parseInt(staffId), notes }),
-      });
+      await api.post(`/applications/${app.id}/assign`, { staff_id: parseInt(staffId), notes });
       onDone();
     } catch (err) { setError(err.message); }
     finally { setSaving(false); }
@@ -162,14 +138,11 @@ function ReviewModal({ app, onClose, onDone }) {
     e.preventDefault();
     setSaving(true); setError('');
     try {
-      await apiFetch(`/applications/${app.id}/review`, {
-        method: 'POST',
-        body: JSON.stringify({
-          total_score:    parseFloat(score) || 0,
-          recommendation,
-          comments,
-          is_complete:    true,
-        }),
+      await api.post(`/applications/${app.id}/review`, {
+        total_score:    parseFloat(score) || 0,
+        recommendation,
+        comments,
+        is_complete:    true,
       });
       onDone();
     } catch (err) { setError(err.message); }
@@ -232,10 +205,7 @@ function ApproveRejectModal({ app, action, onClose, onDone }) {
     e.preventDefault();
     setSaving(true); setError('');
     try {
-      await apiFetch(`/applications/${app.id}/${action}`, {
-        method: 'POST',
-        body: JSON.stringify({ comments }),
-      });
+      await api.post(`/applications/${app.id}/${action}`, { comments });
       onDone();
     } catch (err) { setError(err.message); }
     finally { setSaving(false); }
@@ -284,7 +254,7 @@ function ApplicationRow({ app, user, staffList, onRefresh }) {
 
   async function handleSelfAssign() {
     try {
-      await apiFetch(`/applications/${app.id}/assign`, { method: 'POST', body: JSON.stringify({}) });
+      await api.post(`/applications/${app.id}/assign`, {});
       onRefresh();
     } catch (err) { alert(err.message); }
   }
@@ -423,7 +393,7 @@ export default function PendingApprovals({ user, onNavigate, onLogout }) {
   const load = useCallback(async () => {
     setLoading(true); setError('');
     try {
-      const data = await apiFetch('/applications/pending');
+      const data = await api.get('/applications/pending');
       setApps(data.applications || []);
     } catch (e) { setError(e.message); }
     finally { setLoading(false); }
@@ -432,7 +402,7 @@ export default function PendingApprovals({ user, onNavigate, onLogout }) {
   const loadStaff = useCallback(async () => {
     if (!isAdmin || !user?.council_id) return;
     try {
-      const data = await apiFetch(`/councils/${user.council_id}/users?role=council_staff,council_admin`);
+      const data = await api.get(`/councils/${user.council_id}/users?role=council_staff,council_admin`);
       setStaffList(data.users || []);
     } catch { /* non-critical */ }
   }, [isAdmin, user?.council_id]);

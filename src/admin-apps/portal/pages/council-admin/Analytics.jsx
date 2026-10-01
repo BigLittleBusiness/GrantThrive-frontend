@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import apiClient from '../../utils/api';
+import { getApplications, getGrants } from '../../utils/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card';
 import { Button } from '@shared/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared/components/ui/tabs';
 import { Badge } from '@shared/components/ui/badge';
+import { Label } from '@shared/components/ui/label';
 import { 
   LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
@@ -26,8 +27,8 @@ const Analytics = ({ user, onNavigate, onLogout }) => {
     const fetchData = async () => {
       try {
         const [grantsData, appsData] = await Promise.all([
-          apiClient.councilGetGrants(),
-          apiClient.councilGetApplications(),
+          getGrants(),
+          getApplications(),
         ]);
         setGrants(grantsData?.grants || grantsData || []);
         setApplications(appsData?.applications || appsData || []);

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import NotificationBell from '../../components/common/NotificationBell.jsx';
+import CommunityNavbar from '../../components/layout/CommunityNavbar.jsx';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@shared/components/ui/card.jsx';
 import { Badge } from '@shared/components/ui/badge.jsx';
 import { Button } from '@shared/components/ui/button.jsx';
@@ -24,7 +25,7 @@ import {
   FolderOpen,
   Loader2,
 } from 'lucide-react';
-import apiClient from '../../utils/api.js';
+import { getApplications, getGrants } from '../../utils/api.js';
 
 const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
   const [applications, setApplications] = useState([]);
@@ -80,7 +81,7 @@ const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
         setError(null);
 
         // Load own applications
-        const appsData = await apiClient.communityGetApplications();
+        const appsData = await getApplications();
         const appsList = Array.isArray(appsData)
           ? appsData
           : appsData?.applications || appsData?.data || [];
@@ -88,7 +89,7 @@ const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
 
         // Load open grants for recommendations panel
         try {
-          const grantsData = await apiClient.getGrants({ status: 'open', limit: 4 });
+          const grantsData = await getGrants({ status: 'open', per_page: 4 });
           const grantsList = Array.isArray(grantsData)
             ? grantsData
             : grantsData?.grants || grantsData?.data || [];

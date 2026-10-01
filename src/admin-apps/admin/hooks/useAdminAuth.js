@@ -9,36 +9,20 @@
  *   const { user, logout } = useAdminAuth();
  *
  * logout() dispatches the `gt:logout` custom event which AdminAuthGate
- * listens for, clearing the token and returning to the AdminLogin screen.
- *
- * Domain: admin.grantthrive.com
+ * listens for, returning to the AdminLogin screen.
  */
 
 import { useCallback } from 'react';
-import { API_BASE_URL, getAuthHeaders, getStoredUser, clearAuth } from '@grantthrive/auth';
+import { getStoredUser } from '@shared/auth';
+import { logout as endSession } from '@shared/api/session';
 
 export function useAdminAuth() {
   const user = getStoredUser();
 
   const logout = useCallback(async () => {
-    try {
-      // The dedicated admin endpoint writes an audit event. Logout must still
-      // complete locally if the network is unavailable or the token has expired.
-      await fetch(`${API_BASE_URL}/admin/logout`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...getAuthHeaders(),
-        },
-        keepalive: true,
-      });
-    } catch {
-      // Deliberately ignored: removing local credentials is the safe outcome.
-    } finally {
-      clearAuth();
-      // Notify AdminAuthGate to return to the login screen.
-      window.dispatchEvent(new CustomEvent('gt:logout'));
-    }
+    // The dedicated admin endpoint writes an audit event.
+    await endSession('/admin/logout');
+    window.dispatchEvent(new CustomEvent('gt:logout'));
   }, []);
 
   return {

@@ -16,10 +16,9 @@ import {
   ChevronLeft,
   ThumbsUp,
 } from 'lucide-react';
-import apiClient from '../../utils/api.js';
+import { getVotingSessions, getVotingSession, castVote } from '../../utils/api.js';
 import CommunityNavbar from '../../components/layout/CommunityNavbar.jsx';
 
-const API_BASE = import.meta.env.VITE_API_URL || '';
 
 const CommunityVoting = ({ user, onNavigate, onLogout }) => {
   const [sessions, setSessions] = useState([]);
@@ -39,10 +38,7 @@ const CommunityVoting = ({ user, onNavigate, onLogout }) => {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch(`${API_BASE}/voting/api/sessions?status=open`);
-      if (!res.ok) throw new Error(`Server error ${res.status}`);
-      const data = await res.json();
-      const list = data.sessions || [];
+      const { sessions: list } = await getVotingSessions('open');
       setSessions(list);
       if (list.length > 0 && !selectedSession) {
         setSelectedSession(list[0]);
@@ -69,9 +65,7 @@ const CommunityVoting = ({ user, onNavigate, onLogout }) => {
   const handleSelectSession = async (session) => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_BASE}/voting/api/sessions/${session.id}`);
-      if (!res.ok) throw new Error(`Server error ${res.status}`);
-      const data = await res.json();
+      const data = await getVotingSession(session.id);
       setSelectedSession(data);
       const mapped = {};
       Object.entries(data.user_votes || {}).forEach(([k, v]) => {
@@ -131,24 +125,11 @@ const CommunityVoting = ({ user, onNavigate, onLogout }) => {
     try {
       setSubmitting(true);
       setError(null);
-      const token = localStorage.getItem('grantthrive_token') || localStorage.getItem('token');
-      const headers = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-
-      const promises = Object.entries(userVotes).map(([optionId, value]) =>
-        fetch(`${API_BASE}/voting/api/vote`, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            application_id: parseInt(optionId),
-            voting_session_id: selectedSession.id,
-            vote_value: value || 1,
-          }),
-        })
+      await Promise.all(
+        Object.entries(userVotes).map(([optionId, value]) =>
+          castVote(selectedSession.id, parseInt(optionId), value || 1)
+        )
       );
-      const results = await Promise.all(promises);
-      const failed = results.filter((r) => !r.ok);
-      if (failed.length > 0) throw new Error('Some votes could not be submitted.');
       setSubmitSuccess(true);
       // Refresh session to get updated counts
       await handleSelectSession(selectedSession);

@@ -32,7 +32,7 @@ import {
   Loader2,
   XCircle,
 } from 'lucide-react';
-import apiClient from '../../utils/api.js';
+import { getGrant, createApplication, updateApplication, submitApplication, validateAbn } from '../../utils/api.js';
 
 const ApplicationForm = ({ user, onNavigate, onLogout }) => {
   const { grantId: grantIdParam } = useParams();
@@ -105,7 +105,7 @@ const ApplicationForm = ({ user, onNavigate, onLogout }) => {
   // ── Load grant title from API ─────────────────────────────────────────────
   useEffect(() => {
     if (!grantId) return;
-    apiClient.communityGetGrant(grantId)
+    getGrant(grantId)
       .then(data => {
         const g = data?.grant || data;
         if (g?.title) setGrantTitle(g.title);
@@ -124,61 +124,41 @@ const ApplicationForm = ({ user, onNavigate, onLogout }) => {
   ];
 
   // ── Build API payload from formData ──────────────────────────────────────
-  const buildPayload = (status = 'draft') => ({
+  // Fields persisted by POST/PATCH /applications.
+  const buildPayload = () => ({
     grant_id: grantId || undefined,
-    status,
     organization_name: formData.organizationName,
-    organization_type: formData.organizationType,
-    abn: formData.abn,
-    address: formData.address,
-    city: formData.city,
-    postcode: formData.postcode,
-    website: formData.website,
-    established_year: formData.establishedYear,
-    primary_contact_name: formData.primaryContactName,
-    primary_contact_title: formData.primaryContactTitle,
-    primary_contact_email: formData.primaryContactEmail,
-    primary_contact_phone: formData.primaryContactPhone,
-    secondary_contact_name: formData.secondaryContactName,
-    secondary_contact_email: formData.secondaryContactEmail,
     project_title: formData.projectTitle,
     project_description: formData.projectDescription,
-    project_category: formData.projectCategory,
-    project_location: formData.projectLocation,
-    project_start_date: formData.projectStartDate,
-    project_end_date: formData.projectEndDate,
-    total_project_cost: parseFloat(formData.totalProjectCost) || 0,
-    requested_amount: parseFloat(formData.amountRequested) || 0,
-    budget_items: formData.budgetItems,
-    other_funding: formData.otherFunding,
-    in_kind_contributions: formData.inKindContributions,
-    community_need: formData.communityNeed,
-    project_impact: formData.projectImpact,
-    sustainability: formData.sustainability,
-    risk_management: formData.riskManagement,
-    team_experience: formData.teamExperience,
-    declaration_accepted: formData.declarationAccepted,
-    privacy_accepted: formData.privacyAccepted,
-    terms_accepted: formData.termsAccepted,
+    amount_requested: parseFloat(formData.amountRequested) || 0,
+    contact_person: formData.primaryContactName,
+    contact_email: formData.primaryContactEmail,
+    contact_phone: formData.primaryContactPhone,
+    address: formData.address,
+    postcode: formData.postcode,
   });
+
+  // Create the draft on first save, update it afterwards. Resolves with its id.
+  const saveDraft = async () => {
+    const payload = buildPayload();
+    if (applicationId) {
+      await updateApplication(applicationId, payload);
+      return applicationId;
+    }
+    const created = await createApplication(payload);
+    setApplicationId(created.id);
+    return created.id;
+  };
 
   // ── Save Draft handler ────────────────────────────────────────────────────
   const handleSaveDraft = async () => {
     setIsAutoSaving(true);
     setSubmitError(null);
     try {
-      const payload = buildPayload('draft');
-      let result;
-      if (applicationId) {
-        result = await apiClient.communityUpdateApplication(applicationId, payload);
-      } else {
-        result = await apiClient.communityCreateApplication(payload);
-        const newId = result?.application?.id || result?.id;
-        if (newId) setApplicationId(newId);
-      }
+      await saveDraft();
       setLastSaved(new Date());
     } catch (err) {
-      setSubmitError(err?.response?.data?.error || 'Failed to save draft. Please try again.');
+      setSubmitError(err.message || 'Failed to save draft. Please try again.');
     } finally {
       setIsAutoSaving(false);
     }
@@ -190,12 +170,7 @@ const ApplicationForm = ({ user, onNavigate, onLogout }) => {
     setIsSubmitting(true);
     setSubmitError(null);
     try {
-      const payload = buildPayload('submitted');
-      if (applicationId) {
-        await apiClient.communityUpdateApplication(applicationId, payload);
-      } else {
-        await apiClient.communityCreateApplication(payload);
-      }
+      await submitApplication(await saveDraft());
       setSubmitSuccess(true);
       // Navigate back to grants list after short delay
       setTimeout(() => {
@@ -203,7 +178,7 @@ const ApplicationForm = ({ user, onNavigate, onLogout }) => {
         else navigate('/portal/community/grants');
       }, 2000);
     } catch (err) {
-      setSubmitError(err?.response?.data?.error || 'Submission failed. Please try again.');
+      setSubmitError(err.message || 'Submission failed. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -242,8 +217,7 @@ const ApplicationForm = ({ user, onNavigate, onLogout }) => {
     abnDebounceRef.current = setTimeout(async () => {
       setAbnStatus('checking');
       try {
-        const res = await apiClient.get(`/api/abn/validate?abn=${encodeURIComponent(stripped)}`);
-        const data = res.data;
+        const data = await validateAbn(stripped);
         setAbnResult(data);
         if (!data.valid_format) {
           setAbnStatus('invalid');
@@ -259,7 +233,7 @@ const ApplicationForm = ({ user, onNavigate, onLogout }) => {
           setErrors(prev => ({ ...prev, abn: null }));
         }
       } catch (err) {
-        const errMsg = err?.response?.data?.error;
+        const errMsg = err?.data?.error;
         if (errMsg) {
           setAbnResult({ error: errMsg, valid_format: false });
           setAbnStatus('invalid');

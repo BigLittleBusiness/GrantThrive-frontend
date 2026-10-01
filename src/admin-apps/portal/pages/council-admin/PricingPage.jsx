@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@shared/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card';
 import { Badge } from '@shared/components/ui/badge';
+import api from '@shared/api/client';
 import { 
   Check, 
   X, 
@@ -23,27 +24,19 @@ const FALLBACK_PRICING = {
   large:  { monthly: 1100, annual: 11000 },
 };
 
-const PRICING_API_URL = (() => {
-  const base = (import.meta.env.VITE_API_URL || 'https://api.grantthrive.com').replace(/\/api$/, '')
-  return `${base}/api/pricing/plans`
-})()
-
 const PricingPage = ({ user, onNavigate, onLogout }) => {
   const [billingCycle, setBillingCycle] = useState('monthly');
   const [livePricing, setLivePricing] = useState(FALLBACK_PRICING);
 
   const loadPricing = useCallback(async () => {
     try {
-      const res = await fetch(PRICING_API_URL, { cache: 'no-store' });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.plans) {
-          setLivePricing({
-            small:  { monthly: Math.round((data.plans.small?.monthly_price_aud_cents  ?? 20000) / 100), annual: Math.round((data.plans.small?.annual_price_aud_cents  ?? 200000) / 100) },
-            medium: { monthly: Math.round((data.plans.medium?.monthly_price_aud_cents ?? 50000) / 100), annual: Math.round((data.plans.medium?.annual_price_aud_cents ?? 500000) / 100) },
-            large:  { monthly: Math.round((data.plans.large?.monthly_price_aud_cents  ?? 110000) / 100), annual: Math.round((data.plans.large?.annual_price_aud_cents  ?? 1100000) / 100) },
-          });
-        }
+      const data = await api.get('/pricing/plans', { cache: 'no-store' });
+      if (data.plans) {
+        setLivePricing({
+          small:  { monthly: Math.round((data.plans.small?.monthly_price_aud_cents  ?? 20000) / 100), annual: Math.round((data.plans.small?.annual_price_aud_cents  ?? 200000) / 100) },
+          medium: { monthly: Math.round((data.plans.medium?.monthly_price_aud_cents ?? 50000) / 100), annual: Math.round((data.plans.medium?.annual_price_aud_cents ?? 500000) / 100) },
+          large:  { monthly: Math.round((data.plans.large?.monthly_price_aud_cents  ?? 110000) / 100), annual: Math.round((data.plans.large?.annual_price_aud_cents  ?? 1100000) / 100) },
+        });
       }
     } catch { /* keep fallback */ }
   }, []);

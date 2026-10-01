@@ -6,25 +6,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { getToken } from '@grantthrive/auth';
-
-const API = import.meta.env.VITE_API_URL || '';
-
-function apiFetch(path, opts = {}) {
-  const token = getToken();
-  return fetch(`${API}${path}`, {
-    ...opts,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(opts.headers || {}),
-    },
-  }).then(async (r) => {
-    const json = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(json.error || `HTTP ${r.status}`);
-    return json;
-  });
-}
+import api from '@shared/api/client';
 
 const PLAN_LABELS = {
   trial:  'Free Trial',
@@ -146,7 +128,7 @@ export default function AccountBilling({ user, onNavigate, onLogout }) {
     setLoading(true);
     setError('');
     try {
-      const data = await apiFetch(`/api/councils/${councilId}/billing`);
+      const data = await api.get(`/councils/${councilId}/billing`);
       setBilling(data);
       setContactForm({
         contact_email: data.council?.contact_email || '',
@@ -163,7 +145,7 @@ export default function AccountBilling({ user, onNavigate, onLogout }) {
   const loadSmsTiers = useCallback(async () => {
     if (!councilId) return;
     try {
-      const data = await apiFetch(`/api/councils/${councilId}/sms-tiers`);
+      const data = await api.get(`/councils/${councilId}/sms-tiers`);
       setSmsData(data);
     } catch {
       // Non-fatal — SMS section will show an error inline
@@ -180,10 +162,7 @@ export default function AccountBilling({ user, onNavigate, onLogout }) {
     setSaving(true);
     setSaveMsg('');
     try {
-      await apiFetch(`/api/councils/${councilId}`, {
-        method: 'PATCH',
-        body: JSON.stringify(contactForm),
-      });
+      await api.patch(`/councils/${councilId}`, contactForm);
       setSaveMsg('Contact details updated successfully.');
       setEditContact(false);
       loadBilling();
@@ -207,14 +186,11 @@ export default function AccountBilling({ user, onNavigate, onLogout }) {
     setSmsMsg('');
     try {
       if (showConfirm === 'cancel') {
-        const res = await apiFetch(`/api/councils/${councilId}/sms-tiers`, { method: 'DELETE' });
+        const res = await api.delete(`/councils/${councilId}/sms-tiers`);
         setSmsMsg(res.message || 'SMS add-on cancelled.');
         setSmsMsgType('success');
       } else {
-        const res = await apiFetch(`/api/councils/${councilId}/sms-tiers`, {
-          method: 'POST',
-          body: JSON.stringify({ tier: showConfirm }),
-        });
+        const res = await api.post(`/councils/${councilId}/sms-tiers`, { tier: showConfirm });
         setSmsMsg(res.message || 'SMS add-on activated.');
         setSmsMsgType('success');
       }
