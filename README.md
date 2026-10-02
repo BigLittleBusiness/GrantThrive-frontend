@@ -37,6 +37,13 @@ relative to it (`api.get('/grants')`). Portal endpoint functions live in
 `src/admin-apps/portal/utils/api.js`; login/logout/session verification in
 `src/shared/api/session.js`.
 
+## Billing
+
+Council subscriptions use Stripe-hosted Checkout and Customer Portal pages, so the
+frontend needs no Stripe keys. Plan selection (`PlanPicker`) and the subscription
+card live in `src/admin-apps/portal/components/billing/`. Setup, GST handling and
+webhook events are documented in the backend README (section 5).
+
 ## Environment files
 
 The build mode controls which env file Vite loads.
