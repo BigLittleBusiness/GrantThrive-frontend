@@ -89,6 +89,21 @@ export async function checkSubdomain(subdomain) {
   }
 }
 
+// ── Billing (Stripe) ────────────────────────────────────────────────────────
+
+/** Plan prices from Stripe (amounts exclude GST): { plans: [...], tax_note }. */
+export const getBillingPlans = () => api.get('/billing/plans')
+
+/** Start Stripe Checkout for the council's subscription. Resolves with { url }. */
+export const startCheckout = (plan, billingCycle) =>
+  api.post('/billing/checkout-session', { plan, billing_cycle: billingCycle })
+
+/** Apply a completed checkout after Stripe redirects back. */
+export const syncCheckout = (sessionId) => api.post('/billing/checkout-session/sync', { session_id: sessionId })
+
+/** Open the Stripe Customer Portal. Resolves with { url }. */
+export const openBillingPortal = () => api.post('/billing/portal-session')
+
 // ── Community voting (public; votes are attributed when logged in) ─────────
 
 export const getVotingSessions = (status = 'open') => api.get(withQuery('/voting/sessions', { status }))

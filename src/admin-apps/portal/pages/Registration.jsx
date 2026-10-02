@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
-import { register, checkSubdomain, validateAbn } from '../utils/api.js';
+import { register, checkSubdomain, validateAbn, getBillingPlans } from '../utils/api.js';
+import PlanPicker from '../components/billing/PlanPicker.jsx';
+import { formatAud } from '@shared/lib/money';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@shared/components/ui/card.jsx';
 import { Button } from '@shared/components/ui/button.jsx';
 import { Input } from '@shared/components/ui/input.jsx';
@@ -114,8 +116,23 @@ export default function Registration({ onLogin }) {
     subdomain: '',
     position: '',
     department: '',
+    plan: '',
+    billingCycle: 'monthly',
   });
   const [submitError, setSubmitError] = useState(null);
+
+  // ── Plans (council registration) ─────────────────────────────────────────
+  const [billingPlans, setBillingPlans] = useState([]);
+  const [billingPlansError, setBillingPlansError] = useState('');
+  useEffect(() => {
+    if (userType !== 'council' || billingPlans.length) return;
+    getBillingPlans()
+      .then((data) => setBillingPlans(data.plans))
+      .catch(() => setBillingPlansError('Plans could not be loaded. Please refresh the page.'));
+  }, [userType, billingPlans.length]);
+  const selectedPlan = billingPlans.find(
+    (p) => p.plan === formData.plan && p.billing_cycle === formData.billingCycle
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // ── Subdomain availability check state ──────────────────────────────────
@@ -314,7 +331,8 @@ export default function Registration({ onLogin }) {
         formData.councilName.trim() &&
         formData.position.trim() &&
         (formData.subdomain.trim() || derivedSubdomain) &&
-        !subdomainBlocked
+        !subdomainBlocked &&
+        formData.plan
       );
     }
 
@@ -352,6 +370,8 @@ export default function Registration({ onLogin }) {
             : undefined,
         position: formData.position.trim() || undefined,
         department: formData.department.trim() || undefined,
+        plan: userType === 'council' ? formData.plan : undefined,
+        billing_cycle: userType === 'council' ? formData.billingCycle : undefined,
       };
 
       const data = await register(payload);
@@ -717,7 +737,7 @@ export default function Registration({ onLogin }) {
                 <XCircle className="mx-2 h-4 w-4 text-rose-500" />
               )}
               <span className="select-none whitespace-nowrap bg-slate-100 px-3 py-2.5 text-sm text-slate-500">
-                .grantthrive.com.au
+                .grantthrive.com
               </span>
             </div>
 
@@ -755,9 +775,23 @@ export default function Registration({ onLogin }) {
               <p className="mt-1.5 text-xs text-slate-500">
                 Your portal will be at{' '}
                 <span className="font-medium text-slate-700">
-                  {formData.subdomain || derivedSubdomain}.grantthrive.com.au
+                  {formData.subdomain || derivedSubdomain}.grantthrive.com
                 </span>
               </p>
+            )}
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Plan *</label>
+            {billingPlans.length > 0 ? (
+              <PlanPicker
+                plans={billingPlans}
+                plan={formData.plan}
+                billingCycle={formData.billingCycle}
+                onChange={({ plan, billingCycle }) => setFormData((prev) => ({ ...prev, plan, billingCycle }))}
+              />
+            ) : (
+              <p className="text-sm text-slate-500">{billingPlansError || 'Loading plans…'}</p>
             )}
           </div>
 
@@ -768,8 +802,8 @@ export default function Registration({ onLogin }) {
                 <p className="font-medium text-amber-900">GrantThrive admin approval required</p>
                 <p className="mt-1 text-sm text-amber-800">
                   Your registration will be reviewed by the GrantThrive team. Once approved you
-                  will receive an email and can log in as your council's Administrator.
-                  Additional staff can then be invited through your admin portal.
+                  will receive an email, can log in as your council's Administrator and complete
+                  your subscription. You won't be charged before approval.
                 </p>
               </div>
             </div>
@@ -907,6 +941,17 @@ export default function Registration({ onLogin }) {
             </div>
           </div>
         </div>
+        {userType === 'council' && selectedPlan && (
+          <div className="rounded-2xl border border-slate-200 bg-white p-5">
+            <p className="text-sm font-medium text-slate-700">Selected plan</p>
+            <p className="mt-1 text-lg font-semibold text-slate-900">
+              {selectedPlan.name} — {formatAud(selectedPlan.amount_cents)} per {selectedPlan.interval}
+            </p>
+            <p className="mt-1 text-sm text-slate-500">
+              Plus GST for Australian councils. Billed through Stripe after your registration is approved.
+            </p>
+          </div>
+        )}
       </div>
 
       {submitError && (

@@ -11,7 +11,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   UserCheck, RefreshCw, Search, Check, X, Mail, Phone, Building2, Globe,
-  Briefcase, Clock, AlertCircle, CheckCircle, Loader2,
+  Briefcase, Clock, AlertCircle, CheckCircle, Loader2, CreditCard,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card';
 import { Badge } from '@shared/components/ui/badge';
@@ -56,6 +56,9 @@ function RegistrationCard({ registration, busy, onApprove, onReject, onSaveSubdo
               </span>
             </div>
             <Field icon={Building2}>{registration.organisation}</Field>
+            <Field icon={CreditCard}>
+              {registration.plan && `${registration.plan.charAt(0).toUpperCase()}${registration.plan.slice(1)} plan · ${registration.billing_cycle === 'annual' ? 'Annual' : 'Monthly'} billing`}
+            </Field>
             <Field icon={Mail}>{registration.email}</Field>
             <Field icon={Phone}>{registration.phone}</Field>
             <Field icon={Briefcase}>

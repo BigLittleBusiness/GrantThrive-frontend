@@ -1,12 +1,13 @@
 /**
  * AccountBilling — Council Admin
  * ================================
- * Shows the council's current plan, billing amounts, trial status,
+ * Shows the council's Stripe subscription, current plan, billing amounts, trial status,
  * entitlements, SMS add-on tier selector, and contact details.
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '@shared/api/client';
+import SubscriptionCard from '../../components/billing/SubscriptionCard.jsx';
 
 const PLAN_LABELS = {
   trial:  'Free Trial',
@@ -119,13 +120,14 @@ export default function AccountBilling({ user, onNavigate, onLogout }) {
   const [saving, setSaving]           = useState(false);
   const [saveMsg, setSaveMsg]         = useState('');
 
-  const loadBilling = useCallback(async () => {
+  // silent: refresh in place (no full-page loader), e.g. after a subscription change.
+  const loadBilling = useCallback(async ({ silent = false } = {}) => {
     if (!councilId) {
       setError('No council associated with your account. Please contact support.');
       setLoading(false);
       return;
     }
-    setLoading(true);
+    if (!silent) setLoading(true);
     setError('');
     try {
       const data = await api.get(`/councils/${councilId}/billing`);
@@ -141,6 +143,7 @@ export default function AccountBilling({ user, onNavigate, onLogout }) {
       setLoading(false);
     }
   }, [councilId]);
+  const refreshBilling = useCallback(() => loadBilling({ silent: true }), [loadBilling]);
 
   const loadSmsTiers = useCallback(async () => {
     if (!councilId) return;
@@ -345,6 +348,8 @@ export default function AccountBilling({ user, onNavigate, onLogout }) {
             {saveMsg}
           </div>
         )}
+
+        <SubscriptionCard subscription={billing.subscription} onChanged={refreshBilling} />
 
         {/* ── Plan card ──────────────────────────────────────────────────────── */}
         <div className="rounded-xl border border-gray-200 bg-white p-6">

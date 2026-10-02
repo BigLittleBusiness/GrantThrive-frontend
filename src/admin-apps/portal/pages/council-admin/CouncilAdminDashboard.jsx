@@ -33,6 +33,7 @@ import {
 const CouncilAdminDashboard = ({ user, onNavigate, onLogout }) => {
   // ── SMS add-on prompt ─────────────────────────────────────────────────────
   const [showSmsBanner, setShowSmsBanner] = useState(false);
+  const [needsSubscription, setNeedsSubscription] = useState(false);
   const [smsBannerDismissed, setSmsBannerDismissed] = useState(
     () => sessionStorage.getItem('gt_sms_banner_dismissed') === 'true'
   );
@@ -96,6 +97,13 @@ const CouncilAdminDashboard = ({ user, onNavigate, onLogout }) => {
     communityMembers: 0,
     averageProcessingTime: '—',
   };
+
+  useEffect(() => {
+    if (user?.role !== 'council_admin' || !user?.council_id) return;
+    apiClient.get(`/councils/${user.council_id}/billing`)
+      .then((data) => setNeedsSubscription(!data.subscription.is_active))
+      .catch(() => {});
+  }, [user]);
 
   useEffect(() => {
     if (user?.role !== 'council_admin' || smsBannerDismissed) return;
@@ -189,6 +197,22 @@ const CouncilAdminDashboard = ({ user, onNavigate, onLogout }) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
       {/* SMS Add-on Prompt Banner */}
+      {needsSubscription && (
+        <div className="mb-6 flex items-center justify-between gap-4 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
+          <div className="flex items-center gap-3">
+            <CreditCard className="h-5 w-5 shrink-0 text-amber-700" />
+            <div>
+              <p className="font-semibold text-amber-900">Complete your subscription</p>
+              <p className="mt-0.5 text-sm text-amber-800">
+                Your council has been approved. Activate your GrantThrive plan to unlock its full limits and features.
+              </p>
+            </div>
+          </div>
+          <Button size="sm" className="shrink-0 bg-amber-700 text-white hover:bg-amber-800" onClick={() => onNavigate('account-billing')}>
+            Choose plan &amp; pay
+          </Button>
+        </div>
+      )}
       {showSmsBanner && (
         <div className="mb-6 flex items-center justify-between gap-4 rounded-xl border border-green-200 bg-green-50 px-5 py-4">
           <div className="flex items-center gap-3">
