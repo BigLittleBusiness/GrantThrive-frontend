@@ -239,14 +239,6 @@ const ApplicationReviewWorkflow = ({ grantId, user, onNavigate, onLogout }) => {
               <Eye className="h-4 w-4 mr-1" />
               View
             </Button>
-            <Button variant="outline" size="sm">
-              <Star className="h-4 w-4 mr-1" />
-              Rate
-            </Button>
-            <Button variant="outline" size="sm">
-              <MessageSquare className="h-4 w-4 mr-1" />
-              Message
-            </Button>
           </div>
         </div>
       </CardContent>

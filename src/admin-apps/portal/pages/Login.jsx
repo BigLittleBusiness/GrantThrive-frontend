@@ -20,8 +20,7 @@ import {
 const Login = ({ onLogin }) => {
   const [formData, setFormData] = useState({
     email: '',
-    password: '',
-    rememberMe: false
+    password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loginAttempt, setLoginAttempt] = useState(null);
@@ -138,16 +137,7 @@ const handleLogin = async (e) => {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={formData.rememberMe}
-                    onChange={(e) => handleInputChange('rememberMe', e.target.checked)}
-                    className="rounded border-gray-300 text-green-700 focus:ring-green-500"
-                  />
-                  <span className="ml-2 text-sm text-gray-600">Remember me</span>
-                </label>
+              <div className="flex justify-end">
                 <a href="/portal/forgot-password" className="text-sm text-green-700 hover:text-green-800 font-medium">
                   Forgot password?
                 </a>
@@ -233,4 +223,3 @@ const handleLogin = async (e) => {
 };
 
 export default Login;
-

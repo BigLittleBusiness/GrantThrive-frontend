@@ -428,11 +428,6 @@ const GrantDetails = ({ user, council, onNavigate, onLogout }) => {
                     council={council}
                   />
                 )}
-                <div className="text-center mt-3">
-                  <button className="text-sm text-orange-600 hover:underline">
-                    Save for later
-                  </button>
-                </div>
               </CardContent>
             </Card>
 

@@ -22,7 +22,11 @@ const ResetPassword = ({ council }) => {
   }, [token]);
 
   const passwordsMatch = formData.password === formData.confirm;
-  const isStrong = formData.password.length >= 8;
+  const isStrong = formData.password.length >= 10
+    && /[A-Z]/.test(formData.password)
+    && /[a-z]/.test(formData.password)
+    && /\d/.test(formData.password)
+    && /[^A-Za-z0-9]/.test(formData.password);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -120,7 +124,7 @@ const ResetPassword = ({ council }) => {
                       type={showPassword ? 'text' : 'password'}
                       value={formData.password}
                       onChange={(e) => setFormData(p => ({ ...p, password: e.target.value }))}
-                      placeholder="At least 8 characters"
+                      placeholder="10+ characters with upper, lower, number and symbol"
                       className="pl-10 pr-10"
                       required
                       autoFocus
@@ -135,7 +139,7 @@ const ResetPassword = ({ council }) => {
                     </button>
                   </div>
                   {formData.password && !isStrong && (
-                    <p className="text-xs text-red-600">Password must be at least 8 characters.</p>
+                    <p className="text-xs text-red-600">Use 10+ characters including upper and lower case letters, a number and a symbol.</p>
                   )}
                 </div>
 

@@ -23,20 +23,14 @@ const Analytics = ({ user, onNavigate, onLogout }) => {
   const [grants, setGrants] = useState([]);
   const [applications, setApplications] = useState([]);
 
+  const loadData = async () => {
+    const [grantsData, appsData] = await Promise.all([getGrants(), getApplications()]);
+    setGrants(grantsData?.grants || grantsData || []);
+    setApplications(appsData?.applications || appsData || []);
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [grantsData, appsData] = await Promise.all([
-          getGrants(),
-          getApplications(),
-        ]);
-        setGrants(grantsData?.grants || grantsData || []);
-        setApplications(appsData?.applications || appsData || []);
-      } catch (err) {
-        console.error('Analytics fetch error:', err);
-      }
-    };
-    fetchData();
+    loadData().catch((err) => console.error('Analytics fetch error:', err));
   }, []);
 
   // Calculate key metrics
@@ -74,7 +68,8 @@ const Analytics = ({ user, onNavigate, onLogout }) => {
     const months = [];
     const now = new Date();
     
-    for (let i = 11; i >= 0; i--) {
+    const rangeMonths = timeRange === '6months' ? 6 : timeRange === '3months' ? 3 : 12;
+    for (let i = rangeMonths - 1; i >= 0; i--) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const monthKey = date.toISOString().slice(0, 7); // YYYY-MM format
       
@@ -156,8 +151,13 @@ const Analytics = ({ user, onNavigate, onLogout }) => {
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    // Simulate data refresh
-    setTimeout(() => setRefreshing(false), 1000);
+    try {
+      await loadData();
+    } catch (err) {
+      console.error('Analytics refresh error:', err);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const exportData = () => {

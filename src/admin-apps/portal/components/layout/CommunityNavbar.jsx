@@ -110,6 +110,8 @@ export default function CommunityNavbar({ user, onNavigate, onLogout, activePage
               className="lg:hidden p-2 rounded-md text-slate-600 hover:bg-slate-100"
               onClick={() => setMobileOpen((o) => !o)}
               aria-label="Toggle menu"
+              aria-expanded={mobileOpen}
+              aria-controls="community-mobile-navigation"
             >
               {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
@@ -120,7 +122,7 @@ export default function CommunityNavbar({ user, onNavigate, onLogout, activePage
       {/* Mobile dropdown */}
       {mobileOpen && (
         <div className="lg:hidden border-t border-slate-200 bg-white shadow-md">
-          <nav className="flex flex-col py-2">
+          <nav id="community-mobile-navigation" className="flex flex-col py-2">
             {NAV_ITEMS.map(({ id, label, icon: Icon, path }) => {
               const isActive = activePage === id;
               return (

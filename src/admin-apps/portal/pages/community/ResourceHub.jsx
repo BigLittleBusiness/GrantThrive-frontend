@@ -169,10 +169,6 @@ const ResourceHub = ({ user, council, onNavigate, onLogout }) => {
               <h1 className="text-3xl font-bold mb-2">Resource Hub</h1>
               <p className="text-blue-100">Guides, templates, videos, and tools to help you succeed</p>
             </div>
-            <Button className="bg-green-700 hover:bg-green-800">
-              <Plus className="w-4 h-4 mr-2" />
-              Suggest Resource
-            </Button>
           </div>
 
           {/* Category Tabs */}
