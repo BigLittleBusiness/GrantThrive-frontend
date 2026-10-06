@@ -121,14 +121,17 @@ function PortalInner() {
 
   const role = useMemo(() => getUserRole(currentUser), [currentUser]);
 
-  const isAuthRoute = useMemo(
-    () =>
-      location.pathname === '/portal/login' ||
-      location.pathname === '/portal/register' ||
-      location.pathname === '/portal/forgot-password' ||
-      location.pathname === '/portal/reset-password',
-    [location.pathname]
-  );
+  const isAuthRoute = useMemo(() => {
+    // Static hosts conventionally redirect directory-style routes to a trailing
+    // slash. Normalise that harmless canonicalisation before applying auth guards.
+    const pathname = location.pathname.replace(/\/+$/, '') || '/';
+    return [
+      '/portal/login',
+      '/portal/register',
+      '/portal/forgot-password',
+      '/portal/reset-password',
+    ].includes(pathname);
+  }, [location.pathname]);
 
   // Build a role-aware navigation helper so dashboard components can navigate
   // using short keys like 'staff-management' rather than full paths.
