@@ -84,6 +84,14 @@ const toneClasses = {
   },
 };
 
+const COUNTRY_CODE_REGION = {
+  '+61': 'AU',
+  '+64': 'NZ',
+  '+1': 'US',
+  '+44': 'GB',
+  '+353': 'IE',
+};
+
 function validateGovernmentEmail(email) {
   const value = email.trim().toLowerCase();
   const auGov = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.gov\.au$/;
@@ -262,27 +270,15 @@ export default function Registration({ onLogin }) {
     return () => clearTimeout(subdomainDebounceRef.current);
   }, [effectiveSubdomain, userType, checkSubdomainAvailability]);
 
-  const selectedRole = ROLE_OPTIONS.find((item) => item.id === userType);
-  const selectedTone = toneClasses[selectedRole?.tone || 'green'];
-
   const emailError =
     userType === 'council' && formData.email && !validateGovernmentEmail(formData.email)
-      ? 'Please use your official council email (.gov.au or .govt.nz).'
+      ? 'Council onboarding is only for authorised council staff using an official .gov.au or .govt.nz email. You can continue to submit the request and we will email the next steps.'
       : '';
-
-  // Country code → ISO region map used for libphonenumber-js parsing
-  const COUNTRY_CODE_REGION = {
-    '+61':  'AU',
-    '+64':  'NZ',
-    '+1':   'US',
-    '+44':  'GB',
-    '+353': 'IE',
-  };
 
   // Phone number validation — accepts spaces and dashes; validates against selected country code
   const phoneError = useMemo(() => {
     // Strip spaces and dashes to get the raw digit string for parsing
-    const raw = formData.phone.replace(/[\s\-]/g, '').trim();
+    const raw = formData.phone.replace(/[\s-]/g, '').trim();
     if (!raw) return '';
     const region = COUNTRY_CODE_REGION[formData.phoneCountryCode] || 'AU';
     // Build the full international number for parsing
@@ -298,7 +294,7 @@ export default function Registration({ onLogin }) {
 
   // Password complexity rules — all five must pass
   const passwordRules = [
-    { label: 'At least 10 characters',           met: formData.password.length >= 10 },
+    { label: 'At least 12 characters',           met: formData.password.length >= 12 },
     { label: 'One uppercase letter (A–Z)',        met: /[A-Z]/.test(formData.password) },
     { label: 'One lowercase letter (a–z)',        met: /[a-z]/.test(formData.password) },
     { label: 'One number (0–9)',                  met: /[0-9]/.test(formData.password) },
@@ -320,8 +316,7 @@ export default function Registration({ onLogin }) {
     !phoneError &&
     passwordStrong &&
     formData.confirmPassword.trim() &&
-    formData.password === formData.confirmPassword &&
-    !emailError;
+    formData.password === formData.confirmPassword;
 
   const canContinueStep3 = useMemo(() => {
     if (userType === 'council') {
@@ -341,7 +336,7 @@ export default function Registration({ onLogin }) {
       formData.address.trim() &&
       (formData.organizationType === 'individual' || formData.organizationName.trim())
     );
-  }, [formData, userType]);
+  }, [formData, userType, subdomainStatus, derivedSubdomain]);
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({
@@ -357,7 +352,7 @@ export default function Registration({ onLogin }) {
         first_name: formData.firstName.trim(),
         last_name: formData.lastName.trim(),
         email: formData.email.trim(),
-        phone: (formData.phoneCountryCode + formData.phone.replace(/[\s\-]/g, '').trim()).trim(),
+        phone: (formData.phoneCountryCode + formData.phone.replace(/[\s-]/g, '').trim()).trim(),
         password: formData.password,
         user_type: userType,
         organization_name:
@@ -385,7 +380,11 @@ export default function Registration({ onLogin }) {
       }
     } catch (error) {
       console.error('Registration error:', error);
-      setSubmitError(error.message || 'Registration failed. Please try again.');
+      setSubmitError(
+        error.data?.code === 'council_email_required'
+          ? 'We cannot create a council account from this email address. Guidance has been sent to the address entered; council staff should register with their official .gov.au or .govt.nz email.'
+          : error.message || 'Registration failed. Please try again.'
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -928,15 +927,17 @@ export default function Registration({ onLogin }) {
       )}
 
       <div className="space-y-5">
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+        <div className={`rounded-2xl border p-5 ${userType === 'council' && emailError ? 'border-amber-200 bg-amber-50' : 'border-emerald-200 bg-emerald-50'}`}>
           <div className="flex items-start gap-3">
-            <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-700" />
+            {userType === 'council' && emailError ? <AlertCircle className="mt-0.5 h-5 w-5 text-amber-700" /> : <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-700" />}
             <div>
-              <p className="font-medium text-emerald-900">No additional documents required</p>
-              <p className="mt-1 text-sm text-emerald-800">
-                {userType === 'council'
-                  ? 'Your government email address is used to verify your council affiliation. No further documentation is needed at this stage.'
-                  : 'You can continue and complete your registration now.'}
+              <p className={`font-medium ${userType === 'council' && emailError ? 'text-amber-900' : 'text-emerald-900'}`}>{userType === 'council' && emailError ? 'Council email required' : 'No additional documents required'}</p>
+              <p className={`mt-1 text-sm ${userType === 'council' && emailError ? 'text-amber-800' : 'text-emerald-800'}`}>
+                {userType === 'council' && emailError
+                  ? 'Submitting this request will not create an account. We will send information to the email entered explaining the council-email requirement and next steps.'
+                  : userType === 'council'
+                    ? 'Your government email address is used to verify your council affiliation. No further documentation is needed at this stage.'
+                    : 'You can continue and complete your registration now.'}
               </p>
             </div>
           </div>
