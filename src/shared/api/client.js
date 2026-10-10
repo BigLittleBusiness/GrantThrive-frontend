@@ -28,17 +28,18 @@ export class ApiClient {
    * Resolves with the parsed JSON body (or null), rejects with ApiError.
    */
   async request(endpoint, options = {}) {
+    const { suppressLogoutEvent = false, ...fetchOptions } = options
     const token = getToken()
-    const isFormData = options.body instanceof FormData
+    const isFormData = fetchOptions.body instanceof FormData
     const headers = {
       ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options.headers,
+      ...fetchOptions.headers,
     }
 
     let response
     try {
-      response = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers })
+      response = await fetch(`${API_BASE_URL}${endpoint}`, { ...fetchOptions, headers })
     } catch {
       throw new ApiError('Network error — unable to reach the server.', 0, null)
     }
@@ -46,7 +47,7 @@ export class ApiClient {
     const isJson = (response.headers.get('content-type') || '').includes('application/json')
     const data = isJson ? await response.json().catch(() => null) : null
 
-    if (response.status === 401 && token) {
+    if (response.status === 401 && token && !suppressLogoutEvent) {
       // Session expired or revoked — PortalApp and AdminAuthGate listen for this.
       clearAuth()
       window.dispatchEvent(new CustomEvent('gt:logout'))

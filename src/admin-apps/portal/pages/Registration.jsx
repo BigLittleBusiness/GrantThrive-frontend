@@ -1099,7 +1099,7 @@ export default function Registration({ onLogin }) {
               return;
             }
 
-            window.location.href = '/portal/login';
+            window.location.href = '/portal/login/';
           }}
           className="h-11 w-full rounded-xl bg-emerald-700 hover:bg-emerald-800"
         >
@@ -1262,7 +1262,7 @@ export default function Registration({ onLogin }) {
         {!submitted && (
           <div className="mt-6 text-center text-sm text-slate-500">
             Already have an account?{' '}
-            <a href="/portal/login" className="font-medium text-emerald-700 hover:text-emerald-800">
+            <a href="/portal/login/" className="font-medium text-emerald-700 hover:text-emerald-800">
               Sign in
             </a>
           </div>

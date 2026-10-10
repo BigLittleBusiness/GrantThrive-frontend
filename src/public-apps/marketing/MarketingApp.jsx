@@ -60,6 +60,7 @@ function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
+  const portalLoginPath = '/portal/login/'
 
   const navItems = [
     { name: 'Home', path: '/' },
@@ -80,7 +81,7 @@ function Navigation() {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className='hidden md:flex items-center space-x-8'>
+          <div className='hidden lg:flex items-center space-x-8'>
             {navItems.map((item) => (
               <Link
                 key={item.name}
@@ -97,9 +98,9 @@ function Navigation() {
           </div>
 
           {/* CTA Buttons */}
-          <div className='hidden md:flex items-center space-x-4'>
+          <div className='hidden lg:flex items-center space-x-4'>
             <Button variant='outline' size='sm' asChild>
-              <a href='/portal'>Login</a>
+              <Link to={portalLoginPath}>Login</Link>
             </Button>
             <Button
               size='sm'
@@ -112,8 +113,12 @@ function Navigation() {
 
           {/* Mobile Menu Button */}
           <button
-            className='md:hidden'
+            type='button'
+            className='lg:hidden'
             onClick={() => setIsMenuOpen(!isMenuOpen)}
+            aria-expanded={isMenuOpen}
+            aria-controls='marketing-navigation-menu'
+            aria-label={isMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
           >
             {isMenuOpen ? (
               <X className='h-6 w-6' />
@@ -125,7 +130,7 @@ function Navigation() {
 
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className='md:hidden py-4 border-t border-gray-200'>
+          <div id='marketing-navigation-menu' className='lg:hidden py-4 border-t border-gray-200'>
             <div className='flex flex-col space-y-4'>
               {navItems.map((item) => (
                 <Link
@@ -139,7 +144,7 @@ function Navigation() {
               ))}
               <div className='flex flex-col space-y-2 pt-4'>
                 <Button variant='outline' size='sm' asChild>
-                  <a href='/portal'>Login</a>
+                  <Link to={portalLoginPath} onClick={() => setIsMenuOpen(false)}>Login</Link>
                 </Button>
                 <Button
                   size='sm'

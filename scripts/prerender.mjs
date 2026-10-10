@@ -14,13 +14,14 @@
 
 import { launch } from 'puppeteer';
 import { createServer } from 'http';
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
+import { copyFileSync, readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import handler from 'serve-handler';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DIST_DIR = join(__dirname, '..', 'dist');
+const PROTECTED_ROUTE_SHELL = join(DIST_DIR, '__protected-route-shell.html');
 const BASE_URL = 'https://grantthrive.com';
 
 const ROUTES = [
@@ -73,6 +74,11 @@ function writeRoute(routePath, html) {
 
 // ── Main ─────────────────────────────────────────────────────────────────
 async function main() {
+  // Preserve Vite's empty root shell before marketing pages are snapshotted.
+  // Protected portal/admin pages must not initially paint the marketing home
+  // page, which otherwise looks like a flicker while React replaces it.
+  copyFileSync(join(DIST_DIR, 'index.html'), PROTECTED_ROUTE_SHELL);
+
   console.log('[prerender] Starting local server on port', PORT);
   const server = await startServer();
 

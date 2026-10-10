@@ -69,9 +69,9 @@ function App() {
         <Route path="/portal/*" element={<PortalApp />} />
 
         {/* Optional convenience redirects */}
-        <Route path="/login" element={<Navigate to="/portal/login" replace />} />
+        <Route path="/login" element={<Navigate to="/portal/login/" replace />} />
         <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
-        <Route path="/portal" element={<Navigate to="/portal/login" replace />} />
+        <Route path="/portal" element={<Navigate to="/portal/login/" replace />} />
 
         {/* Public tools */}
         <Route path="/map" element={<MapApp />} />

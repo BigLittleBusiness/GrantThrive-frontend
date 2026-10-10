@@ -35,6 +35,10 @@ function isAllowedRole(user, allowedRoles = []) {
   return allowedRoles.includes(role);
 }
 
+function normalisePortalPath(pathname) {
+  return pathname.replace(/\/+$/, '') || '/';
+}
+
 // ── Simple access denied screen ──────────────────────────────────────────────
 function AccessDenied({ onLogout }) {
   return (
@@ -59,7 +63,7 @@ function AccessDenied({ onLogout }) {
 // ── Route guard ───────────────────────────────────────────────────────────────
 function ProtectedRoute({ user, allowedRoles, onLogout, children }) {
   if (!user) {
-    return <Navigate to="/portal/login" replace />;
+    return <Navigate to="/portal/login/" replace />;
   }
 
   if (!isAllowedRole(user, allowedRoles)) {
@@ -93,12 +97,16 @@ function PortalInner() {
     // Fired by the API client when the backend rejects the session (401).
     const handleSessionExpired = () => {
       setCurrentUser(null);
-      navigate('/portal/login', { replace: true });
+      // A stale token can produce more than one 401 while React initialises.
+      // Do not repeatedly replace the already-visible login route.
+      if (normalisePortalPath(location.pathname) !== '/portal/login') {
+        navigate('/portal/login/', { replace: true });
+      }
     };
 
     window.addEventListener('gt:logout', handleSessionExpired);
     return () => window.removeEventListener('gt:logout', handleSessionExpired);
-  }, [navigate]);
+  }, [location.pathname, navigate]);
 
   // The session (token + user) is already stored by the login/registration call.
   const handleLogin = useCallback(
@@ -116,7 +124,7 @@ function PortalInner() {
   const handleLogout = useCallback(() => {
     logout();
     setCurrentUser(null);
-    navigate('/portal/login', { replace: true });
+    navigate('/portal/login/', { replace: true });
   }, [navigate]);
 
   const role = useMemo(() => getUserRole(currentUser), [currentUser]);
@@ -124,7 +132,7 @@ function PortalInner() {
   const isAuthRoute = useMemo(() => {
     // Static hosts conventionally redirect directory-style routes to a trailing
     // slash. Normalise that harmless canonicalisation before applying auth guards.
-    const pathname = location.pathname.replace(/\/+$/, '') || '/';
+    const pathname = normalisePortalPath(location.pathname);
     return [
       '/portal/login',
       '/portal/register',
@@ -185,7 +193,7 @@ function PortalInner() {
   }
 
   if (!currentUser && !isAuthRoute) {
-    return <Navigate to="/portal/login" replace />;
+    return <Navigate to="/portal/login/" replace />;
   }
 
   if (currentUser && isAuthRoute) {
@@ -227,7 +235,7 @@ function PortalInner() {
               replace
             />
           ) : (
-            <Navigate to="/portal/login" replace />
+            <Navigate to="/portal/login/" replace />
           )
         }
       />
@@ -267,7 +275,7 @@ function PortalInner() {
               replace
             />
           ) : (
-            <Navigate to="/portal/login" replace />
+            <Navigate to="/portal/login/" replace />
           )
         }
       />

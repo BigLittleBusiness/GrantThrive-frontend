@@ -28,7 +28,9 @@ export async function verifyToken() {
   const token = getToken()
   if (!token) return null
   try {
-    const data = await api.post('/auth/verify-token', { token })
+    // Bootstrap validation handles invalid credentials locally. Dispatching a
+    // global logout here causes duplicate route changes under React StrictMode.
+    const data = await api.post('/auth/verify-token', { token }, { suppressLogoutEvent: true })
     if (!data?.user) throw new Error('No user in verify-token response')
     setAuth(data.new_token || token, data.user)
     return data.user

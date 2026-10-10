@@ -77,7 +77,7 @@ const ResetPassword = ({ council }) => {
                   This password reset link is invalid or has already been used.
                 </p>
                 <a
-                  href="/portal/forgot-password"
+                  href="/portal/forgot-password/"
                   className="inline-flex items-center gap-2 text-green-700 hover:text-green-800 font-medium text-sm"
                 >
                   Request a new reset link
@@ -94,7 +94,7 @@ const ResetPassword = ({ council }) => {
                   your new password.
                 </p>
                 <a
-                  href="/portal/login"
+                  href="/portal/login/"
                   className="inline-flex items-center gap-2 text-white bg-green-700 hover:bg-green-800 font-medium px-5 py-2 rounded-md text-sm"
                 >
                   Sign in
@@ -191,7 +191,7 @@ const ResetPassword = ({ council }) => {
 
                 <div className="text-center">
                   <a
-                    href="/portal/login"
+                    href="/portal/login/"
                     className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
                   >
                     <ArrowLeft className="w-3 h-3" />

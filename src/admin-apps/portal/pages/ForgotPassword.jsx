@@ -67,7 +67,7 @@ const ForgotPassword = ({ council }) => {
                   Please check your spam folder if you don't see it within a few minutes.
                 </p>
                 <a
-                  href="/portal/login"
+                  href="/portal/login/"
                   className="inline-flex items-center gap-2 text-green-700 hover:text-green-800 font-medium text-sm"
                 >
                   <ArrowLeft className="w-4 h-4" />
@@ -125,7 +125,7 @@ const ForgotPassword = ({ council }) => {
 
                 <div className="text-center">
                   <a
-                    href="/portal/login"
+                    href="/portal/login/"
                     className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
                   >
                     <ArrowLeft className="w-3 h-3" />
