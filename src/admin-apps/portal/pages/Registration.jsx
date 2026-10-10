@@ -108,6 +108,17 @@ export default function Registration({ onLogin }) {
   const [userType, setUserType] = useState('');
   const [submitted, setSubmitted] = useState(false);
 
+  // Links from council-email guidance can send grant applicants directly to
+  // the appropriate account journey without requiring them to choose again.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const account = new URLSearchParams(window.location.search).get('account');
+    if (account === 'community_member') {
+      setUserType('community_member');
+      setStep(2);
+    }
+  }, []);
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -544,9 +555,18 @@ export default function Registration({ onLogin }) {
             />
           </div>
           {emailError && (
-            <div className="mt-2 flex items-center gap-2 text-sm text-rose-600">
-              <AlertCircle className="h-4 w-4" />
-              <span>{emailError}</span>
+            <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
+                <span>{emailError}</span>
+              </div>
+              <a
+                href="/portal/register?account=community_member"
+                className="mt-3 inline-flex items-center gap-1 font-semibold text-emerald-800 underline underline-offset-2 hover:text-emerald-900"
+              >
+                Register as a community member instead
+                <ArrowRight className="h-3.5 w-3.5" />
+              </a>
             </div>
           )}
         </div>
@@ -934,7 +954,7 @@ export default function Registration({ onLogin }) {
               <p className={`font-medium ${userType === 'council' && emailError ? 'text-amber-900' : 'text-emerald-900'}`}>{userType === 'council' && emailError ? 'Council email required' : 'No additional documents required'}</p>
               <p className={`mt-1 text-sm ${userType === 'council' && emailError ? 'text-amber-800' : 'text-emerald-800'}`}>
                 {userType === 'council' && emailError
-                  ? 'Submitting this request will not create an account. We will send information to the email entered explaining the council-email requirement and next steps.'
+                  ? 'Submitting this request will not create an account. If you are applying for grants, use the community-member registration link above instead. We will also send information to the email entered explaining the council-email requirement.'
                   : userType === 'council'
                     ? 'Your government email address is used to verify your council affiliation. No further documentation is needed at this stage.'
                     : 'You can continue and complete your registration now.'}
