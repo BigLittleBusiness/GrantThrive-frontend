@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/
 import { Button } from '@shared/components/ui/button.jsx';
 import { Input } from '@shared/components/ui/input.jsx';
 import { Mail, ArrowLeft, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
-import grantthriveLogo from '../assets/grantthrive_logo_growth_concept.png';
+import grantthriveLogo from '../assets/grantthrive_logo_growth_concept.webp';
 
 const ForgotPassword = ({ council }) => {
   const [email, setEmail] = useState('');

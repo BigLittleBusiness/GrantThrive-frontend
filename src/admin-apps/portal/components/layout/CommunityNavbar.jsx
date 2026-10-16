@@ -28,7 +28,7 @@ import {
   X,
   ChevronRight,
 } from 'lucide-react';
-import grantThriveLogo from '../../assets/grantthrive_logo_growth_concept.png';
+import grantThriveLogo from '../../assets/grantthrive_logo_growth_concept.webp';
 
 const NAV_ITEMS = [
   { id: 'dashboard',    label: 'Dashboard',    icon: LayoutDashboard, path: 'community/dashboard' },

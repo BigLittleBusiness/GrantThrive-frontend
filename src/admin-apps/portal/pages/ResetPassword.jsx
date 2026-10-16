@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/
 import { Button } from '@shared/components/ui/button.jsx';
 import { Input } from '@shared/components/ui/input.jsx';
 import { Lock, Eye, EyeOff, CheckCircle, AlertCircle, Loader2, ArrowLeft } from 'lucide-react';
-import grantthriveLogo from '../assets/grantthrive_logo_growth_concept.png';
+import grantthriveLogo from '../assets/grantthrive_logo_growth_concept.webp';
 
 const ResetPassword = ({ council }) => {
   const [searchParams] = useSearchParams();

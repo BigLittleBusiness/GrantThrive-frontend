@@ -1,4 +1,5 @@
 import React from 'react';
+import AdminMfaSettings from './AdminMfaSettings.jsx';
 import {
   BarChart3,
   Bot,
@@ -97,6 +98,8 @@ export default function PlatformSettings({ onNavigate }) {
           </div>
         </div>
       </div>
+
+      <AdminMfaSettings />
 
       <div>
         <div className="mb-4 flex items-center gap-2">

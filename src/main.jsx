@@ -1,99 +1,37 @@
-/**
- * GrantThrive Unified Frontend — Entry Point
- * ==========================================
- * Single entry point for all GrantThrive frontend surfaces.
- *
- * Final RBAC:
- *   - system_admin     → admin.grantthrive.com
- *   - council_admin    → portal.grantthrive.com
- *   - council_staff    → portal.grantthrive.com
- *   - community_member → portal.grantthrive.com
- *
- * Apps:
- *   src/
- *   ├── admin-apps/
- *   │   ├── admin/      → Platform admin app
- *   │   └── portal/     → Council + community portal
- *   ├── public-apps/
- *   │   ├── marketing/  → Public marketing site
- *   │   ├── map/        → Public map
- *   │   └── roi/        → Public ROI calculator
- *   └── shared/
- *
- * Routes:
- *   /admin/*   → Platform admin (system_admin only)
- *   /portal/*  → Council + community portal
- *   /map       → Public grant map
- *   /roi       → Public ROI calculator
- *   /*         → Marketing website
- */
-
-import { StrictMode } from 'react';
+import { StrictMode, Suspense, lazy } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import './index.css';
 
-// ── Platform admin app (system_admin only) ────────────────────────────────
-import AdminAuthGate from './admin-apps/admin/components/AdminAuthGate.jsx';
-import AdminApp from './admin-apps/admin/AdminApp.jsx';
-import './admin-apps/admin/AdminApp.css';
+const AdminAuthGate = lazy(() => import('./admin-apps/admin/components/AdminAuthGate.jsx'));
+const AdminApp = lazy(() => import('./admin-apps/admin/AdminApp.jsx'));
+const PortalApp = lazy(() => import('./admin-apps/portal/PortalApp.jsx'));
+const MapApp = lazy(() => import('./public-apps/map/MapApp.jsx'));
+const ROIApp = lazy(() => import('./public-apps/roi/ROIApp.jsx'));
+const MarketingApp = lazy(() => import('./public-apps/marketing/MarketingApp.jsx'));
 
-// ── Portal app (council_admin, council_staff, community_member) ──────────
-import PortalApp from './admin-apps/portal/PortalApp.jsx';
-import './admin-apps/portal/PortalApp.css';
-
-// ── Public apps ───────────────────────────────────────────────────────────
-import MapApp from './public-apps/map/MapApp.jsx';
-import './public-apps/map/MapApp.css';
-
-import ROIApp from './public-apps/roi/ROIApp.jsx';
-import './public-apps/roi/ROIApp.css';
-
-import MarketingApp from './public-apps/marketing/MarketingApp.jsx';
+function LoadingSurface() {
+  return <div className="flex min-h-screen items-center justify-center bg-slate-50 text-sm text-slate-600" role="status">Loading GrantThrive…</div>;
+}
 
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        {/* Platform admin */}
-        <Route
-          path="/admin/*"
-          element={
-            <AdminAuthGate>
-              <AdminApp />
-            </AdminAuthGate>
-          }
-        />
-
-        {/* Unified portal for council + community users */}
-        <Route path="/portal/*" element={<PortalApp />} />
-
-        {/* Optional convenience redirects */}
-        <Route path="/login" element={<Navigate to="/portal/login/" replace />} />
-        <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
-        <Route path="/portal" element={<Navigate to="/portal/login/" replace />} />
-
-        {/* Public tools */}
-        <Route path="/map" element={<MapApp />} />
-        <Route path="/roi" element={<ROIApp />} />
-
-        {/* Public marketing */}
-        <Route path="/*" element={<MarketingApp />} />
-      </Routes>
+      <Suspense fallback={<LoadingSurface />}>
+        <Routes>
+          <Route path="/admin/*" element={<AdminAuthGate><AdminApp /></AdminAuthGate>} />
+          <Route path="/portal/*" element={<PortalApp />} />
+          <Route path="/login" element={<Navigate to="/portal/login/" replace />} />
+          <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="/portal" element={<Navigate to="/portal/login/" replace />} />
+          <Route path="/map" element={<MapApp />} />
+          <Route path="/roi" element={<ROIApp />} />
+          <Route path="/*" element={<MarketingApp />} />
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }
 
-// Dispatch 'render-event' after React mounts so vite-plugin-prerender
-// (Puppeteer renderer) knows the page is ready to snapshot.
-const root = createRoot(document.getElementById('root'));
-root.render(
-  <StrictMode>
-    <App />
-  </StrictMode>
-);
-
-// Fire after the first paint so all route-level useEffect SEO hooks have run.
-requestAnimationFrame(() => {
-  document.dispatchEvent(new Event('render-event'));
-});
+createRoot(document.getElementById('root')).render(<StrictMode><App /></StrictMode>);
+requestAnimationFrame(() => document.dispatchEvent(new Event('render-event')));

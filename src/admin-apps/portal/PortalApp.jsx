@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { ROLES, setAuth } from '@shared/auth';
 import { verifyToken, logout } from '@shared/api/session';
 import { TenantProvider, useTenant } from '@shared/tenancy/TenantContext';
@@ -15,9 +15,10 @@ import Registration from './pages/Registration.jsx';
 import ForgotPassword from './pages/ForgotPassword.jsx';
 import ResetPassword from './pages/ResetPassword.jsx';
 
-import CouncilAdminRoutes from './routes/CouncilAdminRoutes.jsx';
-import CouncilStaffRoutes from './routes/CouncilStaffRoutes.jsx';
-import CommunityRoutes from './routes/CommunityRoutes.jsx';
+const CouncilAdminRoutes = lazy(() => import('./routes/CouncilAdminRoutes.jsx'));
+const CouncilStaffRoutes = lazy(() => import('./routes/CouncilStaffRoutes.jsx'));
+const CommunityRoutes = lazy(() => import('./routes/CommunityRoutes.jsx'));
+import './PortalApp.css';
 
 // ── RBAC constants ────────────────────────────────────────────────────────────
 const ROLE_HOME = {
@@ -241,29 +242,11 @@ function PortalInner() {
       />
 
       {/* Role-based route groups */}
-      {CouncilAdminRoutes({
-        ProtectedRoute,
-        currentUser,
-        handleLogout,
-        pageProps,
-        ROLES,
-      })}
-
-      {CouncilStaffRoutes({
-        ProtectedRoute,
-        currentUser,
-        handleLogout,
-        pageProps,
-        ROLES,
-      })}
-
-      {CommunityRoutes({
-        ProtectedRoute,
-        currentUser,
-        handleLogout,
-        pageProps,
-        ROLES,
-      })}
+      <Suspense fallback={<div className="p-6 text-sm text-slate-600" role="status">Loading your workspace…</div>}>
+        <CouncilAdminRoutes ProtectedRoute={ProtectedRoute} currentUser={currentUser} handleLogout={handleLogout} pageProps={pageProps} ROLES={ROLES} />
+        <CouncilStaffRoutes ProtectedRoute={ProtectedRoute} currentUser={currentUser} handleLogout={handleLogout} pageProps={pageProps} ROLES={ROLES} />
+        <CommunityRoutes ProtectedRoute={ProtectedRoute} currentUser={currentUser} handleLogout={handleLogout} pageProps={pageProps} ROLES={ROLES} />
+      </Suspense>
 
       {/* Fallback */}
       <Route

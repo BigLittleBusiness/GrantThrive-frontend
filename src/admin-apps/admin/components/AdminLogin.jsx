@@ -35,8 +35,8 @@ import {
   LogIn,
 } from 'lucide-react';
 import { ROLES, clearAuth } from '@shared/auth';
-import { login } from '@shared/api/session';
-import logoSrc from '../assets/grantthrive_logo_growth_concept.png';
+import { adminLogin } from '../adminSession.js';
+import logoSrc from '../assets/grantthrive_logo_growth_concept.webp';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -96,6 +96,8 @@ export default function AdminLogin({ onAuthenticated }) {
     try { return localStorage.getItem(REMEMBER_KEY) || ''; } catch { return ''; }
   });
   const [password, setPassword]         = useState('');
+  const [mfaCode, setMfaCode]           = useState('');
+  const [mfaRequired, setMfaRequired]   = useState(false);
   const [rememberMe, setRememberMe]     = useState(() => {
     try { return !!localStorage.getItem(REMEMBER_KEY); } catch { return false; }
   });
@@ -169,7 +171,7 @@ export default function AdminLogin({ onAuthenticated }) {
     setErrorMessage('');
 
     try {
-      const user = await login(email.trim(), password);
+      const user = await adminLogin(email.trim(), password, mfaCode);
 
       // ── Role guard ────────────────────────────────────────────────────────────
       if (user.role !== ROLES.SYSTEM_ADMIN) {
@@ -202,6 +204,12 @@ export default function AdminLogin({ onAuthenticated }) {
       }, 800);
 
     } catch (err) {
+      if (err.data?.mfa_required) {
+        setMfaRequired(true);
+        setStatus('error');
+        setErrorMessage('Enter the current code from your authenticator app.');
+        return;
+      }
       const newCount = recordFailedAttempt();
       const remaining = MAX_ATTEMPTS - newCount;
 
@@ -411,6 +419,13 @@ export default function AdminLogin({ onAuthenticated }) {
                   </button>
                 </div>
               </div>
+
+              {mfaRequired && (
+                <div className="mb-5">
+                  <label htmlFor="admin-mfa-code" className="block text-sm font-medium text-gray-300 mb-2">Authenticator code</label>
+                  <Input id="admin-mfa-code" inputMode="numeric" autoComplete="one-time-code" maxLength="8" value={mfaCode} onChange={e => setMfaCode(e.target.value.replace(/\s/g, ''))} placeholder="6-digit code" required disabled={isDisabled} className="bg-gray-800 border-gray-700 text-white placeholder-gray-500 focus:border-green-500 focus:ring-green-500/20 disabled:opacity-50" />
+                </div>
+              )}
 
               {/* Remember me */}
               <div className="flex items-center gap-2 mb-6">

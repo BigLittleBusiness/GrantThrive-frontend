@@ -46,8 +46,8 @@ import {
 } from 'lucide-react'
 import api from '@shared/api/client'
 import './MarketingApp.css'
-import logoStandard from './assets/logo_standard.png'
-import logoReversed from './assets/logo_reversed.png'
+import logoStandard from './assets/logo_standard.webp'
+import logoReversed from './assets/logo_reversed.webp'
 
 function submitPublicForm(path, payload) {
   return api.post(path, payload).catch((err) => {

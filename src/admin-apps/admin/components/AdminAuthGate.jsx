@@ -18,7 +18,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ROLES, clearAuth } from '@shared/auth';
-import { verifyToken } from '@shared/api/session';
+import { refreshAdminSession, verifyAdminSession } from '../adminSession.js';
 
 import { Loader2, AlertTriangle, LogOut } from 'lucide-react';
 import AdminLogin from './AdminLogin.jsx';
@@ -96,7 +96,7 @@ export default function AdminAuthGate({ children }) {
   const verifyAndRoute = useCallback(async (silent = false) => {
     if (!silent) setStatus('loading');
     try {
-      const verified = await verifyToken();
+      const verified = await verifyAdminSession();
       if (!verified) {
         setUser(null);
         setStatus('login');
@@ -132,7 +132,7 @@ export default function AdminAuthGate({ children }) {
       if (idleMs < ACTIVITY_POLL_MS) {
         // User is active — silently call verifyToken so the backend can
         // issue a fresh token if the current one is close to expiry.
-        verifyAndRoute(true);
+        refreshAdminSession().catch(() => verifyAndRoute(true));
       }
     }, ACTIVITY_POLL_MS);
     return () => clearInterval(pollTimerRef.current);

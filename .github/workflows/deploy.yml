@@ -2,45 +2,64 @@ name: Deploy Frontend
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
+
+permissions:
+  contents: read
 
 jobs:
-  deploy:
+  validate:
+    name: Build and dependency gates
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Set up Node
+        uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4.0.3
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+      - name: Set up pnpm
+        uses: pnpm/action-setup@0c17529a66aca453f9227af23103ed11469b1e47 # v4.0.0
+        with:
+          version: 10.4.1
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build production assets
+        run: pnpm run build:no-prerender
+      - name: Block high-severity production dependency advisories
+        run: pnpm audit --prod --audit-level=high
 
+  deploy:
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.0
+        uses: appleboy/ssh-action@029f5b4aeeeb58fdfe1410a5d17f967dacf36262 # v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: 22
           script: |
-            set -e
-
+            set -euo pipefail
             cd ${{ secrets.VPS_PROJECT_PATH }}
             git fetch origin
             git checkout main
             git reset --hard origin/main
-
             CHROMIUM_PATH="$(command -v chromium || command -v chromium-browser || true)"
             if [ -z "$CHROMIUM_PATH" ]; then
               sudo apt-get update -qq
-              sudo apt-get install -y --no-install-recommends chromium || \
-                sudo apt-get install -y --no-install-recommends chromium-browser
+              sudo apt-get install -y --no-install-recommends chromium || sudo apt-get install -y --no-install-recommends chromium-browser
               CHROMIUM_PATH="$(command -v chromium || command -v chromium-browser || true)"
             fi
-            test -n "$CHROMIUM_PATH"
-            export CHROMIUM_PATH
-
+            test -n "$CHROMIUM_PATH"; export CHROMIUM_PATH
             pnpm install --frozen-lockfile
             pnpm build
-
+            sudo install -m 0644 deploy/nginx/90-grantthrive-security.conf /etc/nginx/conf.d/90-grantthrive-security.conf
+            sudo nginx -t
             sudo systemctl reload nginx
-
-            echo "Deployment completed successfully"
+            echo 'Deployment completed successfully'
