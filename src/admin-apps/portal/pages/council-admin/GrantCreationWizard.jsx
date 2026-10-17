@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, ArrowRight, Save, Eye, CheckCircle, FileText, Calendar, Settings, DollarSign, Users, Clock, UserCheck, UserX, Plus, Minus, Loader2, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Save, Eye, CheckCircle, FileText, Calendar, Settings, DollarSign, Users, Clock, UserCheck, UserX, Plus, Minus, Loader2, MapPin, X } from 'lucide-react';
 import GrantSuggestionsPanel from '../../components/grant/GrantSuggestionsPanel.jsx';
 import { getCouncilUsers, createGrant, updateGrant, publishGrant } from '../../utils/api.js';
 
@@ -19,6 +19,11 @@ const GrantCreationWizard = ({ onNavigate, council, user }) => {
     projectDuration: '',
     reviewProcess: '',
     customQuestions: [],
+    // Community Grant Map (opt-in; the location is displayed publicly).
+    enableMapping: false,
+    locationName: '',
+    latitude: '',
+    longitude: '',
     // Assessment team (step 4)
     assignedReviewerIds: [],
     requiredApprovals: 1,
@@ -105,6 +110,13 @@ const GrantCreationWizard = ({ onNavigate, council, user }) => {
       if (!formData.category) { setStepError('Please select a category.'); return; }
       if (!formData.description.trim()) { setStepError('A description is required.'); return; }
       if (!formData.eligibility.trim()) { setStepError('Eligibility criteria are required.'); return; }
+      if (formData.enableMapping) {
+        const latitude = Number(formData.latitude);
+        const longitude = Number(formData.longitude);
+        if (!formData.locationName.trim()) { setStepError('Enter a public location name before enabling the Community Grant Map.'); return; }
+        if (!String(formData.latitude).trim() || !Number.isFinite(latitude) || latitude < -90 || latitude > 90) { setStepError('Enter a valid latitude between -90 and 90 for the map marker.'); return; }
+        if (!String(formData.longitude).trim() || !Number.isFinite(longitude) || longitude < -180 || longitude > 180) { setStepError('Enter a valid longitude between -180 and 180 for the map marker.'); return; }
+      }
     }
     if (currentStep === 2) {
       if (!formData.fundingAmount || parseFloat(formData.fundingAmount) <= 0) { setStepError('A valid funding amount is required.'); return; }
@@ -144,6 +156,10 @@ const GrantCreationWizard = ({ onNavigate, council, user }) => {
     total_budget:          parseFloat(formData.fundingAmount) || 0,
     project_duration:      formData.projectDuration,
     review_process:        formData.reviewProcess,
+    enable_mapping:        Boolean(formData.enableMapping),
+    location_name:         formData.locationName.trim() || null,
+    latitude:              formData.enableMapping ? Number(formData.latitude) : null,
+    longitude:             formData.enableMapping ? Number(formData.longitude) : null,
     opens_at:              new Date().toISOString(),
     closes_at:             formData.applicationDeadline
                              ? new Date(formData.applicationDeadline).toISOString()
@@ -257,6 +273,73 @@ const GrantCreationWizard = ({ onNavigate, council, user }) => {
                   className="w-full px-6 py-4 text-lg border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 bg-white shadow-sm resize-none"
                   style={{ minHeight: '160px' }}
                 />
+              </div>
+
+              <div className="rounded-xl border-2 border-blue-100 bg-blue-50 p-6">
+                <div className="flex gap-4">
+                  <input
+                    id="enable-grant-mapping"
+                    type="checkbox"
+                    checked={formData.enableMapping}
+                    onChange={(event) => handleInputChange('enableMapping', event.target.checked)}
+                    className="mt-1 h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <div className="flex-1">
+                    <label htmlFor="enable-grant-mapping" className="flex cursor-pointer items-center gap-2 text-lg font-semibold text-gray-900">
+                      <MapPin className="h-5 w-5 text-blue-700" />
+                      Show this grant on the Community Grant Map
+                    </label>
+                    <p className="mt-2 text-sm leading-6 text-gray-700">
+                      Optional. Only published grants that have been explicitly approved for map display are shown publicly. Use a suburb, precinct or facility location&mdash;never an applicant&rsquo;s private address.
+                    </p>
+                  </div>
+                </div>
+
+                <div className={`mt-5 grid grid-cols-1 gap-4 md:grid-cols-3 ${formData.enableMapping ? '' : 'opacity-60'}`}>
+                  <div className="md:col-span-3">
+                    <label htmlFor="grant-map-location" className="mb-2 block text-sm font-semibold text-gray-800">Public location name</label>
+                    <input
+                      id="grant-map-location"
+                      type="text"
+                      value={formData.locationName}
+                      onChange={(event) => handleInputChange('locationName', event.target.value)}
+                      disabled={!formData.enableMapping}
+                      placeholder="e.g. Central Business District or Riverside Precinct"
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-base shadow-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-gray-100"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="grant-map-latitude" className="mb-2 block text-sm font-semibold text-gray-800">Latitude</label>
+                    <input
+                      id="grant-map-latitude"
+                      type="number"
+                      step="any"
+                      min="-90"
+                      max="90"
+                      value={formData.latitude}
+                      onChange={(event) => handleInputChange('latitude', event.target.value)}
+                      disabled={!formData.enableMapping}
+                      placeholder="-37.8136"
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-base shadow-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-gray-100"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="grant-map-longitude" className="mb-2 block text-sm font-semibold text-gray-800">Longitude</label>
+                    <input
+                      id="grant-map-longitude"
+                      type="number"
+                      step="any"
+                      min="-180"
+                      max="180"
+                      value={formData.longitude}
+                      onChange={(event) => handleInputChange('longitude', event.target.value)}
+                      disabled={!formData.enableMapping}
+                      placeholder="144.9631"
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-base shadow-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-gray-100"
+                    />
+                  </div>
+                  <div className="self-end pb-3 text-xs text-gray-600">Coordinates are required only when map display is enabled.</div>
+                </div>
               </div>
 
               <div>
@@ -821,4 +904,3 @@ const GrantCreationWizard = ({ onNavigate, council, user }) => {
 };
 
 export default GrantCreationWizard;
-

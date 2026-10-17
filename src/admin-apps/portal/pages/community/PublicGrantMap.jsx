@@ -1,646 +1,448 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { getGrants } from '../../utils/api.js';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { LngLatBounds, Map as MapLibreMap, NavigationControl, ScaleControl, setWorkerUrl } from 'maplibre-gl';
+import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
+import 'maplibre-gl/dist/maplibre-gl.css';
+import api from '../../utils/api.js';
 import CommunityNavbar from '../../components/layout/CommunityNavbar.jsx';
-import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card';
-import { Button } from '@shared/components/ui/button';
+import { Card, CardContent } from '@shared/components/ui/card';
 import { Badge } from '@shared/components/ui/badge';
-import { Input } from '@shared/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/components/ui/select';
-import { 
-  Map, 
-  MapPin, 
-  Filter, 
-  Search, 
-  DollarSign, 
+import { Button } from '@shared/components/ui/button';
+import {
   Calendar,
-  Users,
-  TrendingUp,
-  Camera,
-  FileText,
-  Star,
-  MessageSquare,
-  Navigation,
+  DollarSign,
+  Filter,
+  Info,
   Layers,
-  Info
+  Map,
+  MapPin,
+  Search,
+  X,
 } from 'lucide-react';
 
-const PublicGrantMap = ({ user, onNavigate, onLogout, council }) => {
-  const mapRef = useRef(null);
-  const [map, setMap] = useState(null);
-  const [markers, setMarkers] = useState([]);
-  const [grantData, setGrantData] = useState([]);
-  const [filteredData, setFilteredData] = useState([]);
-  const [selectedGrant, setSelectedGrant] = useState(null);
-  const [filters, setFilters] = useState({
-    postcode: '',
-    suburb: '',
-    project_status: '',
-    category: ''
-  });
-  const [loading, setLoading] = useState(true);
-  const [mapConfig, setMapConfig] = useState(null);
-  const [geoError, setGeoError] = useState(null);
-  const [userLocation, setUserLocation] = useState(null);
+const MAP_SOURCE_ID = 'published-grants';
+const MAP_LAYER_ID = 'grant-points';
+const CLUSTER_LAYER_ID = 'grant-clusters';
+const CLUSTER_HIT_AREA_ID = 'grant-cluster-hit-area';
+const DEFAULT_CENTER = [134.0, -25.0];
+const DEFAULT_ZOOM = 3.5;
 
-  // Mock grant data for demonstration
-  const mockGrantData = [
-    {
-      id: 1,
-      grant_id: 'GRANT-2024-001',
-      coordinates: { lat: -33.8688, lng: 151.2093 },
-      address: '123 Community Street, Sydney NSW 2000',
-      suburb: 'Sydney',
-      postcode: '2000',
-      location_type: 'Primary',
-      project: {
-        title: 'Sydney Community Garden Project',
-        description: 'Creating a sustainable community garden space for local residents to grow fresh produce and connect with neighbors.',
-        status: 'In Progress',
-        completion_percentage: 65,
-        beneficiaries_count: 150,
-        photos: [
-          '/images/garden-progress-1.jpg',
-          '/images/garden-progress-2.jpg'
-        ],
-        last_updated: '2024-08-25T10:30:00Z',
-        is_featured: true,
-        category: 'Environment',
-        funding_amount: 25000,
-        start_date: '2024-03-01',
-        expected_completion: '2024-12-31'
-      }
-    },
-    {
-      id: 2,
-      grant_id: 'GRANT-2024-002',
-      coordinates: { lat: -33.8650, lng: 151.2094 },
-      address: '456 Arts Lane, Sydney NSW 2000',
-      suburb: 'Sydney',
-      postcode: '2000',
-      location_type: 'Primary',
-      project: {
-        title: 'Youth Arts Workshop Series',
-        description: 'Weekly art workshops for young people aged 12-18, providing free access to art supplies and professional instruction.',
-        status: 'Completed',
-        completion_percentage: 100,
-        beneficiaries_count: 85,
-        photos: [
-          '/images/arts-workshop-1.jpg',
-          '/images/arts-workshop-2.jpg',
-          '/images/arts-workshop-3.jpg'
-        ],
-        last_updated: '2024-08-20T14:15:00Z',
-        is_featured: false,
-        category: 'Arts & Culture',
-        funding_amount: 15000,
-        start_date: '2024-01-15',
-        expected_completion: '2024-07-31'
-      }
-    },
-    {
-      id: 3,
-      grant_id: 'GRANT-2024-003',
-      coordinates: { lat: -33.8720, lng: 151.2070 },
-      address: '789 Sports Avenue, Sydney NSW 2000',
-      suburb: 'Sydney',
-      postcode: '2000',
-      location_type: 'Primary',
-      project: {
-        title: 'Community Sports Equipment Upgrade',
-        description: 'Upgrading basketball courts and installing new fitness equipment in the local park for community use.',
-        status: 'Planning',
-        completion_percentage: 15,
-        beneficiaries_count: 300,
-        photos: [
-          '/images/sports-planning.jpg'
-        ],
-        last_updated: '2024-08-28T09:00:00Z',
-        is_featured: true,
-        category: 'Recreation & Sports',
-        funding_amount: 45000,
-        start_date: '2024-09-01',
-        expected_completion: '2025-03-31'
-      }
+// Vite needs an explicit worker asset for MapLibre in production builds.
+setWorkerUrl(workerUrl);
+
+// OpenFreeMap's MapLibre style includes the required OpenMapTiles and
+// OpenStreetMap attribution. A council can replace this with an approved,
+// public provider style URL at build time; never put a secret in a VITE_ value.
+const mapStyleUrl = import.meta.env.VITE_MAP_STYLE_URL || 'https://tiles.openfreemap.org/styles/liberty';
+
+const emptyCollection = { type: 'FeatureCollection', features: [] };
+
+function normaliseFeatureCollection(data) {
+  if (!data || data.type !== 'FeatureCollection' || !Array.isArray(data.features)) return emptyCollection;
+
+  return {
+    type: 'FeatureCollection',
+    features: data.features.filter((feature) => {
+      const coordinates = feature?.geometry?.coordinates;
+      return feature?.geometry?.type === 'Point'
+        && Array.isArray(coordinates)
+        && Number.isFinite(Number(coordinates[0]))
+        && Number.isFinite(Number(coordinates[1]));
+    }),
+  };
+}
+
+function formatCurrency(amount) {
+  return new Intl.NumberFormat('en-AU', {
+    style: 'currency',
+    currency: 'AUD',
+    maximumFractionDigits: 0,
+  }).format(Number(amount || 0));
+}
+
+function formatDate(value) {
+  if (!value) return 'Not specified';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? 'Not specified'
+    : new Intl.DateTimeFormat('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }).format(date);
+}
+
+function displayStatus(status) {
+  return status ? `${status.charAt(0).toUpperCase()}${status.slice(1)}` : 'Published';
+}
+
+function statusClass(status) {
+  if (status === 'open') return 'bg-green-100 text-green-800';
+  if (status === 'closed') return 'bg-slate-100 text-slate-700';
+  return 'bg-blue-100 text-blue-800';
+}
+
+const PublicGrantMap = ({ user, onNavigate, onLogout, council }) => {
+  const mapContainerRef = useRef(null);
+  const mapInstanceRef = useRef(null);
+  const [isMapReady, setIsMapReady] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [mapError, setMapError] = useState('');
+  const [dataError, setDataError] = useState('');
+  const [grantCollection, setGrantCollection] = useState(emptyCollection);
+  const [selectedGrantId, setSelectedGrantId] = useState(null);
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('all');
+  const [status, setStatus] = useState('all');
+
+  const loadGrantData = useCallback(async () => {
+    setIsLoading(true);
+    setDataError('');
+    try {
+      const params = new URLSearchParams({ limit: '200' });
+      if (council?.id) params.set('council_id', String(council.id));
+      const data = await api.get(`/mapping/grants-geojson?${params.toString()}`);
+      setGrantCollection(normaliseFeatureCollection(data));
+    } catch (error) {
+      setGrantCollection(emptyCollection);
+      setDataError(error.message || 'The mapped grants could not be loaded. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
-  ];
+  }, [council?.id]);
 
   useEffect(() => {
-    initializeMap();
     loadGrantData();
+  }, [loadGrantData]);
+
+  useEffect(() => {
+    if (!mapContainerRef.current || mapInstanceRef.current) return undefined;
+
+    const map = new MapLibreMap({
+      container: mapContainerRef.current,
+      style: mapStyleUrl,
+      center: DEFAULT_CENTER,
+      zoom: DEFAULT_ZOOM,
+      minZoom: 2,
+      maxZoom: 19,
+      attributionControl: true,
+    });
+
+    mapInstanceRef.current = map;
+    map.addControl(new NavigationControl({ showCompass: false }), 'top-right');
+    map.addControl(new ScaleControl({ maxWidth: 120, unit: 'metric' }), 'bottom-right');
+
+    map.on('load', () => {
+      map.addSource(MAP_SOURCE_ID, {
+        type: 'geojson',
+        data: emptyCollection,
+        cluster: true,
+        clusterMaxZoom: 13,
+        clusterRadius: 48,
+      });
+
+      map.addLayer({
+        id: CLUSTER_LAYER_ID,
+        type: 'circle',
+        source: MAP_SOURCE_ID,
+        filter: ['has', 'point_count'],
+        paint: {
+          'circle-color': '#0f766e',
+          'circle-radius': ['step', ['get', 'point_count'], 18, 10, 23, 50, 28],
+          'circle-stroke-width': 3,
+          'circle-stroke-color': '#ffffff',
+        },
+      });
+
+      map.addLayer({
+        id: CLUSTER_HIT_AREA_ID,
+        type: 'circle',
+        source: MAP_SOURCE_ID,
+        filter: ['has', 'point_count'],
+        paint: {
+          'circle-radius': ['step', ['get', 'point_count'], 25, 10, 30, 50, 35],
+          'circle-color': '#000000',
+          'circle-opacity': 0,
+        },
+      });
+
+      map.addLayer({
+        id: MAP_LAYER_ID,
+        type: 'circle',
+        source: MAP_SOURCE_ID,
+        filter: ['!', ['has', 'point_count']],
+        paint: {
+          'circle-color': '#1d4ed8',
+          'circle-radius': ['interpolate', ['linear'], ['coalesce', ['get', 'total_budget'], 0], 0, 8, 50000, 11, 500000, 15],
+          'circle-stroke-width': 3,
+          'circle-stroke-color': '#ffffff',
+          'circle-opacity': 0.95,
+        },
+      });
+
+      map.on('click', CLUSTER_HIT_AREA_ID, (event) => {
+        const feature = event.features?.[0];
+        const clusterId = feature?.properties?.cluster_id;
+        const source = map.getSource(MAP_SOURCE_ID);
+        if (!feature || clusterId === undefined || !source?.getClusterExpansionZoom) return;
+
+        source.getClusterExpansionZoom(clusterId, (error, zoom) => {
+          if (!error) {
+            map.easeTo({ center: feature.geometry.coordinates, zoom });
+          }
+        });
+      });
+
+      map.on('click', MAP_LAYER_ID, (event) => {
+        const id = event.features?.[0]?.properties?.id;
+        if (id === undefined) return;
+        setSelectedGrantId(Number(id));
+        map.flyTo({ center: event.features[0].geometry.coordinates, zoom: Math.max(map.getZoom(), 12), essential: true });
+      });
+
+      for (const layerId of [CLUSTER_HIT_AREA_ID, MAP_LAYER_ID]) {
+        map.on('mouseenter', layerId, () => { map.getCanvas().style.cursor = 'pointer'; });
+        map.on('mouseleave', layerId, () => { map.getCanvas().style.cursor = ''; });
+      }
+
+      setIsMapReady(true);
+    });
+
+    map.on('error', (event) => {
+      if (event?.error && map.isStyleLoaded()) {
+        setMapError('The map tiles could not be loaded. Please check your connection and try again.');
+      }
+    });
+
+    return () => {
+      map.remove();
+      mapInstanceRef.current = null;
+    };
   }, []);
 
+  const filteredCollection = useMemo(() => {
+    const needle = search.trim().toLowerCase();
+    return {
+      type: 'FeatureCollection',
+      features: grantCollection.features.filter((feature) => {
+        const properties = feature.properties || {};
+        const searchable = [properties.title, properties.description, properties.location_name, properties.category]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+        return (!needle || searchable.includes(needle))
+          && (category === 'all' || properties.category === category)
+          && (status === 'all' || properties.status === status);
+      }),
+    };
+  }, [category, grantCollection, search, status]);
+
+  const grants = filteredCollection.features;
+  const categories = useMemo(
+    () => [...new Set(grantCollection.features.map((feature) => feature.properties?.category).filter(Boolean))].sort(),
+    [grantCollection],
+  );
+  const statuses = useMemo(
+    () => [...new Set(grantCollection.features.map((feature) => feature.properties?.status).filter(Boolean))].sort(),
+    [grantCollection],
+  );
+  const selectedGrant = grants.find((feature) => Number(feature.properties?.id) === selectedGrantId) || null;
+
   useEffect(() => {
-    // Apply filters when filter state changes
-    applyFilters();
-  }, [filters, grantData]);
+    if (selectedGrantId !== null && !selectedGrant) setSelectedGrantId(null);
+  }, [selectedGrant, selectedGrantId]);
 
-  const initializeMap = () => {
-    setMapConfig({
-      default_center: { lat: -33.8688, lng: 151.2093 },
-      default_zoom_level: 14,
-      map_style: 'standard',
-      is_public_map_enabled: true,
-      branding: {
-        map_title: council?.name ? `${council.name} Grant Projects` : 'Community Grant Map',
-        map_description: 'Explore funded community projects in your area'
-      }
-    });
-    setLoading(false);
-  };
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!isMapReady || !map) return;
 
-  const loadGrantData = async () => {
-    try {
-      // Fetch open grants from the API
-      const data = await getGrants({ status: 'open' });
-      const grants = (data.grants || []).map((g, i) => ({
-        id: g.id,
-        grant_id: g.reference_number || `GRANT-${g.id}`,
-        coordinates: g.latitude && g.longitude
-          ? { lat: parseFloat(g.latitude), lng: parseFloat(g.longitude) }
-          : { lat: -33.8688 + (i * 0.005), lng: 151.2093 + (i * 0.005) },
-        address: g.location_address || g.address || '',
-        suburb: g.suburb || g.location_suburb || '',
-        postcode: g.postcode || g.location_postcode || '',
-        location_type: 'Primary',
-        project: {
-          title: g.title || g.name,
-          description: g.description || g.summary || '',
-          status: g.status === 'active' ? 'In Progress' : g.status === 'completed' ? 'Completed' : 'Planning',
-          completion_percentage: g.completion_percentage || 0,
-          beneficiaries_count: g.beneficiaries_count || 0,
-          photos: g.photos || [],
-          last_updated: g.updated_at,
-          is_featured: g.is_featured || false,
-          category: g.category || 'Community Services',
-          funding_amount: g.amount_requested || g.funding_amount || 0,
-          start_date: g.start_date || g.created_at,
-          expected_completion: g.end_date || g.deadline
-        }
-      }));
-      // Fall back to mock data only if API returns nothing (e.g. no projects yet)
-      const finalData = grants.length > 0 ? grants : mockGrantData;
-      setGrantData(finalData);
-      setFilteredData(finalData);
-    } catch {
-      // API unavailable — fall back to mock data so map is still usable
-      setGrantData(mockGrantData);
-      setFilteredData(mockGrantData);
-    }
-  };
+    const source = map.getSource(MAP_SOURCE_ID);
+    if (source?.setData) source.setData(filteredCollection);
 
-  const applyFilters = () => {
-    let filtered = [...grantData];
-
-    if (filters.postcode) {
-      filtered = filtered.filter(grant => 
-        grant.postcode.includes(filters.postcode)
-      );
+    if (filteredCollection.features.length === 0) {
+      map.easeTo({ center: DEFAULT_CENTER, zoom: DEFAULT_ZOOM, duration: 500 });
+      return;
     }
 
-    if (filters.suburb) {
-      filtered = filtered.filter(grant => 
-        grant.suburb.toLowerCase().includes(filters.suburb.toLowerCase())
-      );
+    const bounds = new LngLatBounds();
+    filteredCollection.features.forEach((feature) => bounds.extend(feature.geometry.coordinates));
+    if (filteredCollection.features.length === 1) {
+      map.easeTo({ center: filteredCollection.features[0].geometry.coordinates, zoom: 12, duration: 500 });
+    } else {
+      map.fitBounds(bounds, { padding: 72, maxZoom: 12, duration: 500 });
     }
+  }, [filteredCollection, isMapReady]);
 
-    if (filters.project_status) {
-      filtered = filtered.filter(grant => 
-        grant.project.status === filters.project_status
-      );
-    }
-
-    if (filters.category) {
-      filtered = filtered.filter(grant => 
-        grant.project.category === filters.category
-      );
-    }
-
-    setFilteredData(filtered);
+  const selectGrant = (feature) => {
+    setSelectedGrantId(Number(feature.properties.id));
+    const map = mapInstanceRef.current;
+    if (map) map.flyTo({ center: feature.geometry.coordinates, zoom: Math.max(map.getZoom(), 12), essential: true });
   };
 
-  const handleMarkerClick = (grant) => {
-    setSelectedGrant(grant);
+  const clearFilters = () => {
+    setSearch('');
+    setCategory('all');
+    setStatus('all');
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-AU', {
-      style: 'currency',
-      currency: 'AUD',
-      minimumFractionDigits: 0
-    }).format(amount);
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-AU', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  const getStatusColor = (status) => {
-    const colors = {
-      'Planning': 'bg-yellow-100 text-yellow-800',
-      'In Progress': 'bg-blue-100 text-blue-800',
-      'Completed': 'bg-green-100 text-green-800',
-      'On Hold': 'bg-red-100 text-red-800'
-    };
-    return colors[status] || 'bg-gray-100 text-gray-800';
-  };
-
-  const getCategoryColor = (category) => {
-    const colors = {
-      'Environment': 'bg-green-100 text-green-800',
-      'Arts & Culture': 'bg-purple-100 text-purple-800',
-      'Recreation & Sports': 'bg-blue-100 text-blue-800',
-      'Community Services': 'bg-orange-100 text-orange-800',
-      'Technology': 'bg-gray-100 text-gray-800'
-    };
-    return colors[category] || 'bg-gray-100 text-gray-800';
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-white">
-        <CommunityNavbar user={user} onNavigate={onNavigate} onLogout={onLogout} activePage="grant-map" />
-        <div className="flex items-center justify-center py-24">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading grant map...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const mapTitle = council?.name ? `${council.name} Grant Map` : 'Community Grant Map';
 
   return (
-    <div className="flex flex-col" style={{ height: '100dvh' }}>
+    <div className="flex min-h-screen flex-col bg-slate-50">
       <CommunityNavbar user={user} onNavigate={onNavigate} onLogout={onLogout} activePage="grant-map" />
-      {/* Map header */}
-      <div className="bg-white border-b border-gray-200 p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Map className="h-8 w-8 text-blue-600" />
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                {mapConfig?.branding?.map_title || 'Community Grant Map'}
-              </h1>
-              <p className="text-gray-600">
-                {mapConfig?.branding?.map_description || 'Explore funded projects in your community'}
-              </p>
+
+      <main className="flex flex-1 flex-col">
+        <header className="border-b border-slate-200 bg-white px-4 py-4 sm:px-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <div className="rounded-xl bg-blue-50 p-2.5 text-blue-700"><Map className="h-6 w-6" aria-hidden="true" /></div>
+              <div>
+                <h1 className="text-xl font-bold text-slate-950 sm:text-2xl">{mapTitle}</h1>
+                <p className="mt-0.5 text-sm text-slate-600">Explore published grants that councils have approved for map display.</p>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="bg-green-50 text-green-700">
-              <TrendingUp className="h-4 w-4 mr-1" />
-              {filteredData.length} Projects
+            <Badge variant="outline" className="w-fit border-teal-200 bg-teal-50 px-3 py-1.5 text-teal-800">
+              <MapPin className="mr-1.5 h-4 w-4" aria-hidden="true" />
+              {grants.length} mapped grant{grants.length === 1 ? '' : 's'}
             </Badge>
           </div>
-        </div>
-      </div>
+        </header>
 
-      <div className="flex-1 flex">
-        {/* Sidebar */}
-        <div className="w-96 bg-white border-r border-gray-200 flex flex-col">
-          {/* Filters */}
-          <div className="p-4 border-b border-gray-200">
-            <div className="flex items-center gap-2 mb-4">
-              <Filter className="h-5 w-5 text-gray-600" />
-              <h3 className="font-semibold text-gray-900">Filter Projects</h3>
-            </div>
-            
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Postcode
-                </label>
-                <Input
-                  placeholder="e.g. 2000"
-                  value={filters.postcode}
-                  onChange={(e) => setFilters({...filters, postcode: e.target.value})}
-                />
+        <div className="flex flex-1 flex-col lg:flex-row">
+          <aside className="z-10 w-full shrink-0 border-b border-slate-200 bg-white lg:w-96 lg:border-b-0 lg:border-r">
+            <div className="border-b border-slate-200 p-4">
+              <div className="mb-4 flex items-center justify-between">
+                <div className="flex items-center gap-2 font-semibold text-slate-900"><Filter className="h-4 w-4" aria-hidden="true" />Filter grants</div>
+                {(search || category !== 'all' || status !== 'all') && (
+                  <button type="button" onClick={clearFilters} className="text-sm font-medium text-blue-700 hover:text-blue-900">Clear</button>
+                )}
               </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Suburb
-                </label>
-                <Input
-                  placeholder="e.g. Sydney"
-                  value={filters.suburb}
-                  onChange={(e) => setFilters({...filters, suburb: e.target.value})}
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Project Status
-                </label>
-                <Select value={filters.project_status || 'all'} onValueChange={(value) => setFilters({...filters, project_status: value === 'all' ? '' : value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All statuses" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All statuses</SelectItem>
-                    <SelectItem value="Planning">Planning</SelectItem>
-                    <SelectItem value="In Progress">In Progress</SelectItem>
-                    <SelectItem value="Completed">Completed</SelectItem>
-                    <SelectItem value="On Hold">On Hold</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Category
-                </label>
-                <Select value={filters.category || 'all'} onValueChange={(value) => setFilters({...filters, category: value === 'all' ? '' : value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All categories" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All categories</SelectItem>
-                    <SelectItem value="Environment">Environment</SelectItem>
-                    <SelectItem value="Arts & Culture">Arts & Culture</SelectItem>
-                    <SelectItem value="Recreation & Sports">Recreation & Sports</SelectItem>
-                    <SelectItem value="Community Services">Community Services</SelectItem>
-                    <SelectItem value="Technology">Technology</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-
-          {/* Project List */}
-          <div className="flex-1 overflow-y-auto">
-            <div className="p-4">
-              <h3 className="font-semibold text-gray-900 mb-3">
-                Projects ({filteredData.length})
-              </h3>
-              
               <div className="space-y-3">
-                {filteredData.map((grant) => (
-                  <Card 
-                    key={grant.id}
-                    className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
-                      selectedGrant?.id === grant.id ? 'ring-2 ring-blue-500 bg-blue-50' : ''
-                    }`}
-                    onClick={() => handleMarkerClick(grant)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between mb-2">
-                        <h4 className="font-semibold text-gray-900 text-sm leading-tight">
-                          {grant.project.title}
-                        </h4>
-                        {grant.project.is_featured && (
-                          <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                        )}
-                      </div>
-                      
-                      <div className="flex flex-wrap gap-1 mb-2">
-                        <Badge className={getStatusColor(grant.project.status)} size="sm">
-                          {grant.project.status}
-                        </Badge>
-                        <Badge className={getCategoryColor(grant.project.category)} size="sm">
-                          {grant.project.category}
-                        </Badge>
-                      </div>
-                      
-                      <p className="text-xs text-gray-600 mb-3 line-clamp-2">
-                        {grant.project.description}
-                      </p>
-                      
-                      <div className="flex items-center justify-between text-xs text-gray-500">
-                        <div className="flex items-center gap-1">
-                          <MapPin className="h-3 w-3" />
-                          <span>{grant.suburb}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <DollarSign className="h-3 w-3" />
-                          <span>{formatCurrency(grant.project.funding_amount)}</span>
-                        </div>
-                      </div>
-                      
-                      {grant.project.status !== 'Planning' && (
-                        <div className="mt-2">
-                          <div className="flex justify-between text-xs text-gray-600 mb-1">
-                            <span>Progress</span>
-                            <span>{grant.project.completion_percentage}%</span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-1.5">
-                            <div 
-                              className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
-                              style={{ width: `${grant.project.completion_percentage}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Map Area */}
-        <div className="flex-1 relative">
-          {/* Mock Map */}
-          <div className="w-full h-full bg-gray-100 relative overflow-hidden">
-            {/* Map Background */}
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-green-50">
-              <div className="absolute inset-0 opacity-20">
-                <svg className="w-full h-full" viewBox="0 0 800 600">
-                  {/* Mock street lines */}
-                  <line x1="0" y1="200" x2="800" y2="200" stroke="#cbd5e1" strokeWidth="2" />
-                  <line x1="0" y1="400" x2="800" y2="400" stroke="#cbd5e1" strokeWidth="2" />
-                  <line x1="200" y1="0" x2="200" y2="600" stroke="#cbd5e1" strokeWidth="2" />
-                  <line x1="400" y1="0" x2="400" y2="600" stroke="#cbd5e1" strokeWidth="2" />
-                  <line x1="600" y1="0" x2="600" y2="600" stroke="#cbd5e1" strokeWidth="2" />
-                </svg>
-              </div>
-            </div>
-
-            {/* Map Markers */}
-            {filteredData.map((grant, index) => (
-              <div
-                key={grant.id}
-                className={`absolute transform -translate-x-1/2 -translate-y-full cursor-pointer transition-all duration-200 hover:scale-110 ${
-                  selectedGrant?.id === grant.id ? 'scale-125 z-20' : 'z-10'
-                }`}
-                style={{
-                  left: `${30 + (index * 25)}%`,
-                  top: `${40 + (index * 15)}%`
-                }}
-                onClick={() => handleMarkerClick(grant)}
-              >
-                <div className={`relative ${
-                  selectedGrant?.id === grant.id ? 'animate-bounce' : ''
-                }`}>
-                  <MapPin 
-                    className={`h-8 w-8 ${
-                      grant.project.is_featured 
-                        ? 'text-yellow-500 fill-yellow-100' 
-                        : 'text-blue-600 fill-blue-100'
-                    }`} 
+                <label className="relative block">
+                  <span className="sr-only">Search mapped grants</span>
+                  <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-slate-400" aria-hidden="true" />
+                  <input
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    placeholder="Search grants or locations"
+                    className="w-full rounded-lg border border-slate-300 py-2.5 pl-9 pr-3 text-sm outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
                   />
-                  {grant.project.is_featured && (
-                    <Star className="h-3 w-3 text-yellow-600 fill-current absolute -top-1 -right-1" />
-                  )}
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="block text-sm font-medium text-slate-700">
+                    Category
+                    <select value={category} onChange={(event) => setCategory(event.target.value)} className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-2 py-2 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100">
+                      <option value="all">All categories</option>
+                      {categories.map((value) => <option key={value} value={value}>{value}</option>)}
+                    </select>
+                  </label>
+                  <label className="block text-sm font-medium text-slate-700">
+                    Status
+                    <select value={status} onChange={(event) => setStatus(event.target.value)} className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-2 py-2 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100">
+                      <option value="all">All statuses</option>
+                      {statuses.map((value) => <option key={value} value={value}>{displayStatus(value)}</option>)}
+                    </select>
+                  </label>
                 </div>
               </div>
-            ))}
+            </div>
 
-            {/* Map Controls */}
-            <div className="absolute top-4 right-4 flex flex-col gap-2">
-              <Button variant="outline" size="sm" className="bg-white" aria-label="Toggle map layers">
-                <Layers className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline" size="sm" className="bg-white"
-                aria-label="Use my location"
-                onClick={() => {
-                  if (!navigator.geolocation) {
-                    setGeoError('Geolocation is not supported by your browser.');
-                    return;
-                  }
-                  navigator.geolocation.getCurrentPosition(
-                    (pos) => {
-                      setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-                      setGeoError(null);
-                    },
-                    () => setGeoError('Location access was denied. Showing all projects instead.')
+            <div className="max-h-[34vh] overflow-y-auto p-4 lg:max-h-none lg:h-[calc(100dvh-17rem)]">
+              {isLoading && <p className="py-8 text-center text-sm text-slate-500">Loading mapped grants…</p>}
+              {!isLoading && dataError && (
+                <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                  <p>{dataError}</p>
+                  <button type="button" onClick={loadGrantData} className="mt-2 font-semibold underline">Try again</button>
+                </div>
+              )}
+              {!isLoading && !dataError && grants.length === 0 && (
+                <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-center">
+                  <Layers className="mx-auto h-7 w-7 text-slate-400" aria-hidden="true" />
+                  <h2 className="mt-2 font-semibold text-slate-800">No mapped grants yet</h2>
+                  <p className="mt-1 text-sm text-slate-600">A grant appears here after it is published, has valid coordinates, and is approved for map display.</p>
+                </div>
+              )}
+              <div className="space-y-3">
+                {grants.map((feature) => {
+                  const properties = feature.properties || {};
+                  const isSelected = Number(properties.id) === selectedGrantId;
+                  return (
+                    <button
+                      key={properties.id}
+                      type="button"
+                      onClick={() => selectGrant(feature)}
+                      className={`w-full rounded-xl border p-4 text-left transition focus:outline-none focus:ring-2 focus:ring-blue-500 ${isSelected ? 'border-blue-500 bg-blue-50 shadow-sm' : 'border-slate-200 bg-white hover:border-blue-300 hover:shadow-sm'}`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <h2 className="font-semibold leading-snug text-slate-900">{properties.title}</h2>
+                        <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" aria-hidden="true" />
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        <Badge className={statusClass(properties.status)}>{displayStatus(properties.status)}</Badge>
+                        {properties.category && <Badge variant="outline" className="border-slate-300 text-slate-700">{properties.category}</Badge>}
+                      </div>
+                      {properties.location_name && <p className="mt-2 text-xs text-slate-600">{properties.location_name}</p>}
+                      <div className="mt-3 flex items-center gap-1.5 text-sm font-medium text-slate-800"><DollarSign className="h-3.5 w-3.5 text-emerald-700" aria-hidden="true" />{formatCurrency(properties.total_budget)}</div>
+                    </button>
                   );
-                }}
-              >
-                <Navigation className="h-4 w-4" />
-              </Button>
+                })}
+              </div>
             </div>
-            {/* Geolocation error / status banner */}
-            {geoError && (
-              <div className="absolute top-4 left-4 bg-yellow-50 border border-yellow-300 text-yellow-800 text-xs rounded-lg px-3 py-2 shadow max-w-xs">
-                {geoError}
-                <button className="ml-2 underline" onClick={() => setGeoError(null)} aria-label="Dismiss location notice">Dismiss</button>
-              </div>
-            )}
-            {userLocation && (
-              <div className="absolute top-4 left-4 bg-green-50 border border-green-300 text-green-800 text-xs rounded-lg px-3 py-2 shadow max-w-xs">
-                Showing projects near your location.
-                <button className="ml-2 underline" onClick={() => setUserLocation(null)} aria-label="Clear location filter">Clear</button>
-              </div>
-            )}
-          </div>
+          </aside>
 
-          {/* Selected Project Details */}
-          {selectedGrant && (
-            <div className="absolute bottom-4 left-4 right-4">
-              <Card className="bg-white shadow-lg">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-lg">{selectedGrant.project.title}</CardTitle>
-                      <p className="text-sm text-gray-600 mt-1">{selectedGrant.address}</p>
-                    </div>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => setSelectedGrant(null)}
-                    >
-                      ×
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    <Badge className={getStatusColor(selectedGrant.project.status)}>
-                      {selectedGrant.project.status}
-                    </Badge>
-                    <Badge className={getCategoryColor(selectedGrant.project.category)}>
-                      {selectedGrant.project.category}
-                    </Badge>
-                    {selectedGrant.project.is_featured && (
-                      <Badge className="bg-yellow-100 text-yellow-800">
-                        <Star className="h-3 w-3 mr-1" />
-                        Featured
-                      </Badge>
-                    )}
-                  </div>
-                  
-                  <p className="text-gray-600 mb-4">{selectedGrant.project.description}</p>
-                  
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="h-4 w-4 text-green-600" />
+          <section className="relative min-h-[52vh] flex-1 lg:min-h-0" aria-label="Interactive grant map">
+            <div ref={mapContainerRef} className="absolute inset-0" />
+            {!isMapReady && (
+              <div className="pointer-events-none absolute inset-0 grid place-items-center bg-slate-100/80" aria-live="polite">
+                <div className="rounded-xl bg-white px-5 py-4 text-sm font-medium text-slate-700 shadow">Loading interactive map…</div>
+              </div>
+            )}
+            {mapError && (
+              <div className="absolute left-4 top-4 max-w-sm rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 shadow">
+                {mapError}
+                <button type="button" className="ml-2 font-semibold underline" onClick={() => setMapError('')}>Dismiss</button>
+              </div>
+            )}
+            {!isLoading && !dataError && grants.length === 0 && isMapReady && (
+              <div className="pointer-events-none absolute inset-0 grid place-items-center p-6">
+                <Card className="max-w-md border-slate-200 bg-white/95 text-center shadow-lg">
+                  <CardContent className="p-6">
+                    <MapPin className="mx-auto h-9 w-9 text-blue-700" aria-hidden="true" />
+                    <h2 className="mt-3 text-lg font-bold text-slate-900">The map is ready for council grants</h2>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">No published grants have been approved for map display yet. Markers will appear here once eligible grants include valid map coordinates.</p>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {selectedGrant && (
+              <div className="absolute bottom-4 left-4 right-4 max-w-xl">
+                <Card className="border-slate-200 bg-white shadow-xl">
+                  <CardContent className="p-5">
+                    <div className="flex items-start justify-between gap-4">
                       <div>
-                        <p className="text-xs text-gray-500">Funding</p>
-                        <p className="font-semibold text-sm">
-                          {formatCurrency(selectedGrant.project.funding_amount)}
-                        </p>
+                        <div className="mb-2 flex flex-wrap gap-1.5">
+                          <Badge className={statusClass(selectedGrant.properties.status)}>{displayStatus(selectedGrant.properties.status)}</Badge>
+                          {selectedGrant.properties.category && <Badge variant="outline">{selectedGrant.properties.category}</Badge>}
+                        </div>
+                        <h2 className="text-lg font-bold text-slate-950">{selectedGrant.properties.title}</h2>
+                        {selectedGrant.properties.location_name && <p className="mt-1 flex items-center gap-1 text-sm text-slate-600"><MapPin className="h-3.5 w-3.5" aria-hidden="true" />{selectedGrant.properties.location_name}</p>}
                       </div>
+                      <button type="button" onClick={() => setSelectedGrantId(null)} className="rounded-md p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-800" aria-label="Close grant details"><X className="h-5 w-5" /></button>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4 text-blue-600" />
-                      <div>
-                        <p className="text-xs text-gray-500">Beneficiaries</p>
-                        <p className="font-semibold text-sm">{selectedGrant.project.beneficiaries_count}</p>
-                      </div>
+                    {selectedGrant.properties.description && <p className="mt-3 text-sm leading-6 text-slate-700">{selectedGrant.properties.description}</p>}
+                    <div className="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
+                      <div><p className="text-xs text-slate-500">Funding</p><p className="font-semibold text-slate-900">{formatCurrency(selectedGrant.properties.total_budget)}</p></div>
+                      <div><p className="text-xs text-slate-500">Applications funded</p><p className="font-semibold text-slate-900">{selectedGrant.properties.approved_project_count || 0}</p></div>
+                      <div><p className="text-xs text-slate-500">Closes</p><p className="font-semibold text-slate-900">{formatDate(selectedGrant.properties.closes_at)}</p></div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-purple-600" />
-                      <div>
-                        <p className="text-xs text-gray-500">Started</p>
-                        <p className="font-semibold text-sm">{formatDate(selectedGrant.project.start_date)}</p>
-                      </div>
+                    <div className="mt-4 flex justify-end">
+                      <Button size="sm" onClick={() => onNavigate(`grant-details/${selectedGrant.properties.id}`)}><Info className="mr-1.5 h-4 w-4" />View grant details</Button>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <TrendingUp className="h-4 w-4 text-orange-600" />
-                      <div>
-                        <p className="text-xs text-gray-500">Progress</p>
-                        <p className="font-semibold text-sm">{selectedGrant.project.completion_percentage}%</p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {selectedGrant.project.photos && selectedGrant.project.photos.length > 0 && (
-                    <div className="mb-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Camera className="h-4 w-4 text-gray-600" />
-                        <span className="text-sm font-medium text-gray-900">Project Photos</span>
-                      </div>
-                      <div className="flex gap-2 overflow-x-auto">
-                        {selectedGrant.project.photos.map((photo, index) => (
-                          <div key={index} className="flex-shrink-0 w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center">
-                            <Camera className="h-6 w-6 text-gray-400" />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline" size="sm" className="flex-1"
-                      onClick={() => onNavigate(`grant-details/${selectedGrant.id}`)}
-                    >
-                      <Info className="h-4 w-4 mr-2" />
-                      View Details
-                    </Button>
-                    <Button variant="outline" size="sm" className="flex-1"
-                      onClick={() => setSelectedGrant(null)}
-                    >
-                      <MessageSquare className="h-4 w-4 mr-2" />
-                      Close
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </section>
         </div>
-      </div>
+      </main>
     </div>
   );
 };
 
 export default PublicGrantMap;
-
