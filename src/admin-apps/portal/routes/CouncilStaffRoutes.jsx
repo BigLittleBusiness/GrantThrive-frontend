@@ -1,5 +1,5 @@
 import React from 'react';
-import { Route } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 
 import CouncilStaffDashboard from '../pages/council-staff/CouncilStaffDashboard.jsx';
 import CouncilStaffProfile from '../pages/council-staff/Profile.jsx';
@@ -23,9 +23,9 @@ export default function CouncilStaffRoutes({
   ROLES,
 }) {
   return (
-    <>
+    <Routes>
       <Route
-        path="staff/dashboard"
+        path="dashboard"
         element={
           <ProtectedRoute
             user={currentUser}
@@ -38,7 +38,7 @@ export default function CouncilStaffRoutes({
       />
 
       <Route
-        path="staff/grants"
+        path="grants"
         element={
           <ProtectedRoute
             user={currentUser}
@@ -51,7 +51,7 @@ export default function CouncilStaffRoutes({
       />
 
       <Route
-        path="staff/grant-details/:id"
+        path="grant-details/:id"
         element={
           <ProtectedRoute
             user={currentUser}
@@ -64,7 +64,7 @@ export default function CouncilStaffRoutes({
       />
 
       <Route
-        path="staff/admin-approvals"
+        path="admin-approvals"
         element={
           <ProtectedRoute
             user={currentUser}
@@ -77,7 +77,7 @@ export default function CouncilStaffRoutes({
       />
 
       <Route
-        path="staff/community-voting"
+        path="community-voting"
         element={
           <ProtectedRoute
             user={currentUser}
@@ -90,7 +90,7 @@ export default function CouncilStaffRoutes({
       />
 
       <Route
-        path="staff/grant-map"
+        path="grant-map"
         element={
           <ProtectedRoute
             user={currentUser}
@@ -103,7 +103,7 @@ export default function CouncilStaffRoutes({
       />
 
       <Route
-        path="staff/resource-hub"
+        path="resource-hub"
         element={
           <ProtectedRoute
             user={currentUser}
@@ -116,7 +116,7 @@ export default function CouncilStaffRoutes({
       />
 
       <Route
-        path="staff/profile"
+        path="profile"
         element={
           <ProtectedRoute
             user={currentUser}
@@ -129,7 +129,7 @@ export default function CouncilStaffRoutes({
       />
 
       <Route
-        path="staff/pending-approvals"
+        path="pending-approvals"
         element={
           <ProtectedRoute
             user={currentUser}
@@ -142,7 +142,7 @@ export default function CouncilStaffRoutes({
       />
 
       <Route
-        path="staff/community-forum"
+        path="community-forum"
         element={
           <ProtectedRoute
             user={currentUser}
@@ -155,7 +155,7 @@ export default function CouncilStaffRoutes({
       />
 
       <Route
-        path="staff/communication-settings"
+        path="communication-settings"
         element={
           <ProtectedRoute
             user={currentUser}
@@ -166,6 +166,6 @@ export default function CouncilStaffRoutes({
           </ProtectedRoute>
         }
       />
-    </>
+    </Routes>
   );
 }

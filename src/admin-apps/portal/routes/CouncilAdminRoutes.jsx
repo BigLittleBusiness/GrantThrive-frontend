@@ -1,5 +1,5 @@
 import React from 'react';
-import { Route } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 
 import AdminApprovalDashboard from '../pages/council-admin/AdminApprovalDashboard.jsx';
 import CouncilAdminDashboard from '../pages/council-admin/CouncilAdminDashboard.jsx';
@@ -29,9 +29,9 @@ export default function CouncilAdminRoutes({
   ROLES,
 }) {
   return (
-    <>
+    <Routes>
       <Route
-        path="council/dashboard"
+        path="dashboard"
         element={
           <ProtectedRoute
             user={currentUser}
@@ -44,7 +44,7 @@ export default function CouncilAdminRoutes({
       />
 
       <Route
-        path="council/admin-approvals"
+        path="admin-approvals"
         element={
           <ProtectedRoute
             user={currentUser}
@@ -57,7 +57,7 @@ export default function CouncilAdminRoutes({
       />
 
       <Route
-        path="council/create-grant"
+        path="create-grant"
         element={
           <ProtectedRoute
             user={currentUser}
@@ -70,7 +70,7 @@ export default function CouncilAdminRoutes({
       />
 
       <Route
-        path="council/grants"
+        path="grants"
         element={
           <ProtectedRoute
             user={currentUser}
@@ -83,7 +83,7 @@ export default function CouncilAdminRoutes({
       />
 
       <Route
-        path="council/grant-details/:id"
+        path="grant-details/:id"
         element={
           <ProtectedRoute
             user={currentUser}
@@ -96,7 +96,7 @@ export default function CouncilAdminRoutes({
       />
 
       <Route
-        path="council/communication-settings"
+        path="communication-settings"
         element={
           <ProtectedRoute
             user={currentUser}
@@ -109,7 +109,7 @@ export default function CouncilAdminRoutes({
       />
 
       <Route
-        path="council/qr-code-management"
+        path="qr-code-management"
         element={
           <ProtectedRoute
             user={currentUser}
@@ -122,7 +122,7 @@ export default function CouncilAdminRoutes({
       />
 
       <Route
-        path="council/community-voting"
+        path="community-voting"
         element={
           <ProtectedRoute
             user={currentUser}
@@ -135,7 +135,7 @@ export default function CouncilAdminRoutes({
       />
 
       <Route
-        path="council/grant-map"
+        path="grant-map"
         element={
           <ProtectedRoute
             user={currentUser}
@@ -148,7 +148,7 @@ export default function CouncilAdminRoutes({
       />
 
       <Route
-        path="council/resource-hub"
+        path="resource-hub"
         element={
           <ProtectedRoute
             user={currentUser}
@@ -161,7 +161,7 @@ export default function CouncilAdminRoutes({
       />
 
       <Route
-        path="council/staff-management"
+        path="staff-management"
         element={
           <ProtectedRoute
             user={currentUser}
@@ -174,7 +174,7 @@ export default function CouncilAdminRoutes({
       />
 
       <Route
-        path="council/account-billing"
+        path="account-billing"
         element={
           <ProtectedRoute
             user={currentUser}
@@ -187,7 +187,7 @@ export default function CouncilAdminRoutes({
       />
 
       <Route
-        path="council/profile"
+        path="profile"
         element={
           <ProtectedRoute
             user={currentUser}
@@ -200,7 +200,7 @@ export default function CouncilAdminRoutes({
       />
 
       <Route
-        path="council/community-forum"
+        path="community-forum"
         element={
           <ProtectedRoute
             user={currentUser}
@@ -213,7 +213,7 @@ export default function CouncilAdminRoutes({
       />
 
       <Route
-        path="council/pricing"
+        path="pricing"
         element={
           <ProtectedRoute
             user={currentUser}
@@ -226,7 +226,7 @@ export default function CouncilAdminRoutes({
       />
 
       <Route
-        path="council/pending-approvals"
+        path="pending-approvals"
         element={
           <ProtectedRoute
             user={currentUser}
@@ -239,7 +239,7 @@ export default function CouncilAdminRoutes({
       />
 
       <Route
-        path="council/analytics"
+        path="analytics"
         element={
           <ProtectedRoute
             user={currentUser}
@@ -252,7 +252,7 @@ export default function CouncilAdminRoutes({
       />
 
       <Route
-        path="council/review-workflow"
+        path="review-workflow"
         element={
           <ProtectedRoute
             user={currentUser}
@@ -265,7 +265,7 @@ export default function CouncilAdminRoutes({
       />
 
       <Route
-        path="council/winners-showcase"
+        path="winners-showcase"
         element={
           <ProtectedRoute
             user={currentUser}
@@ -276,6 +276,6 @@ export default function CouncilAdminRoutes({
           </ProtectedRoute>
         }
       />
-    </>
+    </Routes>
   );
 }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Route } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 
 import CommunityMemberDashboard from '../pages/community/CommunityMemberDashboard.jsx';
 import GrantsListing from '../pages/community/GrantsListing.jsx';
@@ -21,9 +21,9 @@ export default function CommunityRoutes({
   ROLES,
 }) {
   return (
-    <>
+    <Routes>
       <Route
-        path="community/dashboard"
+        path="dashboard"
         element={
           <ProtectedRoute
             user={currentUser}
@@ -36,7 +36,7 @@ export default function CommunityRoutes({
       />
 
       <Route
-        path="community/grants"
+        path="grants"
         element={
           <ProtectedRoute
             user={currentUser}
@@ -49,7 +49,7 @@ export default function CommunityRoutes({
       />
 
       <Route
-        path="community/grant-details/:id"
+        path="grant-details/:id"
         element={
           <ProtectedRoute
             user={currentUser}
@@ -62,7 +62,7 @@ export default function CommunityRoutes({
       />
 
       <Route
-        path="community/application-form/:grantId?"
+        path="application-form/:grantId?"
         element={
           <ProtectedRoute
             user={currentUser}
@@ -75,7 +75,7 @@ export default function CommunityRoutes({
       />
 
       <Route
-        path="community/community-forum"
+        path="community-forum"
         element={
           <ProtectedRoute
             user={currentUser}
@@ -88,7 +88,7 @@ export default function CommunityRoutes({
       />
 
       <Route
-        path="community/resource-hub"
+        path="resource-hub"
         element={
           <ProtectedRoute
             user={currentUser}
@@ -101,7 +101,7 @@ export default function CommunityRoutes({
       />
 
       <Route
-        path="community/winners-showcase"
+        path="winners-showcase"
         element={
           <ProtectedRoute
             user={currentUser}
@@ -114,7 +114,7 @@ export default function CommunityRoutes({
       />
 
       <Route
-        path="community/community-voting"
+        path="community-voting"
         element={
           <ProtectedRoute
             user={currentUser}
@@ -127,7 +127,7 @@ export default function CommunityRoutes({
       />
 
       <Route
-        path="community/grant-map"
+        path="grant-map"
         element={
           <ProtectedRoute
             user={currentUser}
@@ -140,7 +140,7 @@ export default function CommunityRoutes({
       />
 
       <Route
-        path="community/transparency"
+        path="transparency"
         element={
           <ProtectedRoute
             user={currentUser}
@@ -153,7 +153,7 @@ export default function CommunityRoutes({
       />
 
       <Route
-        path="community/public-results"
+        path="public-results"
         element={
           <ProtectedRoute
             user={currentUser}
@@ -164,6 +164,6 @@ export default function CommunityRoutes({
           </ProtectedRoute>
         }
       />
-    </>
+    </Routes>
   );
 }

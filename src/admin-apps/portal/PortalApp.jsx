@@ -241,12 +241,31 @@ function PortalInner() {
         }
       />
 
-      {/* Role-based route groups */}
-      <Suspense fallback={<div className="p-6 text-sm text-slate-600" role="status">Loading your workspace…</div>}>
-        <CouncilAdminRoutes ProtectedRoute={ProtectedRoute} currentUser={currentUser} handleLogout={handleLogout} pageProps={pageProps} ROLES={ROLES} />
-        <CouncilStaffRoutes ProtectedRoute={ProtectedRoute} currentUser={currentUser} handleLogout={handleLogout} pageProps={pageProps} ROLES={ROLES} />
-        <CommunityRoutes ProtectedRoute={ProtectedRoute} currentUser={currentUser} handleLogout={handleLogout} pageProps={pageProps} ROLES={ROLES} />
-      </Suspense>
+      {/* Role route groups lazy-load only after their role-specific URL matches. */}
+      <Route
+        path="council/*"
+        element={
+          <Suspense fallback={<div className="p-6 text-sm text-slate-600" role="status">Loading your workspace…</div>}>
+            <CouncilAdminRoutes ProtectedRoute={ProtectedRoute} currentUser={currentUser} handleLogout={handleLogout} pageProps={pageProps} ROLES={ROLES} />
+          </Suspense>
+        }
+      />
+      <Route
+        path="staff/*"
+        element={
+          <Suspense fallback={<div className="p-6 text-sm text-slate-600" role="status">Loading your workspace…</div>}>
+            <CouncilStaffRoutes ProtectedRoute={ProtectedRoute} currentUser={currentUser} handleLogout={handleLogout} pageProps={pageProps} ROLES={ROLES} />
+          </Suspense>
+        }
+      />
+      <Route
+        path="community/*"
+        element={
+          <Suspense fallback={<div className="p-6 text-sm text-slate-600" role="status">Loading your workspace…</div>}>
+            <CommunityRoutes ProtectedRoute={ProtectedRoute} currentUser={currentUser} handleLogout={handleLogout} pageProps={pageProps} ROLES={ROLES} />
+          </Suspense>
+        }
+      />
 
       {/* Fallback */}
       <Route
