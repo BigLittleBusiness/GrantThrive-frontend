@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import AuthGateModal from '../../components/common/AuthGateModal.jsx';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@shared/components/ui/card.jsx';
+import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card.jsx';
 import { Button } from '@shared/components/ui/button.jsx';
 import { Badge } from '@shared/components/ui/badge.jsx';
 import {
@@ -13,7 +13,6 @@ import {
   CheckCircle,
   AlertCircle,
   Loader2,
-  ChevronLeft,
   ThumbsUp,
 } from 'lucide-react';
 import { getVotingSessions, getVotingSession, castVote } from '../../utils/api.js';
@@ -24,6 +23,7 @@ const CommunityVoting = ({ user, onNavigate, onLogout }) => {
   const [sessions, setSessions] = useState([]);
   const [selectedSession, setSelectedSession] = useState(null);
   const [userVotes, setUserVotes] = useState({});
+  const [recordedVotes, setRecordedVotes] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -39,16 +39,17 @@ const CommunityVoting = ({ user, onNavigate, onLogout }) => {
       setLoading(true);
       setError(null);
       const { sessions: list } = await getVotingSessions('open');
-      setSessions(list);
-      if (list.length > 0 && !selectedSession) {
-        setSelectedSession(list[0]);
+      const sessionList = Array.isArray(list) ? list : [];
+      setSessions(sessionList);
+      if (sessionList.length > 0 && !selectedSession) {
+        setSelectedSession(sessionList[0]);
         // Seed user votes from server if authenticated
-        if (list[0].user_votes) {
+        if (sessionList[0].user_votes) {
           const mapped = {};
-          Object.entries(list[0].user_votes).forEach(([k, v]) => {
+          Object.entries(sessionList[0].user_votes).forEach(([k, v]) => {
             mapped[parseInt(k)] = v;
           });
-          setUserVotes(mapped);
+          setRecordedVotes(mapped);
         }
       }
     } catch (err) {
@@ -62,17 +63,19 @@ const CommunityVoting = ({ user, onNavigate, onLogout }) => {
     loadSessions();
   }, [loadSessions]);
 
-  const handleSelectSession = async (session) => {
+  const handleSelectSession = async (session, preserveSuccess = false) => {
     try {
       setLoading(true);
+      setError(null);
       const data = await getVotingSession(session.id);
       setSelectedSession(data);
       const mapped = {};
       Object.entries(data.user_votes || {}).forEach(([k, v]) => {
         mapped[parseInt(k)] = v;
       });
-      setUserVotes(mapped);
-      setSubmitSuccess(false);
+      setRecordedVotes(mapped);
+      setUserVotes({});
+      if (!preserveSuccess) setSubmitSuccess(false);
     } catch (err) {
       setError(err.message || 'Failed to load session.');
     } finally {
@@ -80,8 +83,9 @@ const CommunityVoting = ({ user, onNavigate, onLogout }) => {
     }
   };
 
-  const handleVote = (optionId) => {
-    if (!currentUser) {
+  const handleVote = (optionId, authenticatedUser = currentUser) => {
+    if (recordedVotes[optionId] !== undefined) return;
+    if (!authenticatedUser) {
       setPendingVoteOptionId(optionId);
       setShowAuthGate(true);
       return;
@@ -92,7 +96,7 @@ const CommunityVoting = ({ user, onNavigate, onLogout }) => {
         delete next[optionId];
       } else {
         const maxVotes = selectedSession?.max_votes_per_user || 99;
-        if (Object.keys(next).length >= maxVotes) {
+        if (Object.keys(recordedVotes).length + Object.keys(next).length >= maxVotes) {
           setError(`You can only vote for ${maxVotes} option${maxVotes !== 1 ? 's' : ''}.`);
           return prev;
         }
@@ -109,7 +113,7 @@ const CommunityVoting = ({ user, onNavigate, onLogout }) => {
     if (pendingVoteOptionId !== null) {
       const optId = pendingVoteOptionId;
       setPendingVoteOptionId(null);
-      setTimeout(() => handleVote(optId), 50);
+      setTimeout(() => handleVote(optId, loggedInUser), 50);
     }
   };
 
@@ -132,7 +136,7 @@ const CommunityVoting = ({ user, onNavigate, onLogout }) => {
       );
       setSubmitSuccess(true);
       // Refresh session to get updated counts
-      await handleSelectSession(selectedSession);
+      await handleSelectSession(selectedSession, true);
     } catch (err) {
       setError(err.message || 'Failed to submit votes. Please try again.');
     } finally {
@@ -163,6 +167,22 @@ const CommunityVoting = ({ user, onNavigate, onLogout }) => {
           <div className="flex flex-col items-center gap-3 text-slate-500">
             <Loader2 className="h-8 w-8 animate-spin" />
             <p className="text-sm">Loading voting sessions…</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!loading && error && sessions.length === 0) {
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <CommunityNavbar user={user} onNavigate={onNavigate} onLogout={onLogout} activePage="voting" />
+        <div className="flex items-center justify-center px-6 py-24">
+          <div className="max-w-md rounded-2xl border border-red-200 bg-red-50 p-6 text-center">
+            <AlertCircle className="mx-auto mb-3 h-10 w-10 text-red-600" />
+            <h2 className="text-lg font-semibold text-slate-900">Could not load voting sessions</h2>
+            <p className="mt-2 text-sm text-slate-600">Please try again. No voting-session information is available right now.</p>
+            <Button className="mt-4" onClick={loadSessions}>Retry</Button>
           </div>
         </div>
       </div>
@@ -282,7 +302,15 @@ const CommunityVoting = ({ user, onNavigate, onLogout }) => {
             {error && (
               <div className="mb-6 flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
                 <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                {error}
+                <span className="flex-1">{error}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-red-200 bg-white text-red-700 hover:bg-red-100"
+                  onClick={() => handleSelectSession(selectedSession, true)}
+                >
+                  Retry
+                </Button>
               </div>
             )}
 
@@ -296,12 +324,13 @@ const CommunityVoting = ({ user, onNavigate, onLogout }) => {
             {/* Voting options */}
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
               {(selectedSession.options || []).map((option) => {
-                const isVoted = userVotes[option.id] !== undefined;
+                const isRecorded = recordedVotes[option.id] !== undefined;
+                const isSelected = userVotes[option.id] !== undefined;
                 return (
                   <Card
                     key={option.id}
                     className={`rounded-3xl border-2 shadow-sm transition-all ${
-                      isVoted ? 'border-emerald-400 bg-emerald-50/30' : 'border-slate-200 bg-white'
+                      isRecorded || isSelected ? 'border-emerald-400 bg-emerald-50/30' : 'border-slate-200 bg-white'
                     }`}
                   >
                     <CardHeader>
@@ -314,7 +343,7 @@ const CommunityVoting = ({ user, onNavigate, onLogout }) => {
                           )}
                           <CardTitle className="text-lg leading-snug">{option.title}</CardTitle>
                         </div>
-                        {isVoted && (
+                        {(isRecorded || isSelected) && (
                           <div className="flex-shrink-0 rounded-full bg-emerald-100 p-2">
                             <CheckCircle className="h-5 w-5 text-emerald-700" />
                           </div>
@@ -365,17 +394,22 @@ const CommunityVoting = ({ user, onNavigate, onLogout }) => {
 
                       <Button
                         className={`w-full rounded-xl ${
-                          isVoted
+                          isRecorded || isSelected
                             ? 'bg-emerald-700 hover:bg-emerald-800'
                             : 'bg-slate-900 hover:bg-slate-800'
                         }`}
                         onClick={() => handleVote(option.id)}
-                        disabled={submitting}
+                        disabled={submitting || isRecorded}
                       >
-                        {isVoted ? (
+                        {isRecorded ? (
                           <>
                             <CheckCircle className="mr-2 h-4 w-4" />
-                            Voted — click to remove
+                            Vote recorded
+                          </>
+                        ) : isSelected ? (
+                          <>
+                            <CheckCircle className="mr-2 h-4 w-4" />
+                            Selected — click to remove before submitting
                           </>
                         ) : (
                           <>
@@ -425,13 +459,12 @@ const CommunityVoting = ({ user, onNavigate, onLogout }) => {
       </div>
 
       {/* Auth gate modal */}
-      {showAuthGate && (
-        <AuthGateModal
-          onClose={() => setShowAuthGate(false)}
-          onSuccess={handleAuthSuccess}
-          message="Please sign in or register to cast your vote."
-        />
-      )}
+      <AuthGateModal
+        isOpen={showAuthGate}
+        onClose={() => setShowAuthGate(false)}
+        onSuccess={handleAuthSuccess}
+        action="cast your vote"
+      />
     </div>
   );
 };

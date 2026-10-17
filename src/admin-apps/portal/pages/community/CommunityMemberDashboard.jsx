@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import NotificationBell from '../../components/common/NotificationBell.jsx';
 import CommunityNavbar from '../../components/layout/CommunityNavbar.jsx';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@shared/components/ui/card.jsx';
@@ -30,6 +30,8 @@ import { getApplications, getGrants } from '../../utils/api.js';
 const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
   const [applications, setApplications] = useState([]);
   const [recommendedGrants, setRecommendedGrants] = useState([]);
+  const [recommendedLoading, setRecommendedLoading] = useState(false);
+  const [recommendedError, setRecommendedError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -74,38 +76,44 @@ const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
     return actions.slice(0, 3);
   }, [applications]);
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        // Load own applications
-        const appsData = await getApplications();
-        const appsList = Array.isArray(appsData)
-          ? appsData
-          : appsData?.applications || appsData?.data || [];
-        setApplications(appsList);
-
-        // Load open grants for recommendations panel
-        try {
-          const grantsData = await getGrants({ status: 'open', per_page: 4 });
-          const grantsList = Array.isArray(grantsData)
-            ? grantsData
-            : grantsData?.grants || grantsData?.data || [];
-          setRecommendedGrants(grantsList.slice(0, 4));
-        } catch {
-          // Recommended grants are non-critical — silently ignore
-          setRecommendedGrants([]);
-        }
-      } catch (err) {
-        setError(err.message || 'Failed to load your dashboard. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
+  const loadRecommendedGrants = useCallback(async () => {
+    setRecommendedLoading(true);
+    setRecommendedError(null);
+    try {
+      const grantsData = await getGrants({ status: 'open', per_page: 4 });
+      const grantsList = Array.isArray(grantsData)
+        ? grantsData
+        : grantsData?.grants || grantsData?.data || [];
+      setRecommendedGrants(grantsList.slice(0, 4));
+    } catch {
+      setRecommendedGrants([]);
+      setRecommendedError('Recommended grants could not be loaded right now.');
+    } finally {
+      setRecommendedLoading(false);
+    }
   }, []);
+
+  const loadDashboard = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const appsData = await getApplications();
+      const appsList = Array.isArray(appsData)
+        ? appsData
+        : appsData?.applications || appsData?.data || [];
+      setApplications(appsList);
+      await loadRecommendedGrants();
+    } catch (err) {
+      setError(err.message || 'Failed to load your applications. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, [loadRecommendedGrants]);
+
+  useEffect(() => {
+    loadDashboard();
+  }, [loadDashboard]);
 
   const formatCurrency = (amount) =>
     new Intl.NumberFormat('en-AU', {
@@ -214,8 +222,11 @@ const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
         </div>
 
         {error && (
-          <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-            {error}
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            <span>{error}</span>
+            <Button variant="outline" size="sm" onClick={loadDashboard}>
+              Try again
+            </Button>
           </div>
         )}
 
@@ -320,6 +331,8 @@ const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
                   applications.slice(0, 5).map((app) => {
                     const statusMeta = getStatusMeta(app.status);
                     const progress = getProgressFromStatus(app.status);
+                    const grantId = app.grant_id ?? app.grant?.id;
+                    const hasGrantId = grantId !== undefined && grantId !== null && grantId !== '';
 
                     return (
                       <div
@@ -380,7 +393,8 @@ const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
                               <Button
                                 size="sm"
                                 className="flex-1 rounded-xl"
-                                onClick={() => onNavigate('grant-details', { grantId: app.grant_id || app.id })}
+                                disabled={!hasGrantId}
+                                onClick={() => onNavigate(`community/grant-details/${encodeURIComponent(grantId)}`)}
                               >
                                 <Eye className="mr-1 h-4 w-4" />
                                 View
@@ -391,7 +405,8 @@ const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
                                   size="sm"
                                   variant="outline"
                                   className="rounded-xl"
-                                  onClick={() => onNavigate('application-form', { grantId: app.grant_id || app.id, applicationId: app.id })}
+                                  disabled={!hasGrantId || !app.id}
+                                  onClick={() => onNavigate(`community/application-form/${encodeURIComponent(grantId)}?applicationId=${encodeURIComponent(app.id)}`)}
                                 >
                                   Update
                                 </Button>
@@ -437,7 +452,18 @@ const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
               </CardHeader>
 
               <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                {recommendedGrants.length === 0 ? (
+                {recommendedLoading ? (
+                  <div className="col-span-2 rounded-2xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500">
+                    Finding open grants…
+                  </div>
+                ) : recommendedError ? (
+                  <div className="col-span-2 rounded-2xl border border-amber-200 bg-amber-50 p-6 text-center text-sm text-amber-900">
+                    <p>{recommendedError}</p>
+                    <Button variant="outline" size="sm" className="mt-3" onClick={loadRecommendedGrants}>
+                      Retry recommendations
+                    </Button>
+                  </div>
+                ) : recommendedGrants.length === 0 ? (
                   <div className="col-span-2 rounded-2xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500">
                     No open grants found at this time.
                   </div>
@@ -483,14 +509,14 @@ const CommunityMemberDashboard = ({ user, onNavigate, onLogout }) => {
                       <div className="mt-5 flex gap-2">
                         <Button
                           className="flex-1 rounded-xl bg-emerald-700 hover:bg-emerald-800"
-                          onClick={() => onNavigate('application-form', { grantId: grant.id })}
+                          onClick={() => onNavigate(`community/application-form/${encodeURIComponent(grant.id)}`)}
                         >
                           Apply now
                         </Button>
                         <Button
                           variant="outline"
                           className="rounded-xl"
-                          onClick={() => onNavigate('grant-details', { grantId: grant.id })}
+                          onClick={() => onNavigate(`community/grant-details/${encodeURIComponent(grant.id)}`)}
                         >
                           Details
                         </Button>

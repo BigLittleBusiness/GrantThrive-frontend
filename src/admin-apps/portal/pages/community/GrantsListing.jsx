@@ -16,9 +16,7 @@ import {
   ChevronLeft,
   ChevronRight,
   SlidersHorizontal,
-  Heart,
   Share2,
-  ExternalLink,
   FileText,
   AlertCircle,
   CheckCircle,
@@ -51,7 +49,7 @@ function MyApplicationsPanel({ onNavigate }) {
     try {
       const data = await getApplications();
       setApplications(Array.isArray(data) ? data : (data?.applications ?? []));
-    } catch (err) {
+    } catch {
       setError('Unable to load your applications. Please try again.');
     } finally {
       setLoading(false);
@@ -131,6 +129,8 @@ function MyApplicationsPanel({ onNavigate }) {
             const cfg = APPLICATION_STATUS_CONFIG[app.status] ?? APPLICATION_STATUS_CONFIG.draft;
             const StatusIcon = cfg.icon;
             const canContinue = app.status === 'draft' || app.status === 'in_progress';
+            const grantId = app.grant_id ?? app.grant?.id;
+            const canOpenApplication = grantId !== undefined && grantId !== null && grantId !== '' && app.id !== undefined && app.id !== null;
             return (
               <Card key={app.id} className="border border-gray-200 hover:shadow-md transition-shadow">
                 <CardContent className="p-5">
@@ -177,7 +177,8 @@ function MyApplicationsPanel({ onNavigate }) {
                         <Button
                           size="sm"
                           className="bg-green-700 hover:bg-green-800 whitespace-nowrap"
-                          onClick={() => onNavigate && onNavigate(`community/application-form/${app.grant_id || app.id}`)}
+                          disabled={!canOpenApplication}
+                          onClick={() => onNavigate && onNavigate(`community/application-form/${encodeURIComponent(grantId)}?applicationId=${encodeURIComponent(app.id)}`)}
                         >
                           Continue
                         </Button>
@@ -185,7 +186,8 @@ function MyApplicationsPanel({ onNavigate }) {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => onNavigate && onNavigate(`community/application-form/${app.grant_id || app.id}`)}
+                          disabled={!canOpenApplication}
+                          onClick={() => onNavigate && onNavigate(`community/application-form/${encodeURIComponent(grantId)}?applicationId=${encodeURIComponent(app.id)}`)}
                         >
                           View
                         </Button>
@@ -207,6 +209,7 @@ function MyApplicationsPanel({ onNavigate }) {
 /** Normalise a raw API grant object into the shape the UI expects */
 function normaliseGrant(g) {
   const closes = g.closes_at || g.deadline || g.close_date || '';
+  const deadlineTimestamp = closes ? new Date(closes).getTime() : Number.POSITIVE_INFINITY;
   let daysLeft = null;
   let status = 'Open';
   if (closes) {
@@ -219,6 +222,7 @@ function normaliseGrant(g) {
     title: g.title || g.name || '—',
     category: g.category || g.grant_type || 'General',
     amount: g.max_amount || g.total_budget || g.amount || 0,
+    deadlineTimestamp: Number.isNaN(deadlineTimestamp) ? Number.POSITIVE_INFINITY : deadlineTimestamp,
     status,
     daysLeft: daysLeft ?? 0,
     description: g.description || g.summary || '',
@@ -239,9 +243,9 @@ function BrowseGrantsPanel({ user, council, onNavigate }) {
   const [fundingRange, setFundingRange] = useState([0, 500000]);
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
-  const [savedGrants, setSavedGrants] = useState(new Set());
   const [showAuthGate, setShowAuthGate] = useState(false);
-  const [pendingGrantId, setPendingGrantId] = useState(null);
+  const [pendingAction, setPendingAction] = useState(null);
+  const [sortBy, setSortBy] = useState('deadline');
 
   const loadGrants = useCallback(async () => {
     setIsLoading(true);
@@ -250,7 +254,7 @@ function BrowseGrantsPanel({ user, council, onNavigate }) {
       const data = await getGrants();
       const raw = Array.isArray(data) ? data : (data?.grants ?? []);
       setGrants(raw.map(normaliseGrant));
-    } catch (err) {
+    } catch {
       setLoadError('Unable to load grants. Please try again.');
     } finally {
       setIsLoading(false);
@@ -266,28 +270,43 @@ function BrowseGrantsPanel({ user, council, onNavigate }) {
   }, [grants]);
   const statuses = ['Open', 'Closing Soon', 'Closed'];
 
-  const filteredGrants = useMemo(() => grants.filter(grant => {
-    const matchesSearch =
-      grant.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      grant.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      grant.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(grant.category);
-    const matchesStatus = selectedStatus.length === 0 || selectedStatus.includes(grant.status);
-    const matchesFunding = grant.amount >= fundingRange[0] && grant.amount <= fundingRange[1];
-    return matchesSearch && matchesCategory && matchesStatus && matchesFunding;
-  }), [grants, searchTerm, selectedCategories, selectedStatus, fundingRange]);
+  const filteredGrants = useMemo(() => grants
+    .filter(grant => {
+      const matchesSearch =
+        grant.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        grant.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        grant.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+      const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(grant.category);
+      const matchesStatus = selectedStatus.length === 0 || selectedStatus.includes(grant.status);
+      const matchesFunding = grant.amount >= fundingRange[0] && grant.amount <= fundingRange[1];
+      return matchesSearch && matchesCategory && matchesStatus && matchesFunding;
+    })
+    .sort((a, b) => {
+      if (sortBy === 'amount') return b.amount - a.amount;
+      if (sortBy === 'popularity') return b.applicants - a.applicants;
+      return a.deadlineTimestamp - b.deadlineTimestamp;
+    }), [grants, searchTerm, selectedCategories, selectedStatus, fundingRange, sortBy]);
 
   const grantsPerPage = 6;
   const totalPages = Math.ceil(filteredGrants.length / grantsPerPage);
   const startIndex = (currentPage - 1) * grantsPerPage;
   const currentGrants = filteredGrants.slice(startIndex, startIndex + grantsPerPage);
 
-  const toggleCategory = (cat) =>
+  const toggleCategory = (cat) => {
     setSelectedCategories(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]);
-  const toggleStatus = (s) =>
+    setCurrentPage(1);
+  };
+  const toggleStatus = (s) => {
     setSelectedStatus(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
-  const toggleSave = (id) =>
-    setSavedGrants(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+    setCurrentPage(1);
+  };
+  const clearFilters = () => {
+    setSelectedCategories([]);
+    setSelectedStatus([]);
+    setFundingRange([0, 500000]);
+    setSearchTerm('');
+    setCurrentPage(1);
+  };
 
   const getStatusDot = (status, daysLeft) => {
     if (status === 'Closed') return 'bg-gray-500';
@@ -306,25 +325,56 @@ function BrowseGrantsPanel({ user, council, onNavigate }) {
 
   function handleApply(grantId) {
     if (user) {
-      if (onNavigate) onNavigate(`community/application-form?grantId=${grantId}`);
+      if (onNavigate) onNavigate(`community/application-form/${encodeURIComponent(grantId)}`);
     } else {
-      setPendingGrantId(grantId);
+      setPendingAction({ grantId, type: 'apply' });
       setShowAuthGate(true);
     }
   }
 
   function handleLearnMore(grantId) {
     if (user) {
-      if (onNavigate) onNavigate(`grant-details/${grantId}`);
+      if (onNavigate) onNavigate(`community/grant-details/${encodeURIComponent(grantId)}`);
     } else {
-      setPendingGrantId(grantId);
+      setPendingAction({ grantId, type: 'details' });
       setShowAuthGate(true);
     }
   }
 
   function handleAuthSuccess() {
     setShowAuthGate(false);
-    if (pendingGrantId && onNavigate) onNavigate(`grant-details/${pendingGrantId}`);
+    if (!pendingAction || !onNavigate) return;
+    const target = pendingAction.type === 'apply'
+      ? `community/application-form/${encodeURIComponent(pendingAction.grantId)}`
+      : `community/grant-details/${encodeURIComponent(pendingAction.grantId)}`;
+    setPendingAction(null);
+    onNavigate(target);
+  }
+
+  async function handleShare(grant) {
+    const url = `${window.location.origin}/portal/community/grant-details/${encodeURIComponent(grant.id)}`;
+    const shareData = { title: grant.title, text: `Check out this grant opportunity: ${grant.title}`, url };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        return;
+      }
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+        window.alert('Grant link copied to clipboard.');
+        return;
+      }
+      throw new Error('Sharing is unavailable');
+    } catch {
+      try {
+        if (!navigator.clipboard?.writeText) throw new Error('Clipboard is unavailable');
+        await navigator.clipboard.writeText(url);
+        window.alert('Grant link copied to clipboard.');
+      } catch {
+        window.alert('Unable to share this grant. Please copy the page address from your browser.');
+      }
+    }
   }
 
   if (isLoading) {
@@ -353,7 +403,7 @@ function BrowseGrantsPanel({ user, council, onNavigate }) {
         <Input
           placeholder="Search grants by title, description, or tags…"
           value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
+          onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
           className="pl-12 pr-32 py-3 w-full"
         />
         <Button
@@ -405,11 +455,11 @@ function BrowseGrantsPanel({ user, council, onNavigate }) {
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
                     <Input type="number" placeholder="Min" value={fundingRange[0]}
-                      onChange={e => setFundingRange([parseInt(e.target.value) || 0, fundingRange[1]])}
+                      onChange={e => { setFundingRange([parseInt(e.target.value, 10) || 0, fundingRange[1]]); setCurrentPage(1); }}
                       className="w-20" />
                     <span>to</span>
                     <Input type="number" placeholder="Max" value={fundingRange[1]}
-                      onChange={e => setFundingRange([fundingRange[0], parseInt(e.target.value) || 50000])}
+                      onChange={e => { setFundingRange([fundingRange[0], parseInt(e.target.value, 10) || 500000]); setCurrentPage(1); }}
                       className="w-20" />
                   </div>
                   <div className="text-xs text-gray-500">
@@ -418,7 +468,7 @@ function BrowseGrantsPanel({ user, council, onNavigate }) {
                 </div>
               </div>
               <Button variant="outline" className="w-full"
-                onClick={() => { setSelectedCategories([]); setSelectedStatus([]); setFundingRange([0, 50000]); setSearchTerm(''); }}>
+                onClick={clearFilters}>
                 Clear all filters
               </Button>
             </CardContent>
@@ -455,13 +505,20 @@ function BrowseGrantsPanel({ user, council, onNavigate }) {
                 {filteredGrants.length} Grant{filteredGrants.length !== 1 ? 's' : ''} Found
               </h2>
               <p className="text-gray-600 text-sm">
-                Showing {startIndex + 1}–{Math.min(startIndex + grantsPerPage, filteredGrants.length)} of {filteredGrants.length} results
+                {filteredGrants.length === 0
+                  ? 'Showing 0–0 of 0 results'
+                  : `Showing ${startIndex + 1}–${Math.min(startIndex + grantsPerPage, filteredGrants.length)} of ${filteredGrants.length} results`}
               </p>
             </div>
-            <select className="border border-gray-300 rounded-lg px-3 py-2 text-sm">
-              <option>Sort by Deadline</option>
-              <option>Sort by Amount</option>
-              <option>Sort by Popularity</option>
+            <select
+              value={sortBy}
+              onChange={event => { setSortBy(event.target.value); setCurrentPage(1); }}
+              aria-label="Sort grants"
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+            >
+              <option value="deadline">Sort by Deadline</option>
+              <option value="amount">Sort by Amount</option>
+              <option value="popularity">Sort by Popularity</option>
             </select>
           </div>
 
@@ -470,7 +527,7 @@ function BrowseGrantsPanel({ user, council, onNavigate }) {
               <Search className="mb-3 h-12 w-12 text-gray-300" />
               <p className="text-lg font-semibold text-gray-600">No grants match your filters</p>
               <p className="mt-1 text-sm text-gray-400">Try adjusting or clearing your filters to see more results.</p>
-              <Button variant="outline" className="mt-4 rounded-xl" onClick={() => { setSearchTerm(''); setSelectedCategories([]); setSelectedStatus([]); setFundingRange([0, 500000]); }}>Clear all filters</Button>
+              <Button variant="outline" className="mt-4 rounded-xl" onClick={clearFilters}>Clear all filters</Button>
             </div>
           )}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
@@ -486,9 +543,6 @@ function BrowseGrantsPanel({ user, council, onNavigate }) {
                       </div>
                       <CardTitle className="text-lg mb-2">{grant.title}</CardTitle>
                     </div>
-                    <Button variant="ghost" size="sm" onClick={() => toggleSave(grant.id)} className="text-gray-400 hover:text-red-500">
-                      <Heart className={`w-4 h-4 ${savedGrants.has(grant.id) ? 'fill-red-500 text-red-500' : ''}`} />
-                    </Button>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -514,7 +568,7 @@ function BrowseGrantsPanel({ user, council, onNavigate }) {
                   </div>
                   <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
                     <span>{grant.applicants} applicants</span>
-                    <span>{grant.successRate}% success rate</span>
+                    {grant.successRate != null && <span>{grant.successRate}% success rate</span>}
                   </div>
                   <div className="flex gap-2">
                     <Button
@@ -527,7 +581,7 @@ function BrowseGrantsPanel({ user, council, onNavigate }) {
                     <Button variant="outline" size="sm" onClick={() => handleLearnMore(grant.id)}>
                       Details
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" onClick={() => handleShare(grant)} aria-label={`Share ${grant.title}`}>
                       <Share2 className="w-4 h-4" />
                     </Button>
                   </div>
@@ -562,7 +616,7 @@ function BrowseGrantsPanel({ user, council, onNavigate }) {
 
       <AuthGateModal
         isOpen={showAuthGate}
-        onClose={() => { setShowAuthGate(false); setPendingGrantId(null); }}
+        onClose={() => { setShowAuthGate(false); setPendingAction(null); }}
         onSuccess={handleAuthSuccess}
         action="view grant details and apply"
         council={council}

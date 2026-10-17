@@ -6,35 +6,26 @@ import AuthGateModal from '../../components/common/AuthGateModal.jsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/card.jsx';
 import { Badge } from '@shared/components/ui/badge.jsx';
 import { Button } from '@shared/components/ui/button.jsx';
-import { 
-  ArrowLeft,
+import {
   Calendar,
   DollarSign,
   Clock,
-  MapPin,
   Users,
   FileText,
-  Download,
   Share2,
-  Heart,
   AlertCircle,
   CheckCircle,
-  Phone,
-  Mail,
   ExternalLink,
   Facebook,
   Twitter,
-  MessageSquare,
   TrendingUp,
-  Award,
-  Target
 } from 'lucide-react';
 
 const GrantDetails = ({ user, council, onNavigate, onLogout }) => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [isSaved, setIsSaved] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [shareMessage, setShareMessage] = useState('');
   const [showAuthGate, setShowAuthGate] = useState(false);
   const [grant, setGrant] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -78,12 +69,6 @@ const GrantDetails = ({ user, council, onNavigate, onLogout }) => {
         eligibilityCriteria: Array.isArray(g.eligibility_criteria) ? g.eligibility_criteria : (g.eligibility ? [g.eligibility] : []),
         documentsRequired: Array.isArray(g.documents_required) ? g.documents_required : [],
         applicationProcess: Array.isArray(g.application_process) ? g.application_process : [],
-        contact: {
-          email: g.contact_email || council?.contact_email || '',
-          phone: g.contact_phone || council?.phone || '',
-          office: g.contact_office || council?.name || '',
-          hours: g.contact_hours || 'Monday – Friday, 8:30 AM – 4:30 PM',
-        },
         relatedGrants: Array.isArray(g.related_grants) ? g.related_grants : [],
         statistics: {
           totalApplicants: g.application_count ?? 0,
@@ -107,9 +92,9 @@ const GrantDetails = ({ user, council, onNavigate, onLogout }) => {
 
   function handleApplyClick() {
     if (user) {
-      const dest = id ? `application-form?grantId=${id}` : 'application-form';
+      const dest = id ? `community/application-form?grantId=${encodeURIComponent(id)}` : 'community/application-form';
       if (onNavigate) onNavigate(dest);
-      else navigate(`/portal/community/application-form${id ? `?grantId=${id}` : ''}`);
+      else navigate(`/portal/community/application-form${id ? `?grantId=${encodeURIComponent(id)}` : ''}`);
     } else {
       setShowAuthGate(true);
     }
@@ -117,9 +102,9 @@ const GrantDetails = ({ user, council, onNavigate, onLogout }) => {
 
   function handleAuthSuccess() {
     setShowAuthGate(false);
-    const dest = id ? `application-form?grantId=${id}` : 'application-form';
+    const dest = id ? `community/application-form?grantId=${encodeURIComponent(id)}` : 'community/application-form';
     if (onNavigate) onNavigate(dest);
-    else navigate(`/portal/community/application-form${id ? `?grantId=${id}` : ''}`);
+    else navigate(`/portal/community/application-form${id ? `?grantId=${encodeURIComponent(id)}` : ''}`);
   }
 
   const getStatusColor = (status) => {
@@ -143,23 +128,33 @@ const GrantDetails = ({ user, council, onNavigate, onLogout }) => {
     return colors[category] || 'bg-gray-100 text-gray-800';
   };
 
-  const shareGrant = (platform) => {
+  const shareGrant = async (platform) => {
     const url = window.location.href;
     const text = `Check out this grant opportunity: ${grant.title}`;
-    
+
+    setShareMessage('');
     switch (platform) {
       case 'facebook':
         window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`);
+        setShowShareModal(false);
         break;
       case 'twitter':
         window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`);
+        setShowShareModal(false);
         break;
-      default:
-        navigator.clipboard.writeText(url);
-        alert('Link copied to clipboard!');
+      default: {
+        try {
+          if (!navigator.clipboard?.writeText) throw new Error('Clipboard is unavailable');
+          await navigator.clipboard.writeText(url);
+          setShareMessage('Link copied to clipboard.');
+        } catch {
+          setShareMessage('Unable to copy the link. Please copy the page address from your browser.');
+        }
+      }
     }
-    setShowShareModal(false);
   };
+
+  const isClosed = grant?.status?.toLowerCase() === 'closed';
 
   if (isLoading) {
     return (
@@ -182,6 +177,7 @@ const GrantDetails = ({ user, council, onNavigate, onLogout }) => {
         <div className="flex flex-col items-center justify-center h-64 text-center px-4">
           <AlertCircle className="mb-3 h-10 w-10 text-red-500" />
           <p className="text-gray-700 mb-4">{loadError || 'Grant not found.'}</p>
+          {loadError && <Button className="mb-3" onClick={loadGrant}>Try again</Button>}
           <Button variant="outline" onClick={() => onNavigate ? onNavigate('community/grants') : navigate('/portal/community/grants')}>
             ← Back to Grants
           </Button>
@@ -219,14 +215,6 @@ const GrantDetails = ({ user, council, onNavigate, onLogout }) => {
             </div>
             
             <div className="flex items-center gap-3 ml-6">
-              <Button
-                variant="outline"
-                onClick={() => setIsSaved(!isSaved)}
-                className="text-white border-white hover:bg-white hover:text-blue-600"
-              >
-                <Heart className={`w-4 h-4 mr-2 ${isSaved ? 'fill-current' : ''}`} />
-                {isSaved ? 'Saved' : 'Save'}
-              </Button>
               <Button
                 variant="outline"
                 onClick={() => setShowShareModal(true)}
@@ -287,14 +275,16 @@ const GrantDetails = ({ user, council, onNavigate, onLogout }) => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-3">
-                  {grant.eligibilityCriteria.map((criteria, index) => (
-                    <li key={index} className="flex items-start gap-3">
-                      <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span>{criteria}</span>
-                    </li>
-                  ))}
-                </ul>
+                {grant.eligibilityCriteria.length ? (
+                  <ul className="space-y-3">
+                    {grant.eligibilityCriteria.map((criteria, index) => (
+                      <li key={index} className="flex items-start gap-3">
+                        <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                        <span>{criteria}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : <p className="text-sm text-gray-600">Eligibility criteria have not been published for this grant.</p>}
               </CardContent>
             </Card>
 
@@ -307,14 +297,16 @@ const GrantDetails = ({ user, council, onNavigate, onLogout }) => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {grant.documentsRequired.map((doc, index) => (
-                    <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                      <FileText className="w-4 h-4 text-gray-500" />
-                      <span className="text-sm">{doc}</span>
-                    </div>
-                  ))}
-                </div>
+                {grant.documentsRequired.length ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {grant.documentsRequired.map((doc, index) => (
+                      <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                        <FileText className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm">{doc}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : <p className="text-sm text-gray-600">No document requirements have been published for this grant.</p>}
               </CardContent>
             </Card>
 
@@ -327,19 +319,21 @@ const GrantDetails = ({ user, council, onNavigate, onLogout }) => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {grant.applicationProcess.map((step, index) => (
-                    <div key={index} className="flex items-center gap-4">
-                      <div className={`w-4 h-4 rounded-full ${getStatusColor(step.status)}`}></div>
-                      <div className="flex-1">
-                        <div className="font-medium">{step.stage}</div>
-                        <div className="text-sm text-gray-600">{step.date}</div>
+                {grant.applicationProcess.length ? (
+                  <div className="space-y-4">
+                    {grant.applicationProcess.map((step, index) => (
+                      <div key={index} className="flex items-center gap-4">
+                        <div className={`w-4 h-4 rounded-full ${getStatusColor(step.status)}`}></div>
+                        <div className="flex-1">
+                          <div className="font-medium">{step.stage}</div>
+                          <div className="text-sm text-gray-600">{step.date}</div>
+                        </div>
+                        {step.status === 'completed' && <CheckCircle className="w-5 h-5 text-green-500" />}
+                        {step.status === 'current' && <Clock className="w-5 h-5 text-blue-500" />}
                       </div>
-                      {step.status === 'completed' && <CheckCircle className="w-5 h-5 text-green-500" />}
-                      {step.status === 'current' && <Clock className="w-5 h-5 text-blue-500" />}
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : <p className="text-sm text-gray-600">The application process timeline has not been published.</p>}
               </CardContent>
             </Card>
 
@@ -416,8 +410,8 @@ const GrantDetails = ({ user, council, onNavigate, onLogout }) => {
                   <div className="font-semibold text-orange-800">Application Deadline</div>
                   <div className="text-2xl font-bold text-orange-600">{grant.daysLeft} days left</div>
                 </div>
-                <Button className="w-full bg-green-700 hover:bg-green-800 text-white" onClick={handleApplyClick}>
-                  {user ? 'Apply Now' : 'Sign in to Apply'}
+                <Button className="w-full bg-green-700 hover:bg-green-800 text-white" onClick={handleApplyClick} disabled={isClosed}>
+                  {isClosed ? 'Applications closed' : user ? 'Apply Now' : 'Sign in to Apply'}
                 </Button>
                 {showAuthGate && (
                   <AuthGateModal
@@ -431,47 +425,13 @@ const GrantDetails = ({ user, council, onNavigate, onLogout }) => {
               </CardContent>
             </Card>
 
-            {/* Contact Information */}
+            {/* In-app application support */}
             <Card>
               <CardHeader>
-                <CardTitle>Contact</CardTitle>
+                <CardTitle>Application support</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <Mail className="w-4 h-4 text-gray-500" />
-                  <span className="text-gray-700">Contact details are available through the grant application process.</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Phone className="w-4 h-4 text-gray-500" />
-                  <a href={`tel:${grant.contact.phone}`} className="text-blue-600 hover:underline">
-                    {grant.contact.phone}
-                  </a>
-                </div>
-                <div className="text-sm text-gray-600">
-                  <div className="font-medium">{grant.contact.office}</div>
-                  <div>{grant.contact.hours}</div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Downloads */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Downloads</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button variant="outline" className="w-full justify-start">
-                  <Download className="w-4 h-4 mr-2" />
-                  Application Form
-                </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  <Download className="w-4 h-4 mr-2" />
-                  Grant Guidelines
-                </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  <Download className="w-4 h-4 mr-2" />
-                  Budget Template
-                </Button>
+              <CardContent>
+                <p className="text-sm leading-6 text-gray-700">Start an in-app application to review the requirements and submit any questions through the application process.</p>
               </CardContent>
             </Card>
 
@@ -481,19 +441,20 @@ const GrantDetails = ({ user, council, onNavigate, onLogout }) => {
                 <CardTitle>Related Grants</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {grant.relatedGrants.map(relatedGrant => (
-                  <div key={relatedGrant.id} className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
-                    <div className="font-medium text-sm">{relatedGrant.title}</div>
+                {grant.relatedGrants.length ? grant.relatedGrants.map(relatedGrant => (
+                  <button
+                    key={relatedGrant.id}
+                    type="button"
+                    onClick={() => onNavigate ? onNavigate(`community/grant-details/${encodeURIComponent(relatedGrant.id)}`) : navigate(`/portal/community/grant-details/${encodeURIComponent(relatedGrant.id)}`)}
+                    className="w-full p-3 border rounded-lg text-left hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-700"
+                  >
+                    <div className="font-medium text-sm">{relatedGrant.title || 'Grant details'}</div>
                     <div className="flex items-center justify-between mt-1">
-                      <Badge className={getCategoryColor(relatedGrant.category)} variant="outline">
-                        {relatedGrant.category}
-                      </Badge>
-                      <span className="text-sm font-medium text-green-600">
-                        ${relatedGrant.amount.toLocaleString()}
-                      </span>
+                      {relatedGrant.category && <Badge className={getCategoryColor(relatedGrant.category)} variant="outline">{relatedGrant.category}</Badge>}
+                      {relatedGrant.amount != null && <span className="text-sm font-medium text-green-600">${Number(relatedGrant.amount).toLocaleString()}</span>}
                     </div>
-                  </div>
-                ))}
+                  </button>
+                )) : <p className="text-sm text-gray-600">No related grants are available at this time.</p>}
               </CardContent>
             </Card>
           </div>
@@ -505,6 +466,7 @@ const GrantDetails = ({ user, council, onNavigate, onLogout }) => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <h3 className="text-lg font-semibold mb-4">Share this grant</h3>
+            {shareMessage && <p className="mb-4 text-sm text-gray-700" role="status">{shareMessage}</p>}
             <div className="grid grid-cols-2 gap-3">
               <Button onClick={() => shareGrant('facebook')} className="bg-blue-600 hover:bg-blue-700">
                 <Facebook className="w-4 h-4 mr-2" />

@@ -32,86 +32,176 @@ import {
   Loader2,
   XCircle,
 } from 'lucide-react';
-import { getGrant, createApplication, updateApplication, submitApplication, validateAbn } from '../../utils/api.js';
+import {
+  createApplication,
+  deleteApplicationDocument,
+  getApplication,
+  getGrant,
+  listApplicationDocuments,
+  submitApplication,
+  updateApplication,
+  uploadApplicationDocument,
+  validateAbn as validateAbnApi,
+} from '../../utils/api.js';
+
+const MAX_DOCUMENT_SIZE = 20 * 1024 * 1024;
+const SUPPORTED_DOCUMENT_EXTENSIONS = new Set([
+  'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'csv', 'png', 'jpg', 'jpeg', 'gif', 'webp',
+]);
+
+const createInitialFormData = () => ({
+  organizationName: '', organizationType: '', abn: '', address: '', city: '', postcode: '', website: '', establishedYear: '',
+  primaryContactName: '', primaryContactTitle: '', primaryContactEmail: '', primaryContactPhone: '', secondaryContactName: '', secondaryContactEmail: '',
+  projectTitle: '', projectDescription: '', projectCategory: '', projectLocation: '', projectStartDate: '', projectEndDate: '',
+  totalProjectCost: '', amountRequested: '', budgetItems: [{ category: '', description: '', amount: '' }], otherFunding: '', inKindContributions: '',
+  communityNeed: '', projectImpact: '', sustainability: '', riskManagement: '', teamExperience: '',
+  declarationAccepted: false, privacyAccepted: false, termsAccepted: false,
+});
+
+const displayDocumentName = (document) => document?.original_filename || document?.originalFilename || document?.filename || document?.name || 'Supporting document';
+const documentId = (document) => document?.id || document?.document_id || document?.documentId;
+const documentSize = (document) => Number(document?.size || document?.file_size || document?.fileSize || 0);
+
+const toFormValue = (value, fallback = '') => (value === null || value === undefined ? fallback : String(value));
+const scalarOrSaved = (scalar, saved, fallback = '') => (scalar === null || scalar === undefined ? toFormValue(saved, fallback) : toFormValue(scalar));
+
+const hydrateFormData = (application) => {
+  const saved = application?.form_data && typeof application.form_data === 'object' ? application.form_data : {};
+  const initial = createInitialFormData();
+  return {
+    ...initial,
+    ...saved,
+    // These core columns are authoritative even if an older form_data copy exists.
+    organizationName: scalarOrSaved(application?.organization_name, saved.organizationName),
+    projectTitle: scalarOrSaved(application?.project_title, saved.projectTitle),
+    projectDescription: scalarOrSaved(application?.project_description, saved.projectDescription),
+    amountRequested: scalarOrSaved(application?.amount_requested, saved.amountRequested),
+    primaryContactName: scalarOrSaved(application?.contact_person, saved.primaryContactName),
+    primaryContactEmail: scalarOrSaved(application?.contact_email, saved.primaryContactEmail),
+    primaryContactPhone: scalarOrSaved(application?.contact_phone, saved.primaryContactPhone),
+    address: scalarOrSaved(application?.address, saved.address),
+    postcode: scalarOrSaved(application?.postcode, saved.postcode),
+    budgetItems: Array.isArray(saved.budgetItems) && saved.budgetItems.length ? saved.budgetItems : initial.budgetItems,
+  };
+};
+
+const normaliseDocuments = (response) => {
+  const documents = Array.isArray(response) ? response : response?.documents || response?.data || [];
+  return Array.isArray(documents) ? documents : [];
+};
 
 const ApplicationForm = ({ user, onNavigate, onLogout }) => {
   const { grantId: grantIdParam } = useParams();
   const [searchParams] = useSearchParams();
-  const grantId = grantIdParam || searchParams.get('grantId');
+  const routeGrantId = grantIdParam || searchParams.get('grantId');
+  const requestedApplicationId = searchParams.get('applicationId');
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
-  const [applicationId, setApplicationId] = useState(null); // set after first save/draft
-  const [grantTitle, setGrantTitle] = useState('Grant Application');
+  const [applicationId, setApplicationId] = useState(null);
+  const [effectiveGrantId, setEffectiveGrantId] = useState(routeGrantId || null);
+  const [grantTitle, setGrantTitle] = useState('Loading grant…');
+  const [grantLoadError, setGrantLoadError] = useState(null);
+  const [grantRetryCount, setGrantRetryCount] = useState(0);
+  const [isGrantLoading, setIsGrantLoading] = useState(Boolean(routeGrantId));
+  const [isApplicationLoading, setIsApplicationLoading] = useState(Boolean(requestedApplicationId));
+  const [applicationLoadError, setApplicationLoadError] = useState(null);
+  const [routeError, setRouteError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [formData, setFormData] = useState({
-    // Step 1: Organization Details
-    organizationName: '',
-    organizationType: '',
-    abn: '',
-    address: '',
-    city: '',
-    postcode: '',
-    website: '',
-    establishedYear: '',
-    
-    // Step 2: Contact Information
-    primaryContactName: '',
-    primaryContactTitle: '',
-    primaryContactEmail: '',
-    primaryContactPhone: '',
-    secondaryContactName: '',
-    secondaryContactEmail: '',
-    
-    // Step 3: Project Details
-    projectTitle: '',
-    projectDescription: '',
-    projectCategory: '',
-    projectLocation: '',
-    projectStartDate: '',
-    projectEndDate: '',
-    
-    // Step 4: Budget
-    totalProjectCost: '',
-    amountRequested: '',
-    budgetItems: [
-      { category: '', description: '', amount: '' }
-    ],
-    otherFunding: '',
-    inKindContributions: '',
-    
-    // Step 5: Supporting Information
-    communityNeed: '',
-    projectImpact: '',
-    sustainability: '',
-    riskManagement: '',
-    teamExperience: '',
-    
-    // Step 6: Documents
-    uploadedFiles: [],
-    
-    // Step 7: Declaration
-    declarationAccepted: false,
-    privacyAccepted: false,
-    termsAccepted: false
-  });
-
+  const [formData, setFormData] = useState(createInitialFormData);
+  const [documents, setDocuments] = useState([]);
+  const [documentError, setDocumentError] = useState(null);
+  const [isUploadingDocuments, setIsUploadingDocuments] = useState(false);
+  const [removingDocumentId, setRemovingDocumentId] = useState(null);
   const [errors, setErrors] = useState({});
   const [isAutoSaving, setIsAutoSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
-  const [collaborators, setCollaborators] = useState([]);
+  const hasUserEditedRef = React.useRef(false);
+  const abnDebounceRef = React.useRef(null);
+
+  // An application ID takes priority for its grant association. A conflicting URL
+  // is blocked rather than risking a new draft against a different grant.
+  useEffect(() => {
+    let cancelled = false;
+    const loadApplication = async () => {
+      setApplicationLoadError(null);
+      setRouteError(null);
+      setDocumentError(null);
+      setSubmitError(null);
+
+      if (!requestedApplicationId) {
+        hasUserEditedRef.current = false;
+        setApplicationId(null);
+        setEffectiveGrantId(routeGrantId || null);
+        setFormData(createInitialFormData());
+        setDocuments([]);
+        if (!routeGrantId) setRouteError('Choose a grant before starting an application.');
+        setIsApplicationLoading(false);
+        return;
+      }
+
+      setIsApplicationLoading(true);
+      try {
+        const response = await getApplication(requestedApplicationId);
+        const application = response?.application || response?.data || response;
+        const loadedGrantId = application?.grant_id ?? application?.grantId;
+        if (!application?.id || !loadedGrantId) {
+          throw new Error('This application could not be opened because its grant information is unavailable.');
+        }
+        if (!routeGrantId || String(routeGrantId) !== String(loadedGrantId)) {
+          if (!cancelled) {
+            setRouteError(!routeGrantId
+              ? 'This saved application must be opened from its grant. Return to grants and reopen the application there.'
+              : 'This saved application belongs to a different grant. Return to grants and reopen it from the correct application.');
+          }
+          return;
+        }
+        if (cancelled) return;
+
+        hasUserEditedRef.current = false;
+        setApplicationId(application.id);
+        setEffectiveGrantId(loadedGrantId);
+        setFormData(hydrateFormData(application));
+        setLastSaved(application.updated_at ? new Date(application.updated_at) : null);
+
+        try {
+          const documentResponse = await listApplicationDocuments(application.id);
+          if (!cancelled) setDocuments(normaliseDocuments(documentResponse));
+        } catch (error) {
+          if (!cancelled) setDocumentError(error.message || 'Existing documents could not be loaded. Please try again.');
+        }
+      } catch (error) {
+        if (!cancelled) setApplicationLoadError(error.message || 'We could not load this saved application. Please try again.');
+      } finally {
+        if (!cancelled) setIsApplicationLoading(false);
+      }
+    };
+
+    loadApplication();
+    return () => { cancelled = true; };
+  }, [requestedApplicationId, routeGrantId]);
 
   // ── Load grant title from API ─────────────────────────────────────────────
   useEffect(() => {
-    if (!grantId) return;
-    getGrant(grantId)
-      .then(data => {
-        const g = data?.grant || data;
-        if (g?.title) setGrantTitle(g.title);
+    if (isApplicationLoading || !effectiveGrantId) return undefined;
+    let cancelled = false;
+    setIsGrantLoading(true);
+    setGrantLoadError(null);
+    setGrantTitle('Loading grant…');
+    getGrant(effectiveGrantId)
+      .then((data) => {
+        const grant = data?.grant || data;
+        if (cancelled) return;
+        if (grant?.title) setGrantTitle(grant.title);
+        else setGrantLoadError('This grant is no longer available. Please return to grants and choose an available grant.');
       })
-      .catch(() => {}); // non-fatal — title stays as default
-  }, [grantId]);
+      .catch((error) => {
+        if (!cancelled) setGrantLoadError(error.message || 'We could not load this grant. Please retry or return to grants.');
+      })
+      .finally(() => { if (!cancelled) setIsGrantLoading(false); });
+    return () => { cancelled = true; };
+  }, [effectiveGrantId, grantRetryCount, isApplicationLoading]);
 
   const steps = [
     { id: 1, title: 'Organization', icon: Building, description: 'Basic organization information' },
@@ -123,42 +213,68 @@ const ApplicationForm = ({ user, onNavigate, onLogout }) => {
     { id: 7, title: 'Review & Submit', icon: CheckCircle, description: 'Final review and declaration' }
   ];
 
-  // ── Build API payload from formData ──────────────────────────────────────
-  // Fields persisted by POST/PATCH /applications.
-  const buildPayload = () => ({
-    grant_id: grantId || undefined,
-    organization_name: formData.organizationName,
-    project_title: formData.projectTitle,
-    project_description: formData.projectDescription,
-    amount_requested: parseFloat(formData.amountRequested) || 0,
-    contact_person: formData.primaryContactName,
-    contact_email: formData.primaryContactEmail,
-    contact_phone: formData.primaryContactPhone,
-    address: formData.address,
-    postcode: formData.postcode,
-  });
+  const getDraftBlockReason = useCallback(() => {
+    if (!effectiveGrantId) return 'Choose a grant before saving this application.';
+    const requiredFields = [
+      ['organization name', formData.organizationName],
+      ['project title', formData.projectTitle],
+      ['project description', formData.projectDescription],
+      ['amount requested', formData.amountRequested],
+      ['primary contact name', formData.primaryContactName],
+      ['primary contact email', formData.primaryContactEmail],
+    ];
+    const missing = requiredFields.filter(([, value]) => value === '' || value === null || value === undefined).map(([label]) => label);
+    return missing.length ? `Complete ${missing.join(', ')} before saving your draft.` : null;
+  }, [effectiveGrantId, formData]);
 
-  // Create the draft on first save, update it afterwards. Resolves with its id.
-  const saveDraft = async () => {
+  // ── Build API payload from formData ──────────────────────────────────────
+  // File objects are deliberately excluded: supporting documents use multipart endpoints.
+  const buildPayload = useCallback(() => {
+    return {
+      grant_id: Number(effectiveGrantId),
+      organization_name: formData.organizationName,
+      project_title: formData.projectTitle,
+      project_description: formData.projectDescription,
+      amount_requested: Number(formData.amountRequested),
+      contact_person: formData.primaryContactName,
+      contact_email: formData.primaryContactEmail,
+      contact_phone: formData.primaryContactPhone,
+      address: formData.address,
+      postcode: formData.postcode,
+      form_data: formData,
+    };
+  }, [effectiveGrantId, formData]);
+
+  // Create the draft on first save, update it afterwards. Resolves with its server ID.
+  const saveDraft = useCallback(async () => {
+    const blockReason = getDraftBlockReason();
+    if (blockReason) throw new Error(blockReason);
     const payload = buildPayload();
     if (applicationId) {
       await updateApplication(applicationId, payload);
       return applicationId;
     }
-    const created = await createApplication(payload);
+    const response = await createApplication(payload);
+    const created = response?.application || response?.data || response;
+    if (!created?.id) throw new Error('The draft was saved, but no application ID was returned. Please reload before uploading documents.');
     setApplicationId(created.id);
     return created.id;
-  };
+  }, [applicationId, buildPayload, getDraftBlockReason]);
 
   // ── Save Draft handler ────────────────────────────────────────────────────
-  const handleSaveDraft = async () => {
+  const handleSaveDraft = async (silentlySkipIncomplete = false) => {
+    const blockReason = getDraftBlockReason();
+    if (blockReason && silentlySkipIncomplete) return null;
     setIsAutoSaving(true);
     setSubmitError(null);
     try {
-      await saveDraft();
+      const savedId = await saveDraft();
+      hasUserEditedRef.current = false;
       setLastSaved(new Date());
-    } catch (err) {
-      setSubmitError(err.message || 'Failed to save draft. Please try again.');
+      return savedId;
+    } catch (error) {
+      if (!silentlySkipIncomplete) setSubmitError(error.message || 'Failed to save draft. Please try again.');
+      return null;
     } finally {
       setIsAutoSaving(false);
     }
@@ -186,15 +302,15 @@ const ApplicationForm = ({ user, onNavigate, onLogout }) => {
 
   // ── Auto-save (real API call) ─────────────────────────────────────────────
   useEffect(() => {
-    const hasData = Object.entries(formData).some(([k, v]) =>
-      k !== 'budgetItems' && k !== 'uploadedFiles' && v !== '' && v !== false
-    );
-    if (!hasData) return;
-    const autoSave = setTimeout(() => handleSaveDraft(), 3000);
+    if (isApplicationLoading || isGrantLoading || grantLoadError || routeError || !hasUserEditedRef.current) return undefined;
+    const autoSave = setTimeout(() => {
+      if (hasUserEditedRef.current) handleSaveDraft(true);
+    }, 3000);
     return () => clearTimeout(autoSave);
-  }, [formData]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [formData, isApplicationLoading, isGrantLoading, grantLoadError, routeError]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const updateFormData = (field, value) => {
+    hasUserEditedRef.current = true;
     setFormData(prev => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
     if (errors[field]) {
@@ -205,7 +321,31 @@ const ApplicationForm = ({ user, onNavigate, onLogout }) => {
   // ── ABN validation state ──────────────────────────────────────────────────
   const [abnStatus, setAbnStatus] = React.useState('idle');
   const [abnResult, setAbnResult] = React.useState(null);
-  const abnDebounceRef = React.useRef(null);
+
+  const runAbnValidation = async (abn) => {
+    setAbnStatus('checking');
+    try {
+      const data = await validateAbnApi(abn);
+      setAbnResult(data);
+      if (!data.valid_format) {
+        setAbnStatus('invalid');
+        setErrors(prev => ({ ...prev, abn: data.error || 'This ABN is not valid.' }));
+      } else if (data.live_validated && data.active === false) {
+        setAbnStatus('inactive');
+        setErrors(prev => ({ ...prev, abn: 'This ABN is registered but not currently active.' }));
+      } else if (data.live_validated && data.active === true) {
+        setAbnStatus('valid');
+        setErrors(prev => ({ ...prev, abn: null }));
+      } else {
+        setAbnStatus('format_only');
+        setErrors(prev => ({ ...prev, abn: null }));
+      }
+    } catch (error) {
+      setAbnResult({ error: error.message });
+      setAbnStatus('network_error');
+      setErrors(prev => ({ ...prev, abn: null }));
+    }
+  };
 
   const handleAbnChange = (value) => {
     updateFormData('abn', value);
@@ -214,38 +354,12 @@ const ApplicationForm = ({ user, onNavigate, onLogout }) => {
     if (abnDebounceRef.current) clearTimeout(abnDebounceRef.current);
     const stripped = value.replace(/\D/g, '');
     if (stripped.length < 11) return;
-    abnDebounceRef.current = setTimeout(async () => {
-      setAbnStatus('checking');
-      try {
-        const data = await validateAbn(stripped);
-        setAbnResult(data);
-        if (!data.valid_format) {
-          setAbnStatus('invalid');
-          setErrors(prev => ({ ...prev, abn: data.error || 'This ABN is not valid.' }));
-        } else if (data.live_validated && data.active === false) {
-          setAbnStatus('inactive');
-          setErrors(prev => ({ ...prev, abn: 'This ABN is registered but not currently active.' }));
-        } else if (data.live_validated && data.active === true) {
-          setAbnStatus('valid');
-          setErrors(prev => ({ ...prev, abn: null }));
-        } else {
-          setAbnStatus('format_only');
-          setErrors(prev => ({ ...prev, abn: null }));
-        }
-      } catch (err) {
-        const errMsg = err?.data?.error;
-        if (errMsg) {
-          setAbnResult({ error: errMsg, valid_format: false });
-          setAbnStatus('invalid');
-          setErrors(prev => ({ ...prev, abn: errMsg }));
-        } else {
-          setAbnStatus('idle');
-        }
-      }
-    }, 600);
+    setAbnStatus('checking');
+    abnDebounceRef.current = setTimeout(() => runAbnValidation(stripped), 600);
   };
 
   const addBudgetItem = () => {
+    hasUserEditedRef.current = true;
     setFormData(prev => ({
       ...prev,
       budgetItems: [...prev.budgetItems, { category: '', description: '', amount: '' }]
@@ -253,6 +367,7 @@ const ApplicationForm = ({ user, onNavigate, onLogout }) => {
   };
 
   const removeBudgetItem = (index) => {
+    hasUserEditedRef.current = true;
     setFormData(prev => ({
       ...prev,
       budgetItems: prev.budgetItems.filter((_, i) => i !== index)
@@ -260,6 +375,7 @@ const ApplicationForm = ({ user, onNavigate, onLogout }) => {
   };
 
   const updateBudgetItem = (index, field, value) => {
+    hasUserEditedRef.current = true;
     setFormData(prev => ({
       ...prev,
       budgetItems: prev.budgetItems.map((item, i) => 
@@ -276,6 +392,9 @@ const ApplicationForm = ({ user, onNavigate, onLogout }) => {
         if (!formData.organizationName) newErrors.organizationName = 'Organization name is required';
         if (!formData.organizationType) newErrors.organizationType = 'Organization type is required';
         if (!formData.abn) newErrors.abn = 'ABN is required';
+        if (formData.abn && formData.abn.replace(/\D/g, '').length !== 11) newErrors.abn = 'ABN must contain 11 digits.';
+        if (formData.abn && abnStatus === 'checking') newErrors.abn = 'ABN validation is still in progress.';
+        if (abnStatus === 'invalid' || abnStatus === 'inactive') newErrors.abn = errors.abn || 'Enter an active, valid ABN.';
         break;
       case 2:
         if (!formData.primaryContactName) newErrors.primaryContactName = 'Primary contact name is required';
@@ -307,26 +426,61 @@ const ApplicationForm = ({ user, onNavigate, onLogout }) => {
     setCurrentStep(prev => Math.max(1, prev - 1));
   };
 
-  const handleFileUpload = (files) => {
-    const newFiles = Array.from(files).map(file => ({
-      id: Date.now() + Math.random(),
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      file: file
-    }));
-    
-    setFormData(prev => ({
-      ...prev,
-      uploadedFiles: [...prev.uploadedFiles, ...newFiles]
-    }));
+  const handleFileUpload = async (fileList) => {
+    const files = Array.from(fileList || []);
+    const rejected = files.filter((file) => {
+      const extension = file.name.split('.').pop()?.toLowerCase();
+      return file.size > MAX_DOCUMENT_SIZE || !SUPPORTED_DOCUMENT_EXTENSIONS.has(extension);
+    });
+    const accepted = files.filter((file) => !rejected.includes(file));
+    const rejectionMessage = rejected.length
+      ? `Not uploaded: ${rejected.map(file => file.name).join(', ')}. Files must be 20MB or smaller and use a supported format.`
+      : null;
+    setDocumentError(rejectionMessage);
+    if (!accepted.length) return;
+
+    const draftId = await handleSaveDraft();
+    if (!draftId) {
+      setDocumentError('Save the required organization, project, contact, and address details before uploading documents.');
+      return;
+    }
+
+    setIsUploadingDocuments(true);
+    const uploadFailures = [];
+    try {
+      for (const file of accepted) {
+        try {
+          await uploadApplicationDocument(draftId, file);
+        } catch (error) {
+          uploadFailures.push(`${file.name}: ${error.message || 'upload failed'}`);
+        }
+      }
+      const documentResponse = await listApplicationDocuments(draftId);
+      setDocuments(normaliseDocuments(documentResponse));
+      setDocumentError(uploadFailures.length ? `Some documents were not uploaded. ${uploadFailures.join(' ')}` : rejectionMessage);
+    } catch (error) {
+      setDocumentError(error.message || 'Documents could not be refreshed after upload. Please try again.');
+    } finally {
+      setIsUploadingDocuments(false);
+    }
   };
 
-  const removeFile = (fileId) => {
-    setFormData(prev => ({
-      ...prev,
-      uploadedFiles: prev.uploadedFiles.filter(file => file.id !== fileId)
-    }));
+  const removeFile = async (file) => {
+    const id = documentId(file);
+    if (!applicationId || !id) {
+      setDocumentError('This document cannot be removed because its server ID is unavailable. Please refresh and try again.');
+      return;
+    }
+    setRemovingDocumentId(id);
+    setDocumentError(null);
+    try {
+      await deleteApplicationDocument(applicationId, id);
+      setDocuments(previous => previous.filter(document => String(documentId(document)) !== String(id)));
+    } catch (error) {
+      setDocumentError(error.message || 'Document could not be removed. Please try again.');
+    } finally {
+      setRemovingDocumentId(null);
+    }
   };
 
   const renderStepContent = () => {
@@ -397,6 +551,19 @@ const ApplicationForm = ({ user, onNavigate, onLogout }) => {
                 )}
                 {abnStatus === 'format_only' && (
                   <p className="text-slate-500 text-xs mt-1">ABN format is valid.</p>
+                )}
+                {abnStatus === 'network_error' && (
+                  <div className="mt-1 flex items-center gap-2 text-sm text-amber-700" role="alert">
+                    <span>{abnResult?.error || 'ABN verification could not be completed.'}</span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => runAbnValidation(formData.abn.replace(/\D/g, ''))}
+                    >
+                      Retry check
+                    </Button>
+                  </div>
                 )}
                 {errors.abn && <p className="text-red-500 text-sm mt-1">{errors.abn}</p>}
               </div>
@@ -813,41 +980,46 @@ const ApplicationForm = ({ user, onNavigate, onLogout }) => {
               <input
                 type="file"
                 multiple
-                onChange={(e) => handleFileUpload(e.target.files)}
+                onChange={(e) => {
+                  handleFileUpload(e.target.files);
+                  e.target.value = '';
+                }}
                 className="hidden"
                 id="file-upload"
-                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.png,.jpg,.jpeg,.gif,.webp"
               />
-              <Button onClick={() => document.getElementById('file-upload').click()}>
-                Browse Files
+              <Button onClick={() => document.getElementById('file-upload')?.click()} disabled={isUploadingDocuments}>
+                {isUploadingDocuments ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Uploading…</> : 'Browse Files'}
               </Button>
               <p className="text-sm text-gray-500 mt-2">
-                Supported formats: PDF, DOC, DOCX, JPG, PNG (Max 10MB per file)
+                Supported formats: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, TXT, CSV, PNG, JPG, JPEG, GIF, WEBP (Max 20MB per file)
               </p>
             </div>
 
-            {formData.uploadedFiles.length > 0 && (
+            {documentError && <p className="text-sm text-red-600" role="alert">{documentError}</p>}
+
+            {documents.length > 0 && (
               <div>
                 <h3 className="font-medium mb-3">Uploaded Files</h3>
                 <div className="space-y-2">
-                  {formData.uploadedFiles.map(file => (
-                    <div key={file.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  {documents.map(file => (
+                    <div key={documentId(file)} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <div className="flex items-center gap-3">
                         <FileText className="w-5 h-5 text-gray-500" />
                         <div>
-                          <div className="font-medium">{file.name}</div>
-                          <div className="text-sm text-gray-500">
-                            {(file.size / 1024 / 1024).toFixed(2)} MB
-                          </div>
+                          <div className="font-medium">{displayDocumentName(file)}</div>
+                          {documentSize(file) > 0 && <div className="text-sm text-gray-500">{(documentSize(file) / 1024 / 1024).toFixed(2)} MB</div>}
                         </div>
                       </div>
                       <Button
-                        onClick={() => removeFile(file.id)}
+                        onClick={() => removeFile(file)}
                         variant="outline"
                         size="sm"
                         className="text-red-500 hover:text-red-700"
+                        disabled={removingDocumentId === documentId(file)}
+                        aria-label={`Remove ${displayDocumentName(file)}`}
                       >
-                        <X className="w-4 h-4" />
+                        {removingDocumentId === documentId(file) ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
                       </Button>
                     </div>
                   ))}
@@ -942,6 +1114,43 @@ const ApplicationForm = ({ user, onNavigate, onLogout }) => {
 
   const canSubmit = formData.declarationAccepted && formData.privacyAccepted && formData.termsAccepted;
 
+  const returnToGrants = () => {
+    if (onNavigate) onNavigate('community/grants');
+    else navigate('/portal/community/grants');
+  };
+
+  if (isApplicationLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <CommunityNavbar user={user} onNavigate={onNavigate} onLogout={onLogout} activePage="grants" />
+        <div className="max-w-4xl mx-auto px-4 py-12 text-center text-slate-600" role="status">
+          <Loader2 className="w-6 h-6 animate-spin mx-auto mb-3" />
+          Loading your saved application…
+        </div>
+      </div>
+    );
+  }
+
+  if (routeError || applicationLoadError) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <CommunityNavbar user={user} onNavigate={onNavigate} onLogout={onLogout} activePage="grants" />
+        <div className="max-w-2xl mx-auto px-4 py-12">
+          <Card>
+            <CardHeader><CardTitle>Application unavailable</CardTitle></CardHeader>
+            <CardContent className="space-y-5">
+              <p className="text-slate-700" role="alert">{routeError || applicationLoadError}</p>
+              <div className="flex gap-3">
+                {applicationLoadError && requestedApplicationId && <Button variant="outline" onClick={() => window.location.reload()}>Retry</Button>}
+                <Button onClick={returnToGrants}>Back to grants</Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <CommunityNavbar user={user} onNavigate={onNavigate} onLogout={onLogout} activePage="grants" />
@@ -983,6 +1192,15 @@ const ApplicationForm = ({ user, onNavigate, onLogout }) => {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-8">
+        {grantLoadError && (
+          <div className="mb-6 rounded-lg border border-amber-300 bg-amber-50 p-4 text-amber-950" role="alert">
+            <p>{grantLoadError}</p>
+            <div className="mt-3 flex gap-3">
+              <Button variant="outline" size="sm" onClick={() => setGrantRetryCount(count => count + 1)}>Retry</Button>
+              <Button variant="outline" size="sm" onClick={returnToGrants}>Back to grants</Button>
+            </div>
+          </div>
+        )}
         {/* Progress Steps */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
@@ -1042,13 +1260,13 @@ const ApplicationForm = ({ user, onNavigate, onLogout }) => {
           </Button>
 
           <div className="flex items-center gap-3">
-            <Button variant="outline" onClick={handleSaveDraft} disabled={isAutoSaving || isSubmitting}>
+            <Button variant="outline" onClick={handleSaveDraft} disabled={isAutoSaving || isSubmitting || isGrantLoading || Boolean(grantLoadError)}>
               <Save className="w-4 h-4 mr-2" />
               {isAutoSaving ? 'Saving...' : 'Save Draft'}
             </Button>
             
             {currentStep < 7 ? (
-              <Button onClick={nextStep} className="bg-green-700 hover:bg-green-800">
+              <Button onClick={nextStep} className="bg-green-700 hover:bg-green-800" disabled={isGrantLoading || Boolean(grantLoadError)}>
                 Next
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
@@ -1064,7 +1282,7 @@ const ApplicationForm = ({ user, onNavigate, onLogout }) => {
                     <p className="text-red-600 text-sm mr-2">{submitError}</p>
                   )}
                   <Button
-                    disabled={!canSubmit || isSubmitting}
+                    disabled={!canSubmit || isSubmitting || isGrantLoading || Boolean(grantLoadError)}
                     onClick={handleSubmit}
                     className="bg-green-600 hover:bg-green-700"
                   >
@@ -1085,4 +1303,3 @@ const ApplicationForm = ({ user, onNavigate, onLogout }) => {
 };
 
 export default ApplicationForm;
-

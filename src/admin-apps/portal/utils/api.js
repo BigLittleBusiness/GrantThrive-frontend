@@ -68,9 +68,20 @@ export const regenerateGrantQR = (grantId) => api.post(`/grants/${grantId}/qr`, 
  * filters: { status: 'a,b', grant_id, assigned_to_me: true }
  */
 export const getApplications = (filters) => api.get(withQuery('/applications', filters))
+export const getApplication = (id) => api.get(`/applications/${id}`)
 export const createApplication = (data) => api.post('/applications', data)
 export const updateApplication = (id, data) => api.patch(`/applications/${id}`, data)
 export const submitApplication = (id) => api.post(`/applications/${id}/submit`)
+
+/** Upload a supporting document. ApiClient detects FormData and retains its auth handling. */
+export const uploadApplicationDocument = (id, file) => {
+  const formData = new FormData()
+  formData.append('file', file)
+  return api.request(`/applications/${id}/documents`, { method: 'POST', body: formData })
+}
+export const listApplicationDocuments = (id) => api.get(`/applications/${id}/documents`)
+export const deleteApplicationDocument = (applicationId, documentId) =>
+  api.delete(`/applications/${applicationId}/documents/${documentId}`)
 
 // ── Councils ────────────────────────────────────────────────────────────────
 

@@ -83,6 +83,7 @@ const PublicGrantMap = ({ user, onNavigate, onLogout, council }) => {
   const [isMapReady, setIsMapReady] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [mapError, setMapError] = useState('');
+  const [mapRetryNonce, setMapRetryNonce] = useState(0);
   const [dataError, setDataError] = useState('');
   const [grantCollection, setGrantCollection] = useState(emptyCollection);
   const [selectedGrantId, setSelectedGrantId] = useState(null);
@@ -113,15 +114,23 @@ const PublicGrantMap = ({ user, onNavigate, onLogout, council }) => {
   useEffect(() => {
     if (!mapContainerRef.current || mapInstanceRef.current) return undefined;
 
-    const map = new MapLibreMap({
-      container: mapContainerRef.current,
-      style: mapStyleUrl,
-      center: DEFAULT_CENTER,
-      zoom: DEFAULT_ZOOM,
-      minZoom: 2,
-      maxZoom: 19,
-      attributionControl: true,
-    });
+    setIsMapReady(false);
+    setMapError('');
+    let map;
+    try {
+      map = new MapLibreMap({
+        container: mapContainerRef.current,
+        style: mapStyleUrl,
+        center: DEFAULT_CENTER,
+        zoom: DEFAULT_ZOOM,
+        minZoom: 2,
+        maxZoom: 19,
+        attributionControl: true,
+      });
+    } catch {
+      setMapError('The interactive map could not be initialized. Please try again.');
+      return undefined;
+    }
 
     mapInstanceRef.current = map;
     map.addControl(new NavigationControl({ showCompass: false }), 'top-right');
@@ -204,8 +213,13 @@ const PublicGrantMap = ({ user, onNavigate, onLogout, council }) => {
     });
 
     map.on('error', (event) => {
-      if (event?.error && map.isStyleLoaded()) {
-        setMapError('The map tiles could not be loaded. Please check your connection and try again.');
+      if (!event?.error) return;
+      // A single tile can fail transiently while the style, controls, and grant
+      // markers remain usable. Only replace the map with an error state when its
+      // style has not loaded at all.
+      if (!map.isStyleLoaded()) {
+        setIsMapReady(false);
+        setMapError('The interactive map could not load its style. Please check your connection and try again.');
       }
     });
 
@@ -213,7 +227,13 @@ const PublicGrantMap = ({ user, onNavigate, onLogout, council }) => {
       map.remove();
       mapInstanceRef.current = null;
     };
-  }, []);
+  }, [mapRetryNonce]);
+
+  const retryMap = () => {
+    setMapError('');
+    setIsMapReady(false);
+    setMapRetryNonce((value) => value + 1);
+  };
 
   const filteredCollection = useMemo(() => {
     const needle = search.trim().toLowerCase();
@@ -387,15 +407,15 @@ const PublicGrantMap = ({ user, onNavigate, onLogout, council }) => {
 
           <section className="relative min-h-[52vh] flex-1 lg:min-h-0" aria-label="Interactive grant map">
             <div ref={mapContainerRef} className="absolute inset-0" />
-            {!isMapReady && (
+            {!isMapReady && !mapError && (
               <div className="pointer-events-none absolute inset-0 grid place-items-center bg-slate-100/80" aria-live="polite">
                 <div className="rounded-xl bg-white px-5 py-4 text-sm font-medium text-slate-700 shadow">Loading interactive map…</div>
               </div>
             )}
             {mapError && (
               <div className="absolute left-4 top-4 max-w-sm rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 shadow">
-                {mapError}
-                <button type="button" className="ml-2 font-semibold underline" onClick={() => setMapError('')}>Dismiss</button>
+                <p>{mapError}</p>
+                <button type="button" className="mt-2 font-semibold underline" onClick={retryMap}>Retry map</button>
               </div>
             )}
             {!isLoading && !dataError && grants.length === 0 && isMapReady && (
@@ -432,7 +452,7 @@ const PublicGrantMap = ({ user, onNavigate, onLogout, council }) => {
                       <div><p className="text-xs text-slate-500">Closes</p><p className="font-semibold text-slate-900">{formatDate(selectedGrant.properties.closes_at)}</p></div>
                     </div>
                     <div className="mt-4 flex justify-end">
-                      <Button size="sm" onClick={() => onNavigate(`grant-details/${selectedGrant.properties.id}`)}><Info className="mr-1.5 h-4 w-4" />View grant details</Button>
+                      <Button size="sm" onClick={() => onNavigate(`community/grant-details/${encodeURIComponent(selectedGrant.properties.id)}`)}><Info className="mr-1.5 h-4 w-4" />View grant details</Button>
                     </div>
                   </CardContent>
                 </Card>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import CommunityNavbar from '../../components/layout/CommunityNavbar.jsx';
 import { getApplications } from '../../utils/api.js';
 import { Card, CardContent } from '@shared/components/ui/card.jsx';
@@ -13,7 +13,6 @@ import {
   Users,
   MapPin,
   Share2,
-  Heart,
   TrendingUp,
   Star,
   Eye,
@@ -40,15 +39,15 @@ function categoryColour(cat) {
 }
 
 // Normalise an API application record into the shape the UI expects
-function normaliseStory(app, index) {
-  const amount = app.amount_requested || app.amount_approved || 0;
+function normaliseStory(app) {
+  const amountRequested = Number(app.amount_requested) || 0;
   const completionDate = app.decision_date || app.reviewed_at || app.submitted_at || null;
   const category = app.grant?.category || app.category || 'Community Services';
   return {
     id:             app.id,
     title:          app.project_title || 'Community Project',
     organization:   app.organization_name || 'Community Organisation',
-    amount,
+    amountRequested,
     category,
     year:           completionDate ? new Date(completionDate).getFullYear() : new Date().getFullYear(),
     location:       app.address || app.suburb || 'Local Area',
@@ -63,7 +62,8 @@ function normaliseStory(app, index) {
     tags:           app.tags || [],
     testimonial:    app.testimonial || null,
     contact:        app.contact_person || '—',
-    isFeatured:     index === 0,   // first result is featured
+    isFeatured:     app.is_featured === true,
+    grantId:        app.grant_id || app.grant?.id || null,
     views:          app.community_votes || 0,
     socialShares:   app.community_score || 0,
   };
@@ -78,28 +78,24 @@ const WinnersShowcase = ({ user, council, onNavigate, onLogout }) => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedFundingRange, setSelectedFundingRange] = useState('all');
   const [viewMode, setViewMode]             = useState('grid');
+  const [shareMessage, setShareMessage]     = useState('');
 
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      setLoading(true);
-      setError(null);
-      try {
-        // Fetch approved applications — the backend supports ?status= filtering
-        const data = await getApplications({ status: 'approved' });
-        if (!cancelled) {
-          const list = data.applications || [];
-          setStories(list.map(normaliseStory));
-        }
-      } catch (err) {
-        if (!cancelled) setError(err.message || 'Failed to load success stories.');
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+  const loadStories = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      // Fetch approved applications — the backend supports ?status= filtering
+      const data = await getApplications({ status: 'approved' });
+      const list = Array.isArray(data.applications) ? data.applications : [];
+      setStories(list.map(normaliseStory));
+    } catch (err) {
+      setError(err.message || 'Failed to load success stories.');
+    } finally {
+      setLoading(false);
     }
-    load();
-    return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => { loadStories(); }, [loadStories]);
 
   // Derive filter options from live data
   const years = useMemo(() => {
@@ -120,9 +116,9 @@ const WinnersShowcase = ({ user, council, onNavigate, onLogout }) => {
   ];
 
   // Derived statistics
-  const totalFunding      = stories.reduce((s, x) => s + (x.amount || 0), 0);
+  const totalRequested = stories.reduce((sum, story) => sum + story.amountRequested, 0);
   const totalBeneficiaries = stories.reduce((s, x) => s + (typeof x.impact.beneficiaries === 'number' ? x.impact.beneficiaries : 0), 0);
-  const featuredStory     = stories.find(s => s.isFeatured) || stories[0] || null;
+  const featuredStory     = stories.find(s => s.isFeatured) || null;
 
   // Filtered list
   const filteredStories = useMemo(() => stories.filter(story => {
@@ -135,13 +131,37 @@ const WinnersShowcase = ({ user, council, onNavigate, onLogout }) => {
     const matchesYear     = selectedYear === 'all' || story.year.toString() === selectedYear;
     const matchesCategory = selectedCategory === 'all' || story.category === selectedCategory;
     let matchesFunding    = true;
-    if (selectedFundingRange === 'small')  matchesFunding = story.amount < 5000;
-    if (selectedFundingRange === 'medium') matchesFunding = story.amount >= 5000 && story.amount <= 15000;
-    if (selectedFundingRange === 'large')  matchesFunding = story.amount > 15000;
+    if (selectedFundingRange === 'small')  matchesFunding = story.amountRequested < 5000;
+    if (selectedFundingRange === 'medium') matchesFunding = story.amountRequested >= 5000 && story.amountRequested <= 15000;
+    if (selectedFundingRange === 'large')  matchesFunding = story.amountRequested > 15000;
     return matchesSearch && matchesYear && matchesCategory && matchesFunding;
   }), [stories, searchTerm, selectedYear, selectedCategory, selectedFundingRange]);
 
   const councilName = council?.name || 'Your Council';
+
+  const share = async (story = null) => {
+    const path = story?.grantId ? `/portal/community/grant-details/${story.grantId}` : window.location.pathname;
+    const url = new URL(path, window.location.origin).toString();
+    const shareData = {
+      title: story?.title || 'GrantThrive community stories',
+      text: story ? `Read about ${story.title}.` : 'Explore GrantThrive community grant stories.',
+      url,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        setShareMessage('Share options opened.');
+      } else if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+        setShareMessage('Link copied to your clipboard.');
+      } else {
+        setShareMessage('Sharing is not available in this browser.');
+      }
+    } catch (err) {
+      if (err.name !== 'AbortError') setShareMessage('Could not share this link. Please try again.');
+    }
+  };
 
   // ── Loading state ──────────────────────────────────────────────────────────
   if (loading) {
@@ -168,7 +188,7 @@ const WinnersShowcase = ({ user, council, onNavigate, onLogout }) => {
             <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Could not load success stories</h2>
             <p className="text-gray-600 mb-4">{error}</p>
-            <Button onClick={() => window.location.reload()}>Try Again</Button>
+            <Button onClick={loadStories}>Try Again</Button>
           </div>
         </div>
       </div>
@@ -193,7 +213,7 @@ const WinnersShowcase = ({ user, council, onNavigate, onLogout }) => {
                   <Award className="w-4 h-4 mr-2" />
                   Apply for Grant
                 </Button>
-                <Button variant="outline" className="text-white border-white hover:bg-white hover:text-green-800">
+                <Button variant="outline" className="text-white border-white hover:bg-white hover:text-green-800" onClick={() => share()}>
                   <Share2 className="w-4 h-4 mr-2" />
                   Share Stories
                 </Button>
@@ -212,7 +232,7 @@ const WinnersShowcase = ({ user, council, onNavigate, onLogout }) => {
                 <div className="flex items-center gap-4 text-sm">
                   <div className="flex items-center gap-1">
                     <DollarSign className="w-4 h-4" />
-                    <span>${featuredStory.amount.toLocaleString()}</span>
+                    <span>${featuredStory.amountRequested.toLocaleString()} requested</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Users className="w-4 h-4" />
@@ -235,9 +255,9 @@ const WinnersShowcase = ({ user, council, onNavigate, onLogout }) => {
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-green-600">
-                {totalFunding >= 1000 ? `$${(totalFunding / 1000).toFixed(0)}K` : `$${totalFunding.toLocaleString()}`}
+                {totalRequested >= 1000 ? `$${(totalRequested / 1000).toFixed(0)}K` : `$${totalRequested.toLocaleString()}`}
               </div>
-              <div className="text-sm text-gray-600">TOTAL FUNDING DISTRIBUTED</div>
+              <div className="text-sm text-gray-600">TOTAL FUNDING REQUESTED</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-green-800">
@@ -350,8 +370,8 @@ const WinnersShowcase = ({ user, council, onNavigate, onLogout }) => {
                     </Badge>
                   </div>
                   <div className="text-white">
-                    <div className="text-2xl font-bold">${story.amount.toLocaleString()}</div>
-                    <div className="text-sm opacity-90">Grant Amount</div>
+                    <div className="text-2xl font-bold">${story.amountRequested.toLocaleString()}</div>
+                    <div className="text-sm opacity-90">Funding requested</div>
                   </div>
                 </div>
 
@@ -435,15 +455,14 @@ const WinnersShowcase = ({ user, council, onNavigate, onLogout }) => {
                   )}
 
                   <div className="flex gap-2">
-                    <Button className="flex-1 bg-green-700 hover:bg-green-800" size="sm">
-                      <ChevronRight className="w-4 h-4 mr-1" />
-                      View Details
-                    </Button>
-                    <Button variant="outline" size="sm" aria-label="Share story">
+                    {story.grantId && (
+                      <Button className="flex-1 bg-green-700 hover:bg-green-800" size="sm" onClick={() => onNavigate?.(`community/grant-details/${story.grantId}`)}>
+                        <ChevronRight className="w-4 h-4 mr-1" />
+                        View grant
+                      </Button>
+                    )}
+                    <Button variant="outline" size="sm" aria-label={`Share ${story.title}`} onClick={() => share(story)}>
                       <Share2 className="w-4 h-4" />
-                    </Button>
-                    <Button variant="outline" size="sm" aria-label="Like story">
-                      <Heart className="w-4 h-4" />
                     </Button>
                   </div>
                 </CardContent>
@@ -463,13 +482,18 @@ const WinnersShowcase = ({ user, council, onNavigate, onLogout }) => {
               <Award className="w-4 h-4 mr-2" />
               Apply for a Grant
             </Button>
-            <Button variant="outline" className="text-white border-white hover:bg-white hover:text-green-800" onClick={() => onNavigate?.('forum')}>
+            <Button variant="outline" className="text-white border-white hover:bg-white hover:text-green-800" onClick={() => onNavigate?.('community/community-forum')}>
               <Users className="w-4 h-4 mr-2" />
               Join Community
             </Button>
           </div>
         </div>
       </div>
+      {shareMessage && (
+        <div role="status" className="fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-slate-900 px-4 py-2 text-sm text-white shadow-lg">
+          {shareMessage}
+        </div>
+      )}
     </div>
   );
 };
