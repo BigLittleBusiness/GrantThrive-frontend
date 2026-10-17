@@ -197,7 +197,7 @@ export default function CouncilManagement() {
               <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">State</th>
               <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Plan</th>
               <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Portal URL</th>
+              <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Council Portal</th>
               <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">Actions</th>
             </tr>
           </thead>
@@ -223,7 +223,7 @@ export default function CouncilManagement() {
             ) : (
               councils.map((council) => (
                 <tr key={council.id} className="hover:bg-gray-50 transition-colors">
-                  {/* Name + subdomain */}
+                  {/* Name + tenant identifier */}
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       {council.logo_url ? (
@@ -238,7 +238,7 @@ export default function CouncilManagement() {
                       )}
                       <div>
                         <p className="text-sm font-semibold text-gray-900">{council.name}</p>
-                        <p className="text-xs text-gray-500">{council.subdomain}.grantthrive.com</p>
+                        <p className="text-xs text-gray-500">Tenant ID: {council.subdomain}</p>
                       </div>
                     </div>
                   </td>
@@ -248,7 +248,7 @@ export default function CouncilManagement() {
                   <td className="px-6 py-4"><PlanBadge plan={council.plan} /></td>
                   {/* Status */}
                   <td className="px-6 py-4"><StatusBadge isActive={council.is_active} /></td>
-                  {/* Portal URL */}
+                  {/* Canonical central portal URL */}
                   <td className="px-6 py-4">
                     <a
                       href={council.portal_url}

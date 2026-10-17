@@ -74,7 +74,7 @@ function OverviewTab({ council, onUpdated }) {
     <div className="space-y-6">
       {/* Council identity (read-only) */}
       <div className="grid grid-cols-2 gap-4 rounded-xl bg-gray-50 p-4">
-        <Field label="Subdomain"   value={`${council.subdomain}.grantthrive.com`} icon={Globe} />
+        <Field label="Tenant Identifier" value={council.subdomain} icon={Globe} />
         <Field label="State"       value={council.state} />
         <Field label="LGA Code"    value={council.lga_code} />
         <Field label="Created"     value={council.created_at ? new Date(council.created_at).toLocaleDateString('en-AU') : null} />
@@ -331,7 +331,7 @@ export default function CouncilDetailModal({ council, onClose, onUpdated }) {
             )}
             <div>
               <h2 className="text-lg font-bold text-gray-900">{council.name}</h2>
-              <p className="text-xs text-gray-500">{council.subdomain}.grantthrive.com</p>
+              <p className="text-xs text-gray-500">Tenant ID: {council.subdomain}</p>
             </div>
           </div>
           <button onClick={onClose} className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">

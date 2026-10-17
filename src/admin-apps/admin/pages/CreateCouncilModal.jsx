@@ -4,8 +4,8 @@
  * Full-featured modal form for provisioning a new council tenant.
  *
  * Fields:
- *   - Council name (auto-derives subdomain)
- *   - Subdomain (editable, validated in real-time)
+ *   - Council name (auto-derives tenant identifier)
+ *   - Tenant identifier (editable, validated in real-time)
  *   - State, LGA code, plan
  *   - Contact email, phone, website
  *   - Primary colour (colour picker)
@@ -118,7 +118,7 @@ export default function CreateCouncilModal({ onClose, onCreated }) {
             </div>
             <div>
               <h2 className="text-lg font-bold text-gray-900">Provision New Council</h2>
-              <p className="text-xs text-gray-500">Creates a new tenant with its own subdomain</p>
+              <p className="text-xs text-gray-500">Creates a new tenant on the shared GrantThrive portal</p>
             </div>
           </div>
           <button onClick={onClose} className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
@@ -149,10 +149,10 @@ export default function CreateCouncilModal({ onClose, onCreated }) {
                 />
               </div>
 
-              {/* Subdomain */}
+              {/* Tenant identifier */}
               <div className="sm:col-span-2">
                 <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                  Subdomain <span className="text-red-500">*</span>
+                  Tenant Identifier <span className="text-red-500">*</span>
                 </label>
                 <div className="flex rounded-lg border border-gray-300 overflow-hidden focus-within:border-green-600 focus-within:ring-1 focus-within:ring-green-600">
                   <input
@@ -164,13 +164,10 @@ export default function CreateCouncilModal({ onClose, onCreated }) {
                     required
                     className="flex-1 border-0 px-3 py-2 text-sm focus:outline-none"
                   />
-                  <span className="flex items-center border-l border-gray-300 bg-gray-50 px-3 text-sm text-gray-500 whitespace-nowrap">
-                    .grantthrive.com
-                  </span>
                 </div>
                 {form.subdomain && (
                   <p className="mt-1 text-xs text-gray-500">
-                    Portal URL: <span className="font-medium text-green-700">https://{form.subdomain}.grantthrive.com</span>
+                    Portal URL: <span className="font-medium text-green-700">https://app.grantthrive.com/portal/login/?tenant={form.subdomain}</span>
                   </p>
                 )}
               </div>

@@ -1,20 +1,23 @@
 /**
  * GrantThrive — TenantContext
  * ===========================
- * Resolves the current council tenant from the browser's subdomain and
+ * Resolves the current council tenant from the browser's subdomain or a
+ * validated ``tenant`` query parameter on the shared portal, and
  * provides council branding, config, and identity to all portal components.
  *
  * Architecture
  * ------------
  * On mount, TenantProvider:
- *   1. Extracts the subdomain from window.location.hostname
+ *   1. Extracts the subdomain from window.location.hostname, or a ``tenant``
+ *      query parameter when the shared portal is used
  *   2. Calls GET /api/councils/resolve?subdomain=<subdomain>
  *   3. Stores the council profile in React context
  *   4. Applies the council's primary/secondary colours as CSS custom properties
  *      on <html> so all Tailwind utilities that reference --gt-primary work
  *
- * Reserved subdomains (app, admin, www, map, roi) resolve to null — the
- * platform renders with the default GrantThrive green palette.
+ * Reserved subdomains (app, admin, www, map, roi) resolve to null unless a
+ * valid ``tenant`` query parameter is supplied. This keeps council portals
+ * reachable without requiring DNS and TLS configuration per council.
  *
  * Development
  * -----------
@@ -76,6 +79,15 @@ function detectSubdomain() {
 }
 
 /**
+ * Read a tenant identifier from a shared-portal URL. Keep this strict so the
+ * value can only be used as the expected opaque council subdomain identifier.
+ */
+function detectQueryTenant() {
+  const tenant = new URLSearchParams(window.location.search).get('tenant')?.trim().toLowerCase();
+  return tenant && /^[a-z0-9](?:[a-z0-9-]{0,98}[a-z0-9])?$/.test(tenant) ? tenant : null;
+}
+
+/**
  * Apply council brand colours as CSS custom properties on <html>.
  * Tailwind utilities can reference these via arbitrary value syntax:
  *   bg-[var(--gt-primary)]  text-[var(--gt-secondary)]
@@ -132,7 +144,9 @@ export function TenantProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    const sub = detectSubdomain();
+    // A real council hostname remains authoritative. The query selector is
+    // used only by the shared app.grantthrive.com portal links.
+    const sub = detectSubdomain() || detectQueryTenant();
     setSubdomain(sub);
     fetchCouncil(sub);
   }, [fetchCouncil]);
