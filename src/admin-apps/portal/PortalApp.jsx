@@ -18,6 +18,7 @@ import ResetPassword from './pages/ResetPassword.jsx';
 const CouncilAdminRoutes = lazy(() => import('./routes/CouncilAdminRoutes.jsx'));
 const CouncilStaffRoutes = lazy(() => import('./routes/CouncilStaffRoutes.jsx'));
 const CommunityRoutes = lazy(() => import('./routes/CommunityRoutes.jsx'));
+const ConsultantRoutes = lazy(() => import('./routes/ConsultantRoutes.jsx'));
 import './PortalApp.css';
 
 // ── RBAC constants ────────────────────────────────────────────────────────────
@@ -25,6 +26,7 @@ const ROLE_HOME = {
   [ROLES.COUNCIL_ADMIN]: '/portal/council/dashboard',
   [ROLES.COUNCIL_STAFF]: '/portal/staff/dashboard',
   [ROLES.COMMUNITY_MEMBER]: '/portal/community/dashboard',
+  [ROLES.PROFESSIONAL_CONSULTANT]: '/portal/consultant/help',
 };
 
 function getUserRole(user) {
@@ -159,7 +161,9 @@ function PortalInner() {
           ? 'council'
           : role === ROLES.COUNCIL_STAFF
             ? 'staff'
-            : 'community';
+            : role === ROLES.PROFESSIONAL_CONSULTANT
+              ? 'consultant'
+              : 'community';
 
       navigate(`/portal/${prefix}/${key}`, opts);
     },
@@ -263,6 +267,14 @@ function PortalInner() {
         element={
           <Suspense fallback={<div className="p-6 text-sm text-slate-600" role="status">Loading your workspace…</div>}>
             <CommunityRoutes ProtectedRoute={ProtectedRoute} currentUser={currentUser} handleLogout={handleLogout} pageProps={pageProps} ROLES={ROLES} />
+          </Suspense>
+        }
+      />
+      <Route
+        path="consultant/*"
+        element={
+          <Suspense fallback={<div className="p-6 text-sm text-slate-600" role="status">Loading your workspace…</div>}>
+            <ConsultantRoutes ProtectedRoute={ProtectedRoute} currentUser={currentUser} handleLogout={handleLogout} pageProps={pageProps} ROLES={ROLES} />
           </Suspense>
         }
       />

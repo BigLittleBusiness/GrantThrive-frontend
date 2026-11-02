@@ -81,6 +81,7 @@ export default function StaffNavbar({ user, onNavigate, onLogout, activePage }) 
                 <button
                   key={id}
                   onClick={() => handleNav(path)}
+                  aria-current={isActive ? 'page' : undefined}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                     isActive
                       ? 'bg-green-50 text-green-700'
@@ -115,6 +116,8 @@ export default function StaffNavbar({ user, onNavigate, onLogout, activePage }) 
               className="lg:hidden p-2 rounded-md text-slate-600 hover:bg-slate-100"
               onClick={() => setMobileOpen((o) => !o)}
               aria-label="Toggle menu"
+              aria-expanded={mobileOpen}
+              aria-controls="staff-mobile-navigation"
             >
               {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
@@ -125,13 +128,14 @@ export default function StaffNavbar({ user, onNavigate, onLogout, activePage }) 
       {/* Mobile dropdown */}
       {mobileOpen && (
         <div className="lg:hidden border-t border-slate-200 bg-white shadow-md">
-          <nav className="flex flex-col py-2">
+          <nav id="staff-mobile-navigation" className="flex flex-col py-2">
             {NAV_ITEMS.map(({ id, label, icon: Icon, path }) => {
               const isActive = activePage === id;
               return (
                 <button
                   key={id}
                   onClick={() => handleNav(path)}
+                  aria-current={isActive ? 'page' : undefined}
                   className={`flex items-center gap-3 px-4 py-3 text-sm font-medium text-left transition-colors ${
                     isActive
                       ? 'bg-green-50 text-green-700'

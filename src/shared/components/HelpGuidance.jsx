@@ -1,11 +1,20 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { AlertCircle, BookOpen, HelpCircle, Info, Loader2, RefreshCw, Search, ShieldCheck } from 'lucide-react';
+import { AlertCircle, BookOpen, HelpCircle, Info, Loader2, RefreshCw, Search, ShieldCheck, X } from 'lucide-react';
 import { Button } from '@shared/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared/components/ui/tabs';
 import api from '@shared/api/client';
 
 const questionId = (question) => (question?.id === null || question?.id === undefined ? '' : String(question.id));
+
+// Kept deliberately small and content-neutral so the client-side search uses
+// the same approved plain-language terminology as the role-filtered API.
+const PLAIN_LANGUAGE_SEARCH_VARIANTS = {
+  reviewer: ['reviewer', 'review', 'recuse', 'recusal', 'assessor'],
+  recusal: ['recusal', 'recuse', 'conflict'],
+  vote: ['vote', 'voting'],
+  voting: ['vote', 'voting'],
+};
 
 function uniqueQuestions(questions) {
   const seen = new Set();
@@ -26,7 +35,10 @@ function matchesPlainLanguageSearch(question, searchTerm) {
     question.cohort_description,
   ].filter(Boolean).join(' ').toLowerCase();
   const terms = searchTerm.toLowerCase().trim().split(/\s+/).filter(Boolean);
-  return terms.every((term) => searchableText.includes(term));
+  return terms.every((term) => {
+    const variants = PLAIN_LANGUAGE_SEARCH_VARIANTS[term] || [term];
+    return variants.some((variant) => searchableText.includes(variant));
+  });
 }
 
 function GuidanceQuestion({ question, showCohortLabel, isContextualMatch }) {
@@ -157,7 +169,12 @@ export default function HelpGuidance() {
   const handleSearchChange = (event) => {
     const value = event.target.value;
     setSearchTerm(value);
-    if (value.trim()) setActiveView('library');
+    setActiveView(value.trim() ? 'library' : 'top');
+  };
+
+  const clearSearch = () => {
+    setSearchTerm('');
+    setActiveView('top');
   };
 
   const clearTopic = () => {
@@ -222,8 +239,21 @@ export default function HelpGuidance() {
             value={searchTerm}
             onChange={handleSearchChange}
             placeholder="Search all available guidance in plain language"
-            className="h-11 w-full rounded-lg border border-slate-300 bg-white pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
+            className="h-11 w-full rounded-lg border border-slate-300 bg-white pl-10 pr-11 text-sm text-slate-900 outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
           />
+          {searchTerm && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="absolute right-1 top-1/2 h-9 w-9 -translate-y-1/2 p-0 text-slate-500 hover:text-slate-800"
+              onClick={clearSearch}
+              aria-label="Clear guidance search"
+              title="Clear guidance search"
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
+            </Button>
+          )}
         </div>
       </section>
 

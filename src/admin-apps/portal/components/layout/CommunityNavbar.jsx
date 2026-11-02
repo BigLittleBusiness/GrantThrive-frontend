@@ -78,6 +78,7 @@ export default function CommunityNavbar({ user, onNavigate, onLogout, activePage
                 <button
                   key={id}
                   onClick={() => handleNav(path)}
+                  aria-current={isActive ? 'page' : undefined}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                     isActive
                       ? 'bg-emerald-50 text-emerald-700'
@@ -131,6 +132,7 @@ export default function CommunityNavbar({ user, onNavigate, onLogout, activePage
                 <button
                   key={id}
                   onClick={() => handleNav(path)}
+                  aria-current={isActive ? 'page' : undefined}
                   className={`flex items-center gap-3 px-4 py-3 text-sm font-medium text-left transition-colors ${
                     isActive
                       ? 'bg-emerald-50 text-emerald-700'
