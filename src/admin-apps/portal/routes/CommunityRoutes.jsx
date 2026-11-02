@@ -12,6 +12,7 @@ import CommunityVoting from '../pages/community/CommunityVoting.jsx';
 import PublicGrantMap from '../pages/community/PublicGrantMap.jsx';
 import TransparencyDashboard from '../pages/community/TransparencyDashboard.jsx';
 import PublicResults from '../pages/community/PublicResults.jsx';
+import HelpGuidancePage from '../pages/HelpGuidancePage.jsx';
 
 export default function CommunityRoutes({
   ProtectedRoute,
@@ -31,6 +32,19 @@ export default function CommunityRoutes({
             onLogout={handleLogout}
           >
             <CommunityMemberDashboard {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="help"
+        element={
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COMMUNITY_MEMBER]}
+            onLogout={handleLogout}
+          >
+            <HelpGuidancePage {...pageProps} navigationVariant="community" />
           </ProtectedRoute>
         }
       />

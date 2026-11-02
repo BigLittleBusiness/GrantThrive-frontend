@@ -14,6 +14,7 @@ import { useSearchParams } from 'react-router-dom';
 import { AlertCircle, CheckCircle, CreditCard, ExternalLink, Loader2 } from 'lucide-react';
 import PlanPicker from './PlanPicker.jsx';
 import { getBillingPlans, startCheckout, syncCheckout, openBillingPortal } from '../../utils/api.js';
+import ContextualHelpLink from '@shared/components/ContextualHelpLink';
 
 const STATUS_LABELS = {
   active: { label: 'Active', className: 'bg-green-100 text-green-800' },
@@ -24,7 +25,7 @@ const STATUS_LABELS = {
 const formatDate = (iso) =>
   new Date(iso).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
 
-export default function SubscriptionCard({ subscription, onChanged }) {
+export default function SubscriptionCard({ subscription, onChanged, onNavigate }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [plans, setPlans] = useState([]);
   const [selection, setSelection] = useState({
@@ -82,12 +83,13 @@ export default function SubscriptionCard({ subscription, onChanged }) {
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-6">
-      <div className="mb-4 flex items-center gap-2">
+      <div className="mb-4 flex flex-wrap items-center gap-2">
         <CreditCard className="h-5 w-5 text-gray-500" />
         <h2 className="text-lg font-semibold text-gray-900">Subscription</h2>
         {subscription.is_active && status && (
           <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${status.className}`}>{status.label}</span>
         )}
+        <ContextualHelpLink topicId="subscription-changes" onNavigate={onNavigate} ariaLabel="Get help with subscription changes" className="ml-auto" />
       </div>
 
       {message && (

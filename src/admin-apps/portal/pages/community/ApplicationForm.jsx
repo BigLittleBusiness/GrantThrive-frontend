@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@shared/components/ui/
 import { Badge } from '@shared/components/ui/badge.jsx';
 import { Button } from '@shared/components/ui/button.jsx';
 import { Input } from '@shared/components/ui/input.jsx';
+import ContextualHelpLink from '@shared/components/ContextualHelpLink';
 import { 
   ArrowLeft,
   ArrowRight,
@@ -962,7 +963,10 @@ const ApplicationForm = ({ user, onNavigate, onLogout }) => {
         return (
           <div className="space-y-6">
             <div className="bg-blue-50 p-4 rounded-lg">
-              <h3 className="font-medium text-blue-900 mb-2">Required Documents</h3>
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <h3 className="font-medium text-blue-900">Required Documents</h3>
+                <ContextualHelpLink topicId="application-documents" onNavigate={onNavigate} ariaLabel="Get help with application documents" />
+              </div>
               <ul className="text-sm text-blue-700 space-y-1">
                 <li>• Completed application form (auto-generated)</li>
                 <li>• Project plan with timeline</li>
@@ -1292,6 +1296,7 @@ const ApplicationForm = ({ user, onNavigate, onLogout }) => {
                       <>Submit Application<CheckCircle className="w-4 h-4 ml-2" /></>
                     )}
                   </Button>
+                  <ContextualHelpLink topicId="application-submission" onNavigate={onNavigate} ariaLabel="Get help with reviewing and submitting an application" />
                 </>
               )
             )}

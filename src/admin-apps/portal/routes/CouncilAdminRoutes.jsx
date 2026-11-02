@@ -20,6 +20,7 @@ import CommunityForum from '../pages/community/CommunityForum.jsx';
 import ResourceHub from '../pages/community/ResourceHub.jsx';
 import CommunityVoting from '../pages/community/CommunityVoting.jsx';
 import PublicGrantMap from '../pages/community/PublicGrantMap.jsx';
+import HelpGuidancePage from '../pages/HelpGuidancePage.jsx';
 
 export default function CouncilAdminRoutes({
   ProtectedRoute,
@@ -39,6 +40,19 @@ export default function CouncilAdminRoutes({
             onLogout={handleLogout}
           >
             <CouncilAdminDashboard {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="help"
+        element={
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COUNCIL_ADMIN]}
+            onLogout={handleLogout}
+          >
+            <HelpGuidancePage {...pageProps} navigationVariant="council-admin" />
           </ProtectedRoute>
         }
       />

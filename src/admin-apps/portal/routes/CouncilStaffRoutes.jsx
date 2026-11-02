@@ -14,6 +14,7 @@ import CommunityForum from '../pages/community/CommunityForum.jsx';
 import ResourceHub from '../pages/community/ResourceHub.jsx';
 import CommunityVoting from '../pages/community/CommunityVoting.jsx';
 import PublicGrantMap from '../pages/community/PublicGrantMap.jsx';
+import HelpGuidancePage from '../pages/HelpGuidancePage.jsx';
 
 export default function CouncilStaffRoutes({
   ProtectedRoute,
@@ -33,6 +34,19 @@ export default function CouncilStaffRoutes({
             onLogout={handleLogout}
           >
             <CouncilStaffDashboard {...pageProps} />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="help"
+        element={
+          <ProtectedRoute
+            user={currentUser}
+            allowedRoles={[ROLES.COUNCIL_STAFF]}
+            onLogout={handleLogout}
+          >
+            <HelpGuidancePage {...pageProps} navigationVariant="staff" />
           </ProtectedRoute>
         }
       />

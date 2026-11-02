@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, ArrowRight, Save, Eye, CheckCircle, FileText, Calendar, Settings, DollarSign, Users, Clock, UserCheck, UserX, Plus, Minus, Loader2, MapPin, X } from 'lucide-react';
 import GrantSuggestionsPanel from '../../components/grant/GrantSuggestionsPanel.jsx';
 import { getCouncilUsers, createGrant, updateGrant, publishGrant } from '../../utils/api.js';
+import ContextualHelpLink from '@shared/components/ContextualHelpLink';
 
 const REVIEWER_ROLES = ['council_admin', 'council_staff'];
 
@@ -527,10 +528,13 @@ const GrantCreationWizard = ({ onNavigate, council, user }) => {
 
       case 4:
         return (
-          <div className="space-y-10">
-            <div className="text-center">
-              <h3 className="text-3xl font-bold text-gray-900 mb-4">Assessment Team</h3>
-              <p className="text-xl text-gray-600">Select the staff members who will review applications for this grant and set the approval threshold.</p>
+            <div className="space-y-10">
+            <div className="flex flex-wrap items-start justify-between gap-4 text-center">
+              <div className="flex-1">
+                <h3 className="text-3xl font-bold text-gray-900 mb-4">Assessment Team</h3>
+                <p className="text-xl text-gray-600">Select the staff members who will review applications for this grant and set the approval threshold.</p>
+              </div>
+              <ContextualHelpLink topicId="reviewer-assignment" onNavigate={onNavigate} ariaLabel="Get help with reviewer assignment" />
             </div>
 
             {staffLoading ? (
@@ -545,8 +549,12 @@ const GrantCreationWizard = ({ onNavigate, council, user }) => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Staff selector */}
                 <div>
-                  <h4 className="text-lg font-bold text-gray-800 mb-4">Nominated Reviewers</h4>
-                  <p className="text-sm text-gray-500 mb-6">Select which staff members can review applications. Leave blank to allow any staff member to self-assign.</p>
+                  <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h4 className="text-lg font-bold text-gray-800 mb-1">Nominated Reviewers</h4>
+                      <p className="text-sm text-gray-500">Select which staff members can review applications. Leave blank to allow any staff member to self-assign.</p>
+                    </div>
+                  </div>
                   <div className="space-y-3">
                     {staffList.map(staff => {
                       const nominated = formData.assignedReviewerIds.includes(staff.id);

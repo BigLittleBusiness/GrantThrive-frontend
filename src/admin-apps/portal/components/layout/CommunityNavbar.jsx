@@ -21,6 +21,7 @@ import {
   Map,
   Trophy,
   BookOpen,
+  HelpCircle,
   MessageSquare,
   BarChart2,
   LogOut,
@@ -38,6 +39,7 @@ const NAV_ITEMS = [
   { id: 'winners',      label: 'Winners',       icon: Trophy,          path: 'community/winners-showcase' },
   { id: 'resources',    label: 'Resources',     icon: BookOpen,        path: 'community/resource-hub' },
   { id: 'forum',        label: 'Forum',         icon: MessageSquare,   path: 'community/community-forum' },
+  { id: 'help',         label: 'Help & Guidance', icon: HelpCircle,    path: 'community/help' },
   { id: 'transparency', label: 'Transparency',  icon: BarChart2,       path: 'community/transparency' },
 ];
 

@@ -15,6 +15,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '@shared/api/client';
 import StaffNavbar from '../../components/layout/StaffNavbar.jsx';
+import ContextualHelpLink from '@shared/components/ContextualHelpLink';
 import {
   ClipboardList, UserCheck, UserX, CheckCircle, XCircle,
   ChevronDown, ChevronUp, Loader, AlertCircle, RefreshCw,
@@ -241,7 +242,7 @@ function ApproveRejectModal({ app, action, onClose, onDone }) {
   );
 }
 
-function ApplicationRow({ app, user, staffList, onRefresh }) {
+function ApplicationRow({ app, user, staffList, onRefresh, onNavigate }) {
   const [expanded, setExpanded]       = useState(false);
   const [modal, setModal]             = useState(null); // 'recuse' | 'assign' | 'review' | 'approve' | 'reject'
   const isAdmin = user?.role === 'council_admin';
@@ -297,6 +298,7 @@ function ApplicationRow({ app, user, staffList, onRefresh }) {
             </div>
 
             <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
+              <ContextualHelpLink topicId="reviewer-assignment" onNavigate={onNavigate} ariaLabel="Get help with reviewer assignment or recusal" />
               {/* Self-assign */}
               {!isAssigned && !isRecused && (
                 <button onClick={handleSelfAssign}
@@ -469,7 +471,7 @@ export default function PendingApprovals({ user, onNavigate, onLogout }) {
       ) : (
         <div className="space-y-3">
           {filtered.map(app => (
-            <ApplicationRow key={app.id} app={app} user={user} staffList={staffList} onRefresh={load} />
+            <ApplicationRow key={app.id} app={app} user={user} staffList={staffList} onRefresh={load} onNavigate={onNavigate} />
           ))}
         </div>
       )}

@@ -10,6 +10,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '@shared/api/client';
+import ContextualHelpLink from '@shared/components/ContextualHelpLink';
 
 const ROLE_LABELS = {
   council_admin: 'Admin',
@@ -130,6 +131,7 @@ export default function StaffManagement({ user, onNavigate, onLogout }) {
               <p className="text-gray-600">Add and manage your council's staff accounts.</p>
             </div>
             <div className="flex items-center gap-3">
+              <ContextualHelpLink topicId="staff-invitations" onNavigate={onNavigate} ariaLabel="Get help with staff invitations" />
               <button
                 onClick={() => { setShowAdd(true); setTempPassword(''); setAddError(''); }}
                 className="bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded-lg text-sm font-medium"

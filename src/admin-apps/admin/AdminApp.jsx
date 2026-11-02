@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import AdminDashboardOverview from './pages/AdminDashboardOverview.jsx';
 import CouncilManagement from './pages/CouncilManagement.jsx';
 import CouncilRegistrations from './pages/CouncilRegistrations.jsx';
@@ -9,6 +10,7 @@ import PlatformSettings from './pages/PlatformSettings.jsx';
 import PublicSubmissions from './pages/PublicSubmissions.jsx';
 import { useAdminAuth } from './hooks/useAdminAuth.js';
 import api from '@shared/api/client';
+import HelpGuidance from '@shared/components/HelpGuidance';
 import { Avatar, AvatarFallback } from '@shared/components/ui/avatar';
 import { Badge } from '@shared/components/ui/badge';
 import { Button } from '@shared/components/ui/button';
@@ -17,6 +19,7 @@ import {
   Building2,
   ClipboardList,
   CreditCard,
+  HelpCircle,
   LayoutDashboard,
   LogOut,
   MessageSquare,
@@ -35,6 +38,7 @@ const SIDEBAR_ITEMS = [
   { id: 'form-submissions', label: 'Form Submissions', icon: ClipboardList },
   { id: 'staff', label: 'System Admins', icon: UserCog },
   { id: 'pricing', label: 'Pricing Management', icon: CreditCard },
+  { id: 'help', label: 'Help & Guidance', icon: HelpCircle },
   { id: 'sms', label: 'SMS / Twilio', icon: MessageSquare },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
@@ -52,6 +56,7 @@ export default function AdminDashboard() {
   const [dashboardLoading, setDashboardLoading] = useState(true);
   const [dashboardError, setDashboardError] = useState('');
   const { user: adminUser, logout } = useAdminAuth();
+  const routerNavigate = useNavigate();
 
   const adminDisplayName = adminUser?.full_name || adminUser?.first_name || adminUser?.email || 'System administrator';
   const adminInitials = adminDisplayName
@@ -85,10 +90,30 @@ export default function AdminDashboard() {
     const url = new URL(window.location.href);
     if (activeTab === 'overview') url.searchParams.delete('tab');
     else url.searchParams.set('tab', activeTab);
+    if (activeTab !== 'help') url.searchParams.delete('topic');
     window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
   }, [activeTab]);
 
-  const navigate = (tab) => setActiveTab(tab);
+  const navigate = useCallback((destination) => {
+    const [tab, queryString] = destination.split('?');
+    if (!SIDEBAR_ITEMS.some((item) => item.id === tab)) return;
+
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (tab === 'help' && queryString) {
+        const requestedParams = new URLSearchParams(queryString);
+        if (requestedParams.has('topic')) params.set('topic', requestedParams.get('topic'));
+      } else if (tab !== 'help' || !queryString) {
+        params.delete('topic');
+      }
+      if (tab === 'overview') params.delete('tab');
+      else params.set('tab', tab);
+      const search = params.toString();
+      routerNavigate({ search: search ? `?${search}` : '' }, { replace: true });
+    }
+
+    setActiveTab(tab);
+  }, [routerNavigate]);
   const alertCount = dashboard?.alerts?.length || 0;
 
   return (
@@ -148,7 +173,8 @@ export default function AdminDashboard() {
           {activeTab === 'approvals' && <CouncilRegistrations />}
           {activeTab === 'form-submissions' && <PublicSubmissions />}
           {activeTab === 'staff' && <SystemAdminManagement />}
-          {activeTab === 'pricing' && <PricingManagement />}
+          {activeTab === 'pricing' && <PricingManagement onNavigate={navigate} />}
+          {activeTab === 'help' && <HelpGuidance />}
           {activeTab === 'sms' && <TwilioConfig />}
           {activeTab === 'settings' && <PlatformSettings onNavigate={navigate} />}
         </main>

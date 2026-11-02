@@ -21,6 +21,7 @@ import {
   Vote,
   Map,
   BookOpen,
+  HelpCircle,
   MessageSquare,
   ShieldCheck,
   User,
@@ -40,6 +41,7 @@ const NAV_ITEMS = [
   { id: 'grant-map',        label: 'Grant Map',        icon: Map,             path: 'staff/grant-map' },
   { id: 'resource-hub',     label: 'Resources',        icon: BookOpen,        path: 'staff/resource-hub' },
   { id: 'community-forum',  label: 'Forum',            icon: MessageSquare,   path: 'staff/community-forum' },
+  { id: 'help',             label: 'Help & Guidance',  icon: HelpCircle,      path: 'staff/help' },
   { id: 'profile',          label: 'Profile',          icon: User,            path: 'staff/profile' },
 ];
 

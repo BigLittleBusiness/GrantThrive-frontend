@@ -25,6 +25,7 @@ import { Badge }  from '@shared/components/ui/badge';
 import { Button } from '@shared/components/ui/button';
 import { Input }  from '@shared/components/ui/input';
 import api from '@shared/api/client';
+import ContextualHelpLink from '@shared/components/ContextualHelpLink';
 
 // ── Utility helpers ───────────────────────────────────────────────────────────
 
@@ -204,7 +205,7 @@ function DollarInput({ label, hint, value, onChange, error, disabled }) {
 
 // ── Plan editor card ──────────────────────────────────────────────────────────
 
-function PlanCard({ planKey, serverData, onSaved, onToast }) {
+function PlanCard({ planKey, serverData, onSaved, onToast, onNavigate }) {
   const meta = PLAN_META[planKey];
 
   // Local form state (dollar strings for UX, converted to cents on save)
@@ -415,7 +416,10 @@ function PlanCard({ planKey, serverData, onSaved, onToast }) {
 
             {/* Subscription prices */}
             <div>
-              <p className="text-sm font-semibold text-gray-700 mb-3">Subscription Prices (AUD)</p>
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm font-semibold text-gray-700">Subscription Prices (AUD)</p>
+                <ContextualHelpLink topicId="pricing-management" onNavigate={onNavigate} ariaLabel="Get help with subscription price management" />
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <DollarInput
                   label="Monthly Price"
@@ -518,7 +522,7 @@ function PlanCard({ planKey, serverData, onSaved, onToast }) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function PricingManagement() {
+export default function PricingManagement({ onNavigate }) {
   const [serverPlans, setServerPlans] = useState({});   // keyed by plan_key
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
@@ -703,6 +707,7 @@ export default function PricingManagement() {
               serverData={serverPlans[key] || null}
               onSaved={handleSaved}
               onToast={showToast}
+              onNavigate={onNavigate}
             />
           ))}
         </div>

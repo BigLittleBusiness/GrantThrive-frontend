@@ -24,6 +24,7 @@ import {
   LogOut,
   ClipboardList,
   CreditCard,
+  HelpCircle,
   User,
   UserPlus,
   MessageCircle,
@@ -185,6 +186,10 @@ const CouncilAdminDashboard = ({ user, onNavigate, onLogout }) => {
             </div>
             <div className="flex items-center gap-3">
               <NotificationBell onNavigate={onNavigate} />
+              <Button variant="outline" onClick={() => onNavigate('help')} className="flex items-center gap-2" aria-label="Open Help and Guidance">
+                <HelpCircle className="w-4 h-4" />
+                <span className="hidden sm:inline">Help &amp; Guidance</span>
+              </Button>
               <Button variant="outline" onClick={onLogout} className="flex items-center gap-2">
                 <LogOut className="w-4 h-4" />
                 Logout

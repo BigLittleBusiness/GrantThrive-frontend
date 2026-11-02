@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared/components/ui/tabs';
 import { Badge } from '@shared/components/ui/badge';
 import { Label } from '@shared/components/ui/label';
+import ContextualHelpLink from '@shared/components/ContextualHelpLink';
 import { 
   LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
@@ -252,6 +253,7 @@ const Analytics = ({ user, onNavigate, onLogout }) => {
             <Download className="w-4 h-4 mr-2" />
             Export Data
           </Button>
+          <ContextualHelpLink topicId="reports-exports" onNavigate={onNavigate} ariaLabel="Get help with reports and exports" />
         </div>
       </div>
 
@@ -575,4 +577,3 @@ const Analytics = ({ user, onNavigate, onLogout }) => {
 };
 
 export default Analytics;
-

@@ -349,7 +349,7 @@ export default function AccountBilling({ user, onNavigate, onLogout }) {
           </div>
         )}
 
-        <SubscriptionCard subscription={billing.subscription} onChanged={refreshBilling} />
+        <SubscriptionCard subscription={billing.subscription} onChanged={refreshBilling} onNavigate={onNavigate} />
 
         {/* ── Plan card ──────────────────────────────────────────────────────── */}
         <div className="rounded-xl border border-gray-200 bg-white p-6">
